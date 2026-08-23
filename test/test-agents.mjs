@@ -1,0 +1,164 @@
+#!/usr/bin/env node
+/**
+ * test-agents.mjs
+ * Validate 7 agents exist with correct contracts
+ */
+
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+import { homedir } from 'node:os';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const agentsDir = join(homedir(), '.config', 'opencode', 'agents');
+const expectedAgents = [
+  'orchestrator.md',
+  'planner.md',
+  'coder.md',
+  'verifier.md',
+  'reviewer.md',
+  'researcher.md',
+  'judge.md',
+];
+
+console.log('=== Test Agents ===\n');
+
+// Check agents directory
+if (!existsSync(agentsDir)) {
+  console.error('✗ Agents directory not found');
+  process.exit(1);
+}
+
+console.log('Checking agents directory: ' + agentsDir + '\n');
+
+// Check each agent file
+const missingAgents = [];
+const invalidAgents = [];
+
+for (const agentFile of expectedAgents) {
+  const agentPath = join(agentsDir, agentFile);
+
+  if (!existsSync(agentPath)) {
+    console.error(`✗ ${agentFile} not found`);
+    missingAgents.push(agentFile);
+  } else {
+    try {
+      const content = readFileSync(agentPath, 'utf8');
+
+      // Check for required fields
+      const requiredFields = ['---', 'description:', 'mode:', 'model:'];
+
+      for (const field of requiredFields) {
+        if (!content.includes(field)) {
+          console.error(`✗ ${agentFile} missing required field: ${field}`);
+          invalidAgents.push({ file: agentFile, missing: field });
+        }
+      }
+
+      // Check for harness-specific requirements
+      const harnessRequirements = [
+        'subagent_type:',
+        'task: deny',
+        'edit: deny',
+      ];
+
+      for (const req of harnessRequirements) {
+        if (!content.includes(req)) {
+          console.warn(`⚠ ${agentFile} missing harness requirement: ${req}`);
+        }
+      }
+
+      console.log(`✓ ${agentFile}`);
+    } catch (err) {
+      console.error(`✗ ${agentFile} could not be read`);
+      invalidAgents.push({ file: agentFile, error: err.message });
+    }
+  }
+}
+
+// Check for generic Task agents (should not exist)
+const allAgentFiles = expectedAgents.map(f => f.replace('.md', ''));
+const genericAgents = allAgentFiles.filter(agent => !agent.startsWith('auto:'));
+
+if (genericAgents.length > 0) {
+  console.log('\n⚠ Generic Task agents found (only harness subagents allowed):');
+  for (const genericAgent of genericAgents) {
+    console.error(`  ✗ ${genericAgent}`);
+  }
+}
+
+// Check orchestrator for specific harness contract
+const orchestratorPath = join(agentsDir, 'orchestrator.md');
+if (existsSync(orchestratorPath)) {
+  const content = readFileSync(orchestratorPath, 'utf8');
+
+  const allowedSubagents = [
+    'planner: allow',
+    'coder: allow',
+    'researcher: allow',
+    'verifier: allow',
+    'reviewer: allow',
+    'judge: allow',
+  ];
+
+  const genericSubagents = [
+    'general: allow',
+    'explore: allow',
+    'scout: allow',
+  ];
+
+  console.log('\n=== Orchestrator Subagent Permissions ===\n');
+
+  let allAllowed = true;
+  for (const subagent of allowedSubagents) {
+    if (content.includes(subagent)) {
+      console.log(`✓ ${subagent}`);
+    } else {
+      console.error(`✗ ${subagent} not found`);
+      allAllowed = false;
+    }
+  }
+
+  for (const genericSubagent of genericSubagents) {
+    if (!content.includes(genericSubagent)) {
+      console.log(`✓ No generic subagent: ${genericSubagent}`);
+    } else {
+      console.error(`✗ Generic subagent found: ${genericSubagent}`);
+      allAllowed = false;
+    }
+  }
+
+  if (!allAllowed) {
+    console.error('\n✗ Orchestrator has incorrect subagent permissions');
+  }
+}
+
+// Check judge for correct model
+const judgePath = join(agentsDir, 'judge.md');
+if (existsSync(judgePath)) {
+  const content = readFileSync(judgePath, 'utf8');
+
+  console.log('\n=== Judge Model ===\n');
+
+  if (content.includes('model: freellmapi/gemini-3.6-flash')) {
+    console.log('✓ Judge uses freellmapi/gemini-3.6-flash');
+  } else if (content.includes('model:')) {
+    console.warn(`⚠ Judge uses model: ${content.match(/model:\s*([^\n]+)/)?.[1] || 'unknown'}`);
+  } else {
+    console.error('✗ Judge missing model field');
+  }
+}
+
+// Summary
+console.log('\n=== Summary ===\n');
+
+if (missingAgents.length === 0 && invalidAgents.length === 0) {
+  console.log('✓ All 7 agents are present and valid');
+  process.exit(0);
+} else {
+  console.error(`✗ ${missingAgents.length} agent(s) missing`);
+  console.error(`✗ ${invalidAgents.length} agent(s) invalid`);
+  process.exit(1);
+}

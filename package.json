@@ -1,0 +1,58 @@
+{
+  "name": "ocode-harness",
+  "version": "0.1.0",
+  "description": "Portable, deterministic harness for orchestrating AI-powered coding agents",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test/test-installer.mjs && node test/test-doctor.mjs && node test/test-agents.mjs && node test/test-orientation.mjs && node test/test-secrets.mjs",
+    "test:installer": "node test/test-installer.mjs",
+    "test:doctor": "node test/test-doctor.mjs",
+    "test:agents": "node test/test-agents.mjs",
+    "test:orientation": "node test/test-orientation.mjs",
+    "test:secrets": "node test/test-secrets.mjs",
+    "doctor": "node scripts/doctor.mjs",
+    "backup": "node scripts/backup.mjs"
+  },
+  "keywords": [
+    "ai",
+    "coding",
+    "agents",
+    "orchestrator",
+    "planner",
+    "coder",
+    "verifier",
+    "reviewer",
+    "researcher",
+    "judge",
+    "orientation",
+    "opencode"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/ocode-harness.git"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "glob": "^10.3.10"
+  },
+  "devDependencies": {},
+  "files": [
+    "agents/",
+    "packages/orientation/",
+    "bin/",
+    "installer/",
+    "profiles/",
+    "skills/",
+    "test/",
+    "scripts/",
+    "docs/",
+    "README.md",
+    "package.json",
+    "VERSION"
+  ]
+}

@@ -1,263 +1,106 @@
-# ROADMAP
+# Ocode Roadmap
 
-## CURRENT: Deterministic Evidence Foundation ✓ COMPLETED
+This file is the canonical high-level roadmap for the Ocode program.
 
-### Core Infrastructure
-- [x] **Harness Runtime Package** (`packages/harness-runtime/`)
-  - [x] Identity management (UUID v4 task/run IDs)
-  - [x] Lifecycle state machine (13 states, legal transitions)
-  - [x] Evidence ledger (JSONL, schema v1, validation)
-  - [x] Git evidence collection (status, diff, branch, remote)
-  - [x] Path reconciliation (expected vs observed)
-  - [x] Closeout gates (reviewer, validationEvidence, lifecycle, sensitive paths, merge conflicts)
-  - [x] Closeout execution (stage, commit, push)
-  - [x] Sensitive path blocking (`.env`, keys, secrets)
+North-star acceptance property:
 
-### Doctrine & Resource Policy
-- [x] **Agentic Agile Operating Doctrine** (`doctrine/agentic-agile.md`)
-  - [x] Core principles, minimum sufficient planning
-  - [x] Roadmap maturity semantics (IDEA/DISCOVERY/PLANNING READY/PLANNED/ACTIVE/PROVEN/DEFERRED)
-  - [x] Evidence-producing increment loop
-  - [x] Version manifest (`doctrine/policy-version.json`)
-- [x] **Resource Consumption Policy** (`doctrine/resource-policy.md`)
-  - [x] Resource tiers (Tier 0-3)
-  - [x] Failure taxonomy (CAPABILITY/INFRASTRUCTURE/CONTEXT/IMPLEMENTATION)
-  - [x] Resource invariants
-- [x] **Deterministic Prompt Composition** (`packages/harness-runtime/lib/composition.mjs`)
-  - [x] Compose role prompts from canonical doctrine + policy
-  - [x] Role frontmatter preserved
-  - [x] No LLM required for composition
-- [x] **Deterministic Validation Runner** (`packages/harness-runtime/lib/verify.mjs`)
-  - [x] `harness verify` CLI command
-  - [x] Validation evidence output (status + commands)
-  - [x] No LLM required for validation execution
+> A clean machine can reconstruct Ocode from repository source plus machine-private configuration/authentication, prove install/update/rollback/runtime integrity, and then execute governed agentic development through deterministic evidence, authority boundaries, and recoverable state transitions.
 
-### Agent Definitions
-- [x] **7 Core Agents** + **Committer** (8 total)
-  - [x] orchestrator (primary coordinator)
-  - [x] planner (architecture/decomposition)
-  - [x] coder (implementation)
-  - [x] researcher (external docs/API)
-  - [x] verifier (independent test/build execution)
-  - [x] reviewer (independent read-only review)
-  - [x] judge (technical disagreement resolution)
-  - [x] committer (semantic closeout preparation, cheap model)
+## Status Legend
 
-### Installation & Configuration
-- [x] **Installer** (`installer/install.mjs`)
-- [x] Orientation package deployment
-- [x] Harness-runtime package deployment
-- [x] Doctrine package deployment
-- [x] All 8 agents deployed to `~/.config/opencode/agents/`
-  - [x] Binaries: `orient`, `ocode`
-  - [x] OpenCode config patching (subagent_depth=1, task_allowlist)
-  - [x] Git excludes: `.opencode/orientation.json`, `.opencode/orientation.md`, `.opencode/run-ledger.jsonl`
+- PROVEN: implemented and validated by repository/runtime evidence.
+- ACTIVE: current work in progress.
+- PLANNED: not implemented; details require the full roadmap prompt or later design.
+- BLOCKED: cannot progress without external authority/input.
 
-### Profiles & Configuration
-- [x] **Default Profile** (`profiles/default.json`)
-  - [x] Provider: freellmapi with auto:smart router
-  - [x] Task allowlist: 8 harness subagents only
-  - [x] subagent_depth: 1
-  - [x] default_agent: orchestrator
+## Milestones
 
-### Orchestrator Contract
-- [x] **Adaptive Workflow** (QUICK/STANDARD/DEEP)
-- [x] **Review Invariant** (mandatory reviewer for source changes)
-- [x] **Research Boundary** (external deps → researcher required)
-- [x] **Harness Contract** (orientation, delegation, evidence-bounded completion)
-- [x] **Delegation Contract** (exact subagent types, role ownership)
-- [x] **Committer delegation** added to task allowlist
+### M0 Canonical Repository Baseline — ACTIVE
 
-### Doctor Checks
-- [x] System dependencies (opencode, Node.js, git)
-- [x] All 8 agents present and valid
-- [x] Orchestrator config (subagent_depth, task_allowlist)
-- [x] Binaries in PATH
-- [x] Orientation package health
-- [x] Harness-runtime package health
-- [x] Ledger runtime exports
-- [x] Closeout runtime exports
-- [x] Git excludes (orientation + run-ledger)
-- [x] Environment variables
-- [x] Doctrine files present and valid (`doctrine/agentic-agile.md`, `doctrine/resource-policy.md`)
-- [x] Policy version manifest valid (`doctrine/policy-version.json`)
+Purpose: make the repository internally trustworthy before broader roadmap work.
 
-### Test Suite (All Isolated Temp Directories)
-- [x] `test/test-installer.mjs` - Installer validation
-- [x] `test/test-doctor.mjs` - Doctor command validation
-- [x] `test/test-agents.mjs` - 8 agents validation
-- [x] `test/test-orientation.mjs` - Orientation package tests
-- [x] `test/test-secrets.mjs` - No credentials in source
-- [x] `test/test-ledger.mjs` - Ledger CRUD + validation
-- [x] `test/test-lifecycle.mjs` - State machine + transitions
-- [x] `test/test-evidence.mjs` - Git evidence + reconciliation
-- [x] `test/test-closeout.mjs` - Gates + execution
-- [x] `test/test-committer.mjs` - Committer agent contract
-- [x] `test/test-composition.mjs` - Prompt composition validation
-- [x] `test/test-verify.mjs` - Validation runner verification
+Evidence required:
+- clean source has no unresolved merge-conflict markers
+- tests covering installer, doctor, agents, composition, committer, secrets, ledger, lifecycle, evidence, closeout, verification, version, update, and rollback pass
+- agent semantic contracts live in `agents/*.md`
+- structured role metadata lives in `agents/manifest.json`
+- runtime composition derives from canonical agent files and doctrine
+- Committer is read-only semantic closeout preparation
+- deterministic runtime owns gate evaluation, path reconciliation, exact staging, commit execution, and optional push
 
----
+### M1 Portable Runtime and M1 Pro Qualification — ACTIVE
 
-## NEXT: Deterministic Task Execution Control — PLANNING READY
+Purpose: prove this M1 Pro can reconstruct and validate Ocode from source without copied prior-machine state.
 
-### Prerequisites (All Satisfied)
-- ✓ Ledger records task identity, workflow, agents, files, validation
-- ✓ Lifecycle enforces legal state transitions
-- ✓ Evidence collects objective git state
-- ✓ Closeout gates enforce reviewer/validationEvidence/lifecycle
-- ✓ Commiter prepares semantic closeout
-- ✓ Orchestrator contract governs delegation
-- ✓ Doctor validates full installation
+Evidence required:
+- `npm run bootstrap` installs reproducibly
+- machine config is initialized at `~/.config/ocode/config.json` when missing
+- unrelated OpenCode config is preserved by ownership-aware merge
+- FreeLLMAPI endpoint is machine-configurable and diagnosable
+- push default is off
+- installed runtime can report version, update from source, and rollback from backup
+- OpenCode presence/version and remaining human authentication actions are explicit
 
-### Phase 1: Task Specification & Planning
-- [ ] **Task Spec Schema** (versioned, validated)
-  - [ ] Objective, scope, acceptance criteria
-  - [ ] Workflow classification (QUICK/STANDARD/DEEP)
-  - [ ] Required agents, optional agents
-  - [ ] Dependencies, constraints, risks
-- [ ] **Planner Agent Enhancement**
-  - [ ] Decompose spec → ordered task list
-  - [ ] Contract definitions between tasks
-  - [ ] Risk assessment per task
-  - [ ] Output: `task-spec.json` + `plan.md`
-- [ ] **Orchestrator Planning Integration**
-  - [ ] Invoke planner for STANDARD/DEEP
-  - [ ] Persist plan to ledger
-  - [ ] Validate plan before delegation
+### M2 Observed OpenCode Integration Contract — PLANNED
 
-### Phase 2: Execution Control
-- [ ] **Task Runner** (orchestrator-owned)
-  - [ ] Sequential task execution per plan
-  - [ ] State persistence per task (ledger)
-  - [ ] Checkpoint/resume capability
-  - [ ] Timeout and step limits per task
-- [ ] **Inter-Task Contracts**
-  - [ ] File-based handoffs (explicit paths)
-  - [ ] Validation gates between tasks
-  - [ ] Rollback on contract violation
-- [ ] **Resource Governance**
-  - [ ] Per-task step budgets
-  - [ ] Model selection per role
-  - [ ] Concurrency limits (subagent_depth=1)
+Purpose: document and verify the actual OpenCode config, agent, provider, task, and skill integration behavior before deeper integration.
 
-### Phase 3: Deterministic Closeout
-- [ ] **Automated Closeout Pipeline**
-  - [ ] Orchestrator → committer → closeout execution
-  - [ ] Evidence gate evaluation (reviewer=ACCEPT, validationEvidence.status=PASS)
-  - [ ] Path reconciliation before commit
-  - [ ] Commit message from committer output
-  - [ ] Push to remote (configurable)
-- [ ] **Ledger Finalization**
-  - [ ] Record closeout result (committed, pushed, SHA)
-  - [ ] Final lifecycle state: COMPLETE/BLOCKED/FAILED
-  - [ ] Elapsed time, infrastructure failures, retries
+Depends on: M0, M1.
 
-### Phase 4: Observability & Debugging
-- [ ] **Structured Logging**
-  - [ ] JSONL per-task logs (stdout/stderr/agent calls)
-  - [ ] Correlation IDs (task_id, run_id)
-  - [ ] Log aggregation for doctor/analysis
-- [ ] **Replay Capability**
-  - [ ] Re-run task from ledger record
-  - [ ] Compare evidence before/after
-  - [ ] Diff validation results
+### M3 OpenCode-Native Provider Binding — PLANNED
 
----
+Purpose: bind Ocode provider configuration to OpenCode-native mechanisms without proxying OpenAI subscription auth or copying OAuth/token material.
 
-## LATER: Worktree Control Requirements
+Depends on: M2.
 
-### Git Worktree Isolation
-- [ ] **Per-Task Worktrees**
-  - [ ] Create worktree per task from base commit
-  - [ ] Isolate changes per task
-  - [ ] Clean up worktree on completion/abort
-- [ ] **Worktree Lifecycle**
-  - [ ] `git worktree add` on task start
-  - [ ] `git worktree remove` on task end
-  - [ ] Handle nested/parallel worktrees
-- [ ] **Base Commit Management**
-  - [ ] Track base commit per run
-  - [ ] Rebase/merge strategy for integration
-  - [ ] Conflict detection before merge
+### M4 Capability / Permission / Authority Contracts — PLANNED
 
-### Multi-Task Coordination
-- [ ] **Parallel Task Execution** (when subagent_depth > 1)
-  - [ ] Dependency graph from planner
-  - [ ] Worktree isolation for parallel tasks
-  - [ ] Merge queue for integration
-- [ ] **Cross-Task Evidence**
-  - [ ] Shared ledger across tasks
-  - [ ] Aggregated validation results
-  - [ ] Unified closeout for multi-task runs
+Purpose: formalize agent capabilities, permissions, and authority boundaries as enforceable contracts.
 
----
+Depends on: M2, M3.
 
-## LATER: Sub-Agent Governance Requirements
+### M5 Wayfinder — PLANNED
 
-### Agent Registry & Versioning
-- [ ] **Agent Manifest**
-  - [ ] Versioned agent definitions
-  - [ ] Capability declarations (tools, models, permissions)
-  - [ ] Compatibility matrix (orchestrator version ↔ agent versions)
-- [ ] **Agent Upgrade Path**
-  - [ ] Backward-compatible agent updates
-  - [ ] Migration guide per version
-  - [ ] Deprecation policy
+Purpose: implement the Wayfinder workflow only after baseline, integration, and authority contracts are proven.
 
-### Dynamic Agent Selection
-- [ ] **Capability-Based Routing**
-  - [ ] Orchestrator selects agent by capability, not name
-  - [ ] Fallback chains (preferred → available)
-  - [ ] Model-aware routing (cost/quality tradeoff)
+Depends on: M4.
 
-### Agent Observability
-- [ ] **Per-Agent Metrics**
-  - [ ] Step count, token usage, latency
-  - [ ] Success/failure rates by task type
-  - [ ] Repair cycle frequency
-- [ ] **Agent Health Checks**
-  - [ ] Liveness/readiness per agent type
-  - [ ] Model availability verification
-  - [ ] Tool permission validation
+### M6 Ocode-Native Pstack-Derived Skills — PLANNED
 
----
+Purpose: add Ocode-owned skills derived from Pstack concepts without copying non-canonical local skill state.
 
-## Dependencies on Current Primitives
+Depends on: M4, M5.
 
-| Future Feature | Depends On | Status |
-|----------------|------------|--------|
-| Task Spec Schema | Ledger schema, validation | ✓ Ready |
-| Planner Integration | Orchestrator contract, delegation | ✓ Ready |
-| Task Runner | Lifecycle, ledger, evidence | ✓ Ready |
-| Inter-Task Contracts | Path reconciliation, evidence | ✓ Ready |
-| Automated Closeout | Closeout gates, committer, evidence | ✓ Ready |
-| Worktree Isolation | Git evidence, lifecycle states | ✓ Ready |
-| Multi-Task Coordination | Ledger aggregation, lifecycle | ✓ Ready |
-| Agent Registry | Agent definitions, permissions | ✓ Ready |
-| Capability Routing | Orchestrator contract, task allowlist | ✓ Ready |
+### M7 Planner Compiler — PLANNED
 
----
+Purpose: compile high-level work into deterministic task plans and contracts.
 
-## Design Principles (Invariant)
+Depends on: M4, M6.
 
-1. **Determinism First** — Every operation has defined inputs, outputs, and failure modes
-2. **Evidence Over Trust** — No completion claim without independent validation
-3. **Isolation By Default** — Worktrees, temp dirs, no shared mutable state
-4. **Explicit Contracts** — File paths, schemas, transitions all declared
-5. **Cheap Abundance** — Commiter, verifier use small models; expensive models for planning/coding
-6. **Human Authority Boundaries** — Orchestrator is only human-facing agent
-7. **Auditability** — Every decision traceable to ledger record
-8. **Recoverability** — BLOCKED/FAILED → ACTIVE transitions always possible
+### M8 Deterministic Task Runner — PLANNED
 
----
+Purpose: execute compiled plans through lifecycle, ledger, evidence, validation, review, and closeout gates.
 
-## Version Milestones
+Depends on: M7.
 
-| Version | Focus | Target |
-|---------|-------|--------|
-| v0.1 | Deterministic Evidence Foundation | ✓ Done |
-| v0.2 | Task Execution Control (Planning + Runner) | Planning |
-| v0.3 | Automated Closeout Pipeline | Planned |
-| v0.4 | Worktree Isolation | Planned |
-| v0.5 | Multi-Task Coordination | Planned |
-| v1.0 | Sub-Agent Governance + Observability | Planned |
+### M9 Worktree Isolation and Safe Parallelism — PLANNED
+
+Purpose: isolate work by task and support safe parallelism only after deterministic single-run execution is proven.
+
+Depends on: M8.
+
+### M10 Evaluation / Learning / Self-Hosting — PLANNED
+
+Purpose: evaluate, learn from, and eventually self-host Ocode improvements without violating authority boundaries or evidence requirements.
+
+Depends on: M9.
+
+## Dependency Order
+
+M0 → M1 → M2 → M3 → M4 → M5 → M6 → M7 → M8 → M9 → M10
+
+M2–M10 remain planned. Placeholder directories or partial primitives do not imply implementation.
+
+## Current Bootstrap Boundary
+
+The current bootstrap may repair only the repository foundation needed for a reproducible baseline. It must not begin Wayfinder, Pstack skill implementation, Planner Compiler, worktree isolation, or broader roadmap features.

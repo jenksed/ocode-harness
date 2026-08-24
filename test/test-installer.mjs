@@ -37,6 +37,28 @@ mkdirSync(join(testShareDir, 'ocode-harness', 'orientation', 'lib'), { recursive
 mkdirSync(join(testShareDir, 'ocode-harness', 'orientation', 'bin'), { recursive: true });
 mkdirSync(join(testShareDir, 'ocode-harness', 'orientation', 'test'), { recursive: true });
 
+writeFileSync(join(testConfigDir, 'opencode.json'), JSON.stringify({
+  provider: {
+    openai: {
+      name: 'User OpenAI Provider',
+      options: {
+        apiKey: '{env:OPENAI_API_KEY}'
+      }
+    }
+  },
+  agent: {
+    user_agent: {
+      model: 'openai/gpt-5'
+    }
+  },
+  skill: {
+    user_skill: {
+      enabled: true
+    }
+  },
+  unrelated_user_setting: true
+}, null, 2), 'utf8');
+
 // Copy agents
 const testAgentsDir = join(testConfigDir, 'agents');
 mkdirSync(testAgentsDir, { recursive: true });
@@ -154,6 +176,10 @@ try {
       path: join(testConfigDir, 'opencode.json'),
     },
     {
+      name: 'Ocode machine configuration',
+      path: join(testHome, '.config', 'ocode', 'config.json'),
+    },
+    {
       name: 'VERSION file',
       path: join(testShareDir, 'ocode-harness', 'VERSION'),
     },
@@ -237,6 +263,23 @@ try {
       console.log('\n✓ subagent_depth is set to 1');
     } else {
       console.error('\n✗ subagent_depth is not set to 1');
+      allPassed = false;
+    }
+
+    if (opencodeConfig.provider?.openai?.name === 'User OpenAI Provider' &&
+        opencodeConfig.agent?.user_agent?.model === 'openai/gpt-5' &&
+        opencodeConfig.skill?.user_skill?.enabled === true &&
+        opencodeConfig.unrelated_user_setting === true) {
+      console.log('✓ unrelated OpenCode provider/agent/skill/settings preserved');
+    } else {
+      console.error('✗ unrelated OpenCode configuration was not preserved');
+      allPassed = false;
+    }
+
+    if (opencodeConfig.provider?.freellmapi?.options?.baseURL === 'http://127.0.0.1:3001/v1') {
+      console.log('✓ FreeLLMAPI baseURL comes from Ocode machine config default');
+    } else {
+      console.error('✗ FreeLLMAPI baseURL did not come from Ocode machine config default');
       allPassed = false;
     }
   }

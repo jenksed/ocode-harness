@@ -84,7 +84,7 @@ code-harness doctor
 - **Expected**: FREELLMAPI_API_KEY is set and not using placeholder
 - **Details**: Shows whether the API key is set (masked)
 - **Check**: FREELLMAPI_BASE_URL is set or has default
-- **Expected**: FREELLMAPI_BASE_URL is set or defaults to `http://192.168.1.29:3001/v1`
+- **Expected**: FreeLLMAPI base URL is configured in `~/.config/ocode/config.json`
 - **Details**: Shows whether the base URL is configured
 
 ## Doctor Output Example
@@ -148,7 +148,7 @@ Checking environment variables...
 ✓ FREELLMAPI_API_KEY is set
   Value: abc123...xyz789
 ✓ FREELLMAPI_BASE_URL is set
-  Value: http://192.168.1.29:3001/v1
+  Value: SET
 
 ============================================================
 Summary
@@ -260,10 +260,10 @@ source ~/.zshrc
 **Solution:**
 ```bash
 # Set the environment variable
-export FREELLMAPI_BASE_URL="http://192.168.1.29:3001/v1"
+export FREELLMAPI_BASE_URL="http://127.0.0.1:3001/v1"
 
 # Make it permanent
-echo 'export FREELLMAPI_BASE_URL="http://192.168.1.29:3001/v1"' >> ~/.zshrc
+echo 'export FREELLMAPI_BASE_URL="http://127.0.0.1:3001/v1"' >> ~/.zshrc
 source ~/.zshrc
 ```
 

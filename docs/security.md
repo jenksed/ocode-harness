@@ -24,7 +24,7 @@ This pattern ensures:
 #### Base URL Pattern
 
 ```json
-"baseURL": "${FREELLMAPI_BASE_URL:http://192.168.1.29:3001/v1}"
+"baseURL": "http://127.0.0.1:3001/v1"
 ```
 
 This pattern provides:
@@ -38,7 +38,7 @@ This pattern provides:
 
 ```bash
 export FREELLMAPI_API_KEY="your-api-key-here"
-export FREELLMAPI_BASE_URL="http://192.168.1.29:3001/v1"
+export FREELLMAPI_BASE_URL="http://127.0.0.1:3001/v1"
 ```
 
 #### Permanent (Shell Config)
@@ -46,21 +46,21 @@ export FREELLMAPI_BASE_URL="http://192.168.1.29:3001/v1"
 **Zsh (macOS/Linux):**
 ```bash
 echo 'export FREELLMAPI_API_KEY="your-api-key-here"' >> ~/.zshrc
-echo 'export FREELLMAPI_BASE_URL="http://192.168.1.29:3001/v1"' >> ~/.zshrc
+echo 'export FREELLMAPI_BASE_URL="http://127.0.0.1:3001/v1"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
 **Bash (Linux):**
 ```bash
 echo 'export FREELLMAPI_API_KEY="your-api-key-here"' >> ~/.bashrc
-echo 'export FREELLMAPI_BASE_URL="http://192.168.1.29:3001/v1"' >> ~/.bashrc
+echo 'export FREELLMAPI_BASE_URL="http://127.0.0.1:3001/v1"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
 **PowerShell (Windows):**
 ```powershell
 $env:FREELLMAPI_API_KEY = "your-api-key-here"
-$env:FREELLMAPI_BASE_URL = "http://192.168.1.29:3001/v1"
+$env:FREELLMAPI_BASE_URL = "http://127.0.0.1:3001/v1"
 ```
 
 ### Environment Variable Validation

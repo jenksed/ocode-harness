@@ -30,6 +30,7 @@ const testSourceHarnessRuntimeDir = join(testSourceDir, 'packages', 'harness-run
 const testSourceDoctrineDir = join(testSourceDir, 'doctrine');
 const testSourceOpencodeConfigDir = join(testSourceDir, 'opencode-config');
 const testSourceInstallerDir = join(testSourceDir, 'installer');
+const testSourceSkillsDir = join(testSourceDir, 'skills');
 
 console.log('=== Test Harness Update ===\n');
 console.log(`Test HOME: ${testHome}`);
@@ -54,12 +55,15 @@ mkdirSync(join(testSourceHarnessRuntimeDir, 'bin'), { recursive: true });
 mkdirSync(testSourceDoctrineDir, { recursive: true });
 mkdirSync(testSourceOpencodeConfigDir, { recursive: true });
 mkdirSync(testSourceInstallerDir, { recursive: true });
+mkdirSync(testSourceSkillsDir, { recursive: true });
 
 // Copy agents
 const agentFiles = ['orchestrator.md', 'planner.md', 'coder.md', 'verifier.md', 'reviewer.md', 'researcher.md', 'judge.md', 'committer.md'];
 for (const agentFile of agentFiles) {
   copyFileSync(join(agentsDir, agentFile), join(testSourceAgentsDir, agentFile));
 }
+copyFileSync(join(agentsDir, 'manifest.json'), join(testSourceAgentsDir, 'manifest.json'));
+writeFileSync(join(testSourceSkillsDir, '.gitkeep'), '', 'utf8');
 
 // Copy orientation
 copyFileSync(join(orientationDir, 'package.json'), join(testSourceOrientationDir, 'package.json'));
@@ -112,6 +116,9 @@ mkdirSync(join(testHarnessRoot, 'harness-runtime'), { recursive: true });
 mkdirSync(join(testHarnessRoot, 'harness-runtime', 'lib'), { recursive: true });
 mkdirSync(join(testHarnessRoot, 'harness-runtime', 'bin'), { recursive: true });
 mkdirSync(join(testHarnessRoot, 'doctrine'), { recursive: true });
+mkdirSync(join(testHarnessRoot, 'agents'), { recursive: true });
+mkdirSync(join(testHarnessRoot, 'opencode-config'), { recursive: true });
+mkdirSync(join(testHarnessRoot, 'skills'), { recursive: true });
 mkdirSync(join(testHarnessRoot, '.backup'), { recursive: true });
 mkdirSync(join(testHarnessRoot, '.staging'), { recursive: true });
 
@@ -137,6 +144,13 @@ copyFileSync(join(testSourceHarnessRuntimeDir, 'bin', 'harness.mjs'), join(testH
 copyFileSync(join(testSourceDoctrineDir, 'agentic-agile.md'), join(testHarnessRoot, 'doctrine', 'agentic-agile.md'));
 copyFileSync(join(testSourceDoctrineDir, 'resource-policy.md'), join(testHarnessRoot, 'doctrine', 'resource-policy.md'));
 copyFileSync(join(testSourceDoctrineDir, 'policy-version.json'), join(testHarnessRoot, 'doctrine', 'policy-version.json'));
+
+for (const agentFile of agentFiles) {
+  copyFileSync(join(testSourceAgentsDir, agentFile), join(testHarnessRoot, 'agents', agentFile));
+}
+copyFileSync(join(testSourceAgentsDir, 'manifest.json'), join(testHarnessRoot, 'agents', 'manifest.json'));
+copyFileSync(join(testSourceOpencodeConfigDir, 'opencode.json'), join(testHarnessRoot, 'opencode-config', 'opencode.json'));
+writeFileSync(join(testHarnessRoot, 'skills', '.gitkeep'), '', 'utf8');
 
 // Copy root node_modules to test harness-runtime for commander dependency
 const testHarnessRuntimeNodeModules = join(testHarnessRoot, 'harness-runtime', 'node_modules');

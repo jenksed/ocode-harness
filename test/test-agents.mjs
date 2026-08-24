@@ -7,12 +7,11 @@
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { existsSync, readFileSync } from 'node:fs';
-import { homedir } from 'node:os';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const agentsDir = join(homedir(), '.config', 'opencode', 'agents');
+const agentsDir = join(__dirname, '..', 'agents');
 const expectedAgents = [
   'orchestrator.md',
   'planner.md',
@@ -33,6 +32,22 @@ if (!existsSync(agentsDir)) {
 }
 
 console.log('Checking agents directory: ' + agentsDir + '\n');
+
+const manifestPath = join(agentsDir, 'manifest.json');
+if (!existsSync(manifestPath)) {
+  console.error('✗ manifest.json not found');
+  process.exit(1);
+}
+
+const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+const manifestFiles = manifest.roles.map(role => role.file).sort();
+const expectedFiles = [...expectedAgents].sort();
+if (JSON.stringify(manifestFiles) === JSON.stringify(expectedFiles)) {
+  console.log('✓ manifest.json lists all canonical agents');
+} else {
+  console.error('✗ manifest.json does not match canonical agent files');
+  process.exit(1);
+}
 
 // Check each agent file
 const missingAgents = [];
@@ -58,12 +73,16 @@ for (const agentFile of expectedAgents) {
         }
       }
 
-      // Check for harness-specific requirements
-      const harnessRequirements = [
-        'subagent_type:',
-        'task: deny',
-        'edit: deny',
-      ];
+      // Check for harness-specific requirements. Orchestrator is allowed to
+      // delegate tasks; coder is the only mutating source agent.
+      const roleName = agentFile.replace('.md', '');
+      const harnessRequirements = ['subagent_type:'];
+      if (roleName !== 'orchestrator') {
+        harnessRequirements.push('task: deny');
+      }
+      if (roleName !== 'coder') {
+        harnessRequirements.push('edit: deny');
+      }
 
       for (const req of harnessRequirements) {
         if (!content.includes(req)) {
@@ -76,17 +95,6 @@ for (const agentFile of expectedAgents) {
       console.error(`✗ ${agentFile} could not be read`);
       invalidAgents.push({ file: agentFile, error: err.message });
     }
-  }
-}
-
-// Check for generic Task agents (should not exist)
-const allAgentFiles = expectedAgents.map(f => f.replace('.md', ''));
-const genericAgents = allAgentFiles.filter(agent => !agent.startsWith('auto:'));
-
-if (genericAgents.length > 0) {
-  console.log('\n⚠ Generic Task agents found (only harness subagents allowed):');
-  for (const genericAgent of genericAgents) {
-    console.error(`  ✗ ${genericAgent}`);
   }
 }
 
@@ -153,24 +161,13 @@ if (existsSync(judgePath)) {
 }
 
 // Summary
-  console.log('\n=== Summary ===\n');
+console.log('\n=== Summary ===\n');
 
-<<<<<<< HEAD
 if (missingAgents.length === 0 && invalidAgents.length === 0) {
-    console.log('✓ All 8 agents are present and valid');
+  console.log('✓ All 8 agents are present and valid');
   process.exit(0);
 } else {
   console.error(`✗ ${missingAgents.length} agent(s) missing`);
   console.error(`✗ ${invalidAgents.length} agent(s) invalid`);
   process.exit(1);
 }
-=======
-  if (missingAgents.length === 0 && invalidAgents.length === 0) {
-    console.log('✓ All 8 agents are present and valid');
-    process.exit(0);
-  } else {
-    console.error(`✗ ${missingAgents.length} agent(s) missing`);
-    console.error(`✗ ${invalidAgents.length} agent(s) invalid`);
-    process.exit(1);
-  }
->>>>>>> d0338ba (Add committer agent, quarantine incompatible skills, drift detection)

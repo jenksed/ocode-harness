@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import { program } from 'commander';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join } from 'node:path';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
@@ -29,6 +28,143 @@ import {
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+function toCamelCase(flag) {
+  return flag.replace(/^--/, '').replace(/-([a-z])/g, (_, char) => char.toUpperCase());
+}
+
+function parseOptionSpec(spec) {
+  const flag = spec.split(/[ ,|]+/).find(part => part.startsWith('--'));
+  if (!flag) {
+    throw new Error(`Unsupported option spec: ${spec}`);
+  }
+  return {
+    flag,
+    name: toCamelCase(flag),
+    takesValue: spec.includes('<') || spec.includes('['),
+  };
+}
+
+class MiniCommand {
+  constructor(name) {
+    this.commandName = name;
+    this.optionSpecs = [];
+    this.handler = null;
+  }
+
+  description() {
+    return this;
+  }
+
+  option(spec, _description, defaultValue) {
+    this.optionSpecs.push({ ...parseOptionSpec(spec), required: false, defaultValue });
+    return this;
+  }
+
+  requiredOption(spec, _description, defaultValue) {
+    this.optionSpecs.push({ ...parseOptionSpec(spec), required: true, defaultValue });
+    return this;
+  }
+
+  action(handler) {
+    this.handler = handler;
+    return this;
+  }
+}
+
+class MiniProgram {
+  constructor() {
+    this.commands = [];
+    this.versionValue = null;
+  }
+
+  name() {
+    return this;
+  }
+
+  description() {
+    return this;
+  }
+
+  version(value) {
+    this.versionValue = value;
+    return this;
+  }
+
+  command(name) {
+    const command = new MiniCommand(name);
+    this.commands.push(command);
+    return command;
+  }
+
+  async parse(argv = process.argv) {
+    const args = argv.slice(2);
+
+    if (args.includes('--version') || args.includes('-V')) {
+      console.log(this.versionValue || 'unknown');
+      return;
+    }
+
+    const match = this.commands
+      .map(command => ({ command, parts: command.commandName.split(' ') }))
+      .filter(({ parts }) => parts.every((part, index) => args[index] === part))
+      .sort((a, b) => b.parts.length - a.parts.length)[0];
+
+    if (!match) {
+      console.error(`Unknown command: ${args.join(' ') || '(none)'}`);
+      process.exit(1);
+    }
+
+    const optionArgs = args.slice(match.parts.length);
+    const options = {};
+    const specsByFlag = new Map(match.command.optionSpecs.map(spec => [spec.flag, spec]));
+
+    for (const spec of match.command.optionSpecs) {
+      if (spec.defaultValue !== undefined) {
+        options[spec.name] = spec.defaultValue;
+      } else if (!spec.takesValue) {
+        options[spec.name] = false;
+      }
+    }
+
+    for (let i = 0; i < optionArgs.length; i++) {
+      const token = optionArgs[i];
+      if (!token.startsWith('--')) {
+        continue;
+      }
+
+      const [flag, inlineValue] = token.split(/=(.*)/s, 2);
+      const spec = specsByFlag.get(flag);
+      if (!spec) {
+        throw new Error(`Unknown option for ${match.command.commandName}: ${flag}`);
+      }
+
+      if (spec.takesValue) {
+        const value = inlineValue !== undefined ? inlineValue : optionArgs[++i];
+        if (value === undefined || value.startsWith('--')) {
+          throw new Error(`Missing value for option ${flag}`);
+        }
+        options[spec.name] = value;
+      } else {
+        options[spec.name] = true;
+      }
+    }
+
+    for (const spec of match.command.optionSpecs) {
+      if (spec.required && (options[spec.name] === undefined || options[spec.name] === false)) {
+        throw new Error(`Missing required option ${spec.flag}`);
+      }
+    }
+
+    if (!match.command.handler) {
+      throw new Error(`No handler registered for ${match.command.commandName}`);
+    }
+
+    await match.command.handler(options);
+  }
+}
+
+const program = new MiniProgram();
 
 program
   .name('harness')
@@ -494,4 +630,9 @@ program
     await verifyCommand(options);
   });
 
-program.parse();
+try {
+  await program.parse();
+} catch (err) {
+  console.error(`✗ ${err.message}`);
+  process.exit(1);
+}

@@ -28,10 +28,21 @@ export const CONFIG = {
   binDir: join(homedir(), '.local', 'bin'),
   agentsDir: join(homedir(), '.config', 'opencode', 'agents'),
   opencodeConfig: join(homedir(), '.config', 'opencode', 'opencode.json'),
+  machineConfig: join(homedir(), '.config', 'ocode', 'config.json'),
   orientationDir: join(homedir(), '.local', 'share', 'ocode-harness', 'orientation'),
   harnessRuntimeDir: join(homedir(), '.local', 'share', 'ocode-harness', 'harness-runtime'),
   stagingDir: join(homedir(), '.local', 'share', 'ocode-harness-staging'),
   backupDir: join(homedir(), '.local', 'share', 'ocode-harness-backups'),
+};
+
+export const DEFAULT_MACHINE_CONFIG = {
+  profile: 'hybrid',
+  freellmapi: {
+    base_url: 'http://127.0.0.1:3001/v1',
+  },
+  closeout: {
+    push: false,
+  },
 };
 
 /**
@@ -92,6 +103,75 @@ function copyDir(src, dest) {
   cpSync(src, dest, { recursive: true });
 }
 
+function isPlainObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function deepMergeOwned(existing, owned) {
+  if (!isPlainObject(existing)) {
+    return structuredClone(owned);
+  }
+  const merged = { ...existing };
+  for (const [key, value] of Object.entries(owned)) {
+    if (isPlainObject(value) && isPlainObject(existing[key])) {
+      merged[key] = deepMergeOwned(existing[key], value);
+    } else {
+      merged[key] = value;
+    }
+  }
+  return merged;
+}
+
+export function readMachineConfig(configPath = CONFIG.machineConfig) {
+  if (!existsSync(configPath)) {
+    return structuredClone(DEFAULT_MACHINE_CONFIG);
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(readFileSync(configPath, 'utf8'));
+  } catch (err) {
+    throw new Error(`Malformed Ocode machine config at ${configPath}: ${err.message}`);
+  }
+
+  return deepMergeOwned(DEFAULT_MACHINE_CONFIG, parsed);
+}
+
+export function ensureMachineConfig(configPath = CONFIG.machineConfig) {
+  if (existsSync(configPath)) {
+    return readMachineConfig(configPath);
+  }
+
+  mkdirSync(dirname(configPath), { recursive: true });
+  writeFileSync(configPath, JSON.stringify(DEFAULT_MACHINE_CONFIG, null, 2) + '\n', 'utf8');
+  return readMachineConfig(configPath);
+}
+
+export function getFreellmapiBaseUrl(config = readMachineConfig()) {
+  return config.freellmapi?.base_url || DEFAULT_MACHINE_CONFIG.freellmapi.base_url;
+}
+
+export function buildOwnedOpenCodeConfig(sourceConfigData, machineConfig = readMachineConfig()) {
+  const ownedConfig = structuredClone(sourceConfigData);
+  const baseURL = getFreellmapiBaseUrl(machineConfig);
+
+  ownedConfig.provider ??= {};
+  ownedConfig.provider.freellmapi ??= {};
+  ownedConfig.provider.freellmapi.options ??= {};
+  ownedConfig.provider.freellmapi.options.baseURL = baseURL;
+
+  return ownedConfig;
+}
+
+export function mergeOpenCodeConfig(existingConfig, sourceConfigData, machineConfig = readMachineConfig()) {
+  const ownedConfig = buildOwnedOpenCodeConfig(sourceConfigData, machineConfig);
+  const merged = deepMergeOwned(existingConfig || {}, ownedConfig);
+  if (merged.provider?.freellmapi?.options) {
+    delete merged.provider.freellmapi.options.apiKey;
+  }
+  return merged;
+}
+
 /**
  * Stage candidate from source to staging directory
  * Copies all components: orientation, harness-runtime, doctrine, agents, VERSION, opencode-config
@@ -119,6 +199,9 @@ export function stageCandidate(sourceRoot, stagingDir, version) {
 
   // Copy agents
   copyDir(join(sourceRoot, 'agents'), join(stagingDir, 'agents'));
+
+  // Copy skills placeholder/owned skills when present
+  copyDir(join(sourceRoot, 'skills'), join(stagingDir, 'skills'));
 
   // Copy opencode-config
   copyDir(join(sourceRoot, 'opencode-config'), join(stagingDir, 'opencode-config'));
@@ -221,6 +304,10 @@ export function validateCandidate(stagingDir) {
     }
   }
   checks.push({ name: 'agents (all 8)', ok: allAgentsFound });
+  checks.push({ name: 'agents/manifest.json', ok: existsSync(join(agentsDir, 'manifest.json')) });
+
+  // Check skills directory is staged when repository has one
+  checks.push({ name: 'skills directory', ok: existsSync(join(stagingDir, 'skills')) });
 
   // Check opencode-config
   const opencodeConfigPath = join(stagingDir, 'opencode-config', 'opencode.json');
@@ -430,22 +517,20 @@ export function patchOpenCodeConfig(stagingDir) {
   }
 
   const sourceConfigData = JSON.parse(readFileSync(sourceConfig, 'utf8'));
+  const machineConfig = ensureMachineConfig();
 
   let existingConfig = {};
   if (existsSync(CONFIG.opencodeConfig)) {
     existingConfig = JSON.parse(readFileSync(CONFIG.opencodeConfig, 'utf8'));
   }
 
-  const mergedConfig = {
-    ...existingConfig,
-    ...sourceConfigData,
-    subagent_depth: 1,
-  };
+  const mergedConfig = mergeOpenCodeConfig(existingConfig, sourceConfigData, machineConfig);
 
   mkdirSync(dirname(CONFIG.opencodeConfig), { recursive: true });
   writeFileSync(CONFIG.opencodeConfig, JSON.stringify(mergedConfig, null, 2), 'utf8');
 
-  console.log('  ✓ Patched opencode.json (subagent_depth=1)');
+  console.log('  ✓ Ensured Ocode machine config');
+  console.log('  ✓ Patched opencode.json with Ocode-owned entries');
 }
 
 /**

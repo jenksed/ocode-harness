@@ -9,6 +9,11 @@ import { dirname, join } from 'node:path';
 import { existsSync, readFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { homedir } from 'node:os';
+import {
+  CONFIG as DEPLOY_CONFIG,
+  readMachineConfig,
+  getFreellmapiBaseUrl,
+} from '../packages/harness-runtime/lib/deploy.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -19,6 +24,7 @@ const CONFIG = {
   harnessRoot: join(homedir(), '.local', 'share', 'ocode-harness'),
   harnessRuntimeDir: join(homedir(), '.local', 'share', 'ocode-harness', 'harness-runtime'),
   opencodeConfig: join(homedir(), '.config', 'opencode', 'opencode.json'),
+  machineConfig: DEPLOY_CONFIG.machineConfig,
 };
 
 function printSection(title) {
@@ -282,28 +288,108 @@ function checkGitExcludes() {
   }
 }
 
-function checkEnvVars() {
-  printSection('Checking environment variables...');
+function checkPrivateAuthState() {
+  printSection('Checking private auth state...');
 
   const freellmApiKey = process.env.FREELLMAPI_API_KEY;
-  const freellmBaseUrl = process.env.FREELLMAPI_BASE_URL;
 
   if (freellmApiKey && freellmApiKey !== '' && freellmApiKey !== '{env:FREELLMAPI_API_KEY}') {
-    console.log('✓ FREELLMAPI_API_KEY is set');
-    console.log(`  Value: ${freellmApiKey.substring(0, 10)}...${freellmApiKey.substring(freellmApiKey.length - 4)}`);
+    console.log('✓ FREELLMAPI_API_KEY: SET');
   } else {
-    console.error('✗ FREELLMAPI_API_KEY not set or uses placeholder');
-    console.error('  Please set FREELLMAPI_API_KEY environment variable');
-  }
-
-  if (freellmBaseUrl && freellmBaseUrl !== 'http://192.168.1.29:3001/v1') {
-    console.log('✓ FREELLMAPI_BASE_URL is set');
-    console.log(`  Value: ${freellmBaseUrl}`);
-  } else if (!freellmBaseUrl) {
-    console.warn('⚠ FREELLMAPI_BASE_URL not set (using default: http://192.168.1.29:3001/v1)');
+    console.error('✗ FREELLMAPI_API_KEY: MISSING');
   }
 
   return freellmApiKey && freellmApiKey !== '' && freellmApiKey !== '{env:FREELLMAPI_API_KEY}';
+}
+
+function readDoctorMachineConfig() {
+  try {
+    const config = readMachineConfig(CONFIG.machineConfig);
+    console.log(`✓ Ocode machine config: ${CONFIG.machineConfig}`);
+    console.log(`  profile: ${config.profile || 'unset'}`);
+    console.log(`  closeout.push: ${config.closeout?.push === true ? 'true' : 'false'}`);
+    console.log(`  freellmapi.base_url: ${getFreellmapiBaseUrl(config)}`);
+    return config;
+  } catch (err) {
+    console.error(`✗ Ocode machine config unavailable: ${err.message}`);
+    return null;
+  }
+}
+
+function checkFreeLLMAPIThroughOpenCode() {
+  try {
+    execSync('opencode models freellmapi', {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    console.log('✓ FreeLLMAPI: AUTHENTICATED');
+    console.log('  Source: OpenCode credential store');
+    return true;
+  } catch (err) {
+    return false;
+  }
+}
+
+async function checkFreeLLMAPIHealth() {
+  printSection('Checking FreeLLMAPI health...');
+
+  const machineConfig = readDoctorMachineConfig();
+  if (!machineConfig) {
+    return false;
+  }
+
+  if (process.env.OCODE_DOCTOR_SKIP_NETWORK === '1') {
+    console.log('✓ FreeLLMAPI: UNAVAILABLE');
+    console.log('  Reason: network check skipped by OCODE_DOCTOR_SKIP_NETWORK');
+    return true;
+  }
+
+  if (checkFreeLLMAPIThroughOpenCode()) {
+    return true;
+  }
+
+  const baseUrl = getFreellmapiBaseUrl(machineConfig);
+  const apiKey = process.env.FREELLMAPI_API_KEY;
+  const healthUrl = `${baseUrl.replace(/\/$/, '')}/models`;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 2000);
+
+  try {
+    const headers = {};
+    if (apiKey && apiKey !== '{env:FREELLMAPI_API_KEY}') {
+      headers.Authorization = `Bearer ${apiKey}`;
+    }
+
+    const response = await fetch(healthUrl, {
+      method: 'GET',
+      headers,
+      signal: controller.signal,
+    });
+
+    if (response.ok) {
+      console.log('✓ FreeLLMAPI: AUTHENTICATED');
+      return true;
+    }
+
+    if (response.status === 401 || response.status === 403) {
+      if (checkFreeLLMAPIThroughOpenCode()) {
+        return true;
+      }
+      console.error('✗ FreeLLMAPI: UNAVAILABLE');
+      console.error('  Reason: authentication rejected');
+      return false;
+    }
+
+    console.error('✗ FreeLLMAPI: UNAVAILABLE');
+    console.error(`  Reason: HTTP ${response.status}`);
+    return false;
+  } catch (err) {
+    console.error('✗ FreeLLMAPI: UNAVAILABLE');
+    console.error(`  Reason: ${err.name === 'AbortError' ? 'request timed out' : err.message}`);
+    return false;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function checkCommitterAgent() {
@@ -600,7 +686,7 @@ function checkRunLedgerGitExcludes() {
   }
 }
 
-function main() {
+async function main() {
   console.log('=== ocode-harness Doctor ===\n');
 
   const checks = [
@@ -613,7 +699,8 @@ function main() {
     checkOcode,
     checkOrientationHealth,
     checkGitExcludes,
-    checkEnvVars,
+    checkPrivateAuthState,
+    checkFreeLLMAPIHealth,
     checkCommitterAgent,
     checkHarnessRuntime,
     checkLedgerRuntime,
@@ -626,7 +713,7 @@ function main() {
 
   for (const check of checks) {
     try {
-      const result = check();
+      const result = await check();
       results.push({ name: check.name, result });
     } catch (err) {
       console.error(`Error running ${check.name}:`, err.message);
@@ -650,7 +737,7 @@ function main() {
     console.log('\n✗ Some checks failed');
     console.log('\nRecommendations:');
     console.log('  1. Run: ocode-harness install');
-    console.log('  2. Ensure all environment variables are set');
+    console.log('  2. Ensure private authentication is configured');
     console.log('  3. Check PATH includes ~/.local/bin');
     process.exit(1);
   }

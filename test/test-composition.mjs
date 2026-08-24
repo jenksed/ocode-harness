@@ -45,6 +45,8 @@ try {
     extractDoctrineVersion,
     loadDoctrine,
     parseFrontmatter,
+    loadRoleManifest,
+    loadRoleRegistry,
     listRoles,
     hasRole,
     composePrompt
@@ -57,6 +59,11 @@ try {
 
   // Test 2: ROLE_REGISTRY has all expected roles
   const expectedRoles = ['orchestrator', 'planner', 'coder', 'researcher', 'verifier', 'reviewer', 'judge', 'committer'];
+  const baseDirForRoles = resolve(__dirname, '..');
+  const manifest = loadRoleManifest(baseDirForRoles);
+  assert(manifest.schema_version === 1, 'Agent manifest has schema_version 1');
+  assert(manifest.roles.length === expectedRoles.length, 'Agent manifest lists 8 roles');
+
   for (const role of expectedRoles) {
     assert(ROLE_REGISTRY[role] !== undefined, `ROLE_REGISTRY has role: ${role}`);
   }
@@ -68,6 +75,16 @@ try {
     assert(typeof r.description === 'string' && r.description.length > 0, `Role ${role} has description`);
     assert(typeof r.frontmatter === 'string' && r.frontmatter.includes('---'), `Role ${role} has frontmatter`);
     assert(typeof r.body === 'string' && r.body.length > 0, `Role ${role} has body`);
+    assert(r.file === `${role}.md`, `Role ${role} references canonical markdown file`);
+  }
+
+  // Test 3b: registry derives prompt text from agents/*.md rather than hard-coded copies
+  const sourceRegistry = loadRoleRegistry({ baseDir: baseDirForRoles });
+  for (const role of expectedRoles) {
+    const agentContent = readFileSync(join(baseDirForRoles, 'agents', `${role}.md`), 'utf8');
+    const parsed = parseFrontmatter(agentContent);
+    assert(sourceRegistry[role].frontmatter === parsed.frontmatter, `Role ${role} frontmatter matches canonical file`);
+    assert(sourceRegistry[role].body === parsed.body, `Role ${role} body matches canonical file`);
   }
 
   // Test 4: listRoles function
@@ -260,7 +277,12 @@ try {
     } catch (err) {
       // Note: composePrompt tries to load doctrine before checking role,
       // so it may throw a doctrine error first. Both are acceptable failures.
-      assert(err.message.includes('Unknown role') || err.message.includes('Doctrine'), 'composePrompt validates role against registry even with custom rolesDir');
+      assert(
+        err.message.includes('Unknown role') ||
+        err.message.includes('Doctrine') ||
+        err.message.includes('Role file not found'),
+        'composePrompt validates role against manifest registry even with custom rolesDir'
+      );
     }
   } catch (err) {
     console.log('  ℹ Custom rolesDir test:', err.message);

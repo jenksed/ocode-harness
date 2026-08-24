@@ -107,7 +107,7 @@ Set the following environment variables:
 
 ```bash
 export FREELLMAPI_API_KEY="your-api-key-here"
-export FREELLMAPI_BASE_URL="http://192.168.1.29:3001/v1"
+export FREELLMAPI_BASE_URL="http://127.0.0.1:3001/v1"
 ```
 
 ### Backup & Rollback

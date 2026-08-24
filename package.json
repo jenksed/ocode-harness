@@ -21,6 +21,7 @@
     "test:orientation": "node test/test-orientation.mjs",
     "test:secrets": "node test/test-secrets.mjs",
     "test:verify": "node test/test-verify.mjs",
+    "bootstrap": "node installer/install.mjs",
     "doctor": "node scripts/doctor.mjs",
     "backup": "node scripts/backup.mjs"
   },
@@ -42,15 +43,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/ocode-harness.git"
+    "url": "https://github.com/jenksed/ocode-harness.git"
   },
   "engines": {
     "node": ">=18.0.0"
   },
-  "dependencies": {
-    "commander": "^11.1.0",
-    "glob": "^10.3.10"
-  },
+  "dependencies": {},
   "devDependencies": {},
   "files": [
     "agents/",

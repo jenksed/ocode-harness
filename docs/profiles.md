@@ -22,7 +22,7 @@ The default profile (`profiles/default.json`) provides a minimal configuration:
       "npm": "@ai-sdk/openai-compatible",
       "name": "FreeLLMAPI",
       "options": {
-        "baseURL": "${FREELLMAPI_BASE_URL:http://192.168.1.29:3001/v1}",
+        "baseURL": "http://127.0.0.1:3001/v1",
         "apiKey": "{env:FREELLMAPI_API_KEY}"
       },
       "models": {
@@ -79,7 +79,7 @@ The FreeLLMAPI profile (`profiles/freellmapi.json`) provides a complete configur
       "npm": "@ai-sdk/openai-compatible",
       "name": "FreeLLMAPI",
       "options": {
-        "baseURL": "${FREELLMAPI_BASE_URL:http://192.168.1.29:3001/v1}",
+        "baseURL": "http://127.0.0.1:3001/v1",
         "apiKey": "{env:FREELLMAPI_API_KEY}"
       },
       "models": {
@@ -188,7 +188,7 @@ To use the FreeLLMAPI profile:
 1. Set the environment variables:
    ```bash
    export FREELLMAPI_API_KEY="your-api-key"
-   export FREELLMAPI_BASE_URL="http://192.168.1.29:3001/v1"
+   export FREELLMAPI_BASE_URL="http://127.0.0.1:3001/v1"
    ```
 
 2. Use the profile in opencode:
@@ -209,7 +209,7 @@ The installer automatically uses this profile.
       "npm": "@ai-sdk/openai-compatible",
       "name": "FreeLLMAPI",
       "options": {
-        "baseURL": "${FREELLMAPI_BASE_URL:http://192.168.1.29:3001/v1}",
+        "baseURL": "http://127.0.0.1:3001/v1",
         "apiKey": "{env:FREELLMAPI_API_KEY}"
       }
     }
@@ -381,7 +381,7 @@ Never hardcode API keys in profiles. Always use:
 
 Provide a sensible default for the base URL:
 ```json
-"baseURL": "${FREELLMAPI_BASE_URL:http://192.168.1.29:3001/v1}"
+"baseURL": "http://127.0.0.1:3001/v1"
 ```
 
 ### 3. Limit Subagent Depth
@@ -452,13 +452,13 @@ If the profile uses environment variables but they are not set:
 2. **Set Variables**:
    ```bash
    export FREELLMAPI_API_KEY="your-key"
-   export FREELLMAPI_BASE_URL="http://192.168.1.29:3001/v1"
+   export FREELLMAPI_BASE_URL="http://127.0.0.1:3001/v1"
    ```
 
 3. **Make Permanent**:
    ```bash
    echo 'export FREELLMAPI_API_KEY="your-key"' >> ~/.zshrc
-   echo 'export FREELLMAPI_BASE_URL="http://192.168.1.29:3001/v1"' >> ~/.zshrc
+   echo 'export FREELLMAPI_BASE_URL="http://127.0.0.1:3001/v1"' >> ~/.zshrc
    source ~/.zshrc
    ```
 

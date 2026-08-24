@@ -1,0 +1,150 @@
+{
+  "schema_version": 1,
+  "roles": [
+    {
+      "id": "orchestrator",
+      "file": "orchestrator.md",
+      "authority": {
+        "tier": "coordination",
+        "may_edit": false,
+        "may_stage": false,
+        "may_commit": false,
+        "may_push": false
+      },
+      "compatible_skills": [
+        "setup-matt-pocock-skills",
+        "wayfinder",
+        "grill-with-docs",
+        "to-spec",
+        "to-tickets"
+      ],
+      "governance": {
+        "human_facing": true,
+        "deterministic_git_authority": false
+      }
+    },
+    {
+      "id": "planner",
+      "file": "planner.md",
+      "authority": {
+        "tier": "planning",
+        "may_edit": false,
+        "may_stage": false,
+        "may_commit": false,
+        "may_push": false
+      },
+      "compatible_skills": [
+        "codebase-design"
+      ],
+      "governance": {
+        "human_facing": false,
+        "deterministic_git_authority": false
+      }
+    },
+    {
+      "id": "coder",
+      "file": "coder.md",
+      "authority": {
+        "tier": "implementation",
+        "may_edit": true,
+        "may_stage": false,
+        "may_commit": false,
+        "may_push": false
+      },
+      "compatible_skills": [
+        "diagnosing-bugs",
+        "prototype"
+      ],
+      "governance": {
+        "human_facing": false,
+        "deterministic_git_authority": false
+      }
+    },
+    {
+      "id": "researcher",
+      "file": "researcher.md",
+      "authority": {
+        "tier": "research",
+        "may_edit": false,
+        "may_stage": false,
+        "may_commit": false,
+        "may_push": false
+      },
+      "compatible_skills": [],
+      "governance": {
+        "human_facing": false,
+        "deterministic_git_authority": false
+      }
+    },
+    {
+      "id": "verifier",
+      "file": "verifier.md",
+      "authority": {
+        "tier": "validation",
+        "may_edit": false,
+        "may_stage": false,
+        "may_commit": false,
+        "may_push": false
+      },
+      "compatible_skills": [],
+      "governance": {
+        "human_facing": false,
+        "deterministic_git_authority": false
+      }
+    },
+    {
+      "id": "reviewer",
+      "file": "reviewer.md",
+      "authority": {
+        "tier": "review",
+        "may_edit": false,
+        "may_stage": false,
+        "may_commit": false,
+        "may_push": false
+      },
+      "compatible_skills": [],
+      "governance": {
+        "human_facing": false,
+        "deterministic_git_authority": false
+      }
+    },
+    {
+      "id": "judge",
+      "file": "judge.md",
+      "authority": {
+        "tier": "adjudication",
+        "may_edit": false,
+        "may_stage": false,
+        "may_commit": false,
+        "may_push": false
+      },
+      "compatible_skills": [],
+      "governance": {
+        "human_facing": false,
+        "deterministic_git_authority": false
+      }
+    },
+    {
+      "id": "committer",
+      "file": "committer.md",
+      "authority": {
+        "tier": "semantic_closeout",
+        "may_edit": false,
+        "may_stage": false,
+        "may_commit": false,
+        "may_push": false
+      },
+      "compatible_skills": [],
+      "governance": {
+        "human_facing": false,
+        "deterministic_git_authority": false,
+        "produces": [
+          "commit_subject",
+          "commit_body",
+          "expected_paths",
+          "semantic_closeout_data"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "policy_version": "1",
+  "doctrine": { "file": "doctrine/agentic-agile.md", "version": "1" },
+  "resources": { "file": "doctrine/resource-policy.md", "version": "1" }
+}

@@ -224,7 +224,7 @@ ocode-harness/
 1. Orchestrator classifies as STANDARD
 2. (Optional) Orchestrator → Planner
 3. Orchestrator → Coder
-4. Orchestrator → Verifier
+4. Orchestrator → Verifier (produces validationEvidence)
 5. Orchestrator → Reviewer
 6. Orchestrator returns result
 
@@ -234,10 +234,18 @@ ocode-harness/
 2. (Optional) Orchestrator → Researcher
 3. (Optional) Orchestrator → Planner
 4. Orchestrator → Coder
-5. Orchestrator → Verifier
+5. Orchestrator → Verifier (produces validationEvidence)
 6. Orchestrator → Reviewer
 7. (Optional) Orchestrator → Judge
 8. Orchestrator returns result
+
+## Validation Evidence
+
+For STANDARD and DEEP workflows, the verifier produces **validation evidence** — an object containing:
+- `status`: `'PASS'` or `'FAIL'`
+- `commands`: Array of validation command objects with `command`, `exit_code`, `output`, `duration_ms`
+
+The closeout gates require `validationEvidence.status === 'PASS'` for STANDARD/DEEP workflows. QUICK workflows do not require validation evidence. This replaces the legacy `verifierResult === 'PASS'` gate with a deterministic, evidence-based approach.
 
 ## Security
 

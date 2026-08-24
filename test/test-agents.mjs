@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * test-agents.mjs
- * Validate 7 agents exist with correct contracts
+ * Validate 8 agents exist with correct contracts
  */
 
 import { fileURLToPath } from 'node:url';
@@ -21,6 +21,7 @@ const expectedAgents = [
   'reviewer.md',
   'researcher.md',
   'judge.md',
+  'committer.md',
 ];
 
 console.log('=== Test Agents ===\n');
@@ -155,7 +156,7 @@ if (existsSync(judgePath)) {
 console.log('\n=== Summary ===\n');
 
 if (missingAgents.length === 0 && invalidAgents.length === 0) {
-  console.log('✓ All 7 agents are present and valid');
+    console.log('✓ All 8 agents are present and valid');
   process.exit(0);
 } else {
   console.error(`✗ ${missingAgents.length} agent(s) missing`);

@@ -50,7 +50,7 @@ checks.push({ name: 'agents directory', path: agentsDir, ok: agentsDirExists });
 
 // Check agents files
 if (agentsDirExists) {
-  const agentFiles = ['orchestrator.md', 'planner.md', 'coder.md', 'verifier.md', 'reviewer.md', 'researcher.md', 'judge.md'];
+  const agentFiles = ['orchestrator.md', 'planner.md', 'coder.md', 'verifier.md', 'reviewer.md', 'researcher.md', 'judge.md', 'committer.md'];
   console.log('\n=== Agent Files ===\n');
   for (const agentFile of agentFiles) {
     const agentPath = join(agentsDir, agentFile);

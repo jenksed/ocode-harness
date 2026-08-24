@@ -5,12 +5,22 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "test": "node test/test-installer.mjs && node test/test-doctor.mjs && node test/test-agents.mjs && node test/test-orientation.mjs && node test/test-secrets.mjs",
-    "test:installer": "node test/test-installer.mjs",
-    "test:doctor": "node test/test-doctor.mjs",
+    "test": "node test/test-installer.mjs && node test/test-doctor.mjs && node test/test-agents.mjs && node test/test-orientation.mjs && node test/test-secrets.mjs && node test/test-ledger.mjs && node test/test-lifecycle.mjs && node test/test-evidence.mjs && node test/test-closeout.mjs && node test/test-committer.mjs && node test/test-composition.mjs && node test/test-verify.mjs && node test/test-harness-version.mjs && node test/test-harness-update.mjs && node test/test-harness-rollback.mjs",
     "test:agents": "node test/test-agents.mjs",
+    "test:closeout": "node test/test-closeout.mjs",
+    "test:committer": "node test/test-committer.mjs",
+    "test:composition": "node test/test-composition.mjs",
+    "test:doctor": "node test/test-doctor.mjs",
+    "test:evidence": "node test/test-evidence.mjs",
+    "test:harness:version": "node test/test-harness-version.mjs",
+    "test:harness:update": "node test/test-harness-update.mjs",
+    "test:harness:rollback": "node test/test-harness-rollback.mjs",
+    "test:installer": "node test/test-installer.mjs",
+    "test:ledger": "node test/test-ledger.mjs",
+    "test:lifecycle": "node test/test-lifecycle.mjs",
     "test:orientation": "node test/test-orientation.mjs",
     "test:secrets": "node test/test-secrets.mjs",
+    "test:verify": "node test/test-verify.mjs",
     "doctor": "node scripts/doctor.mjs",
     "backup": "node scripts/backup.mjs"
   },
@@ -38,6 +48,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
+    "commander": "^11.1.0",
     "glob": "^10.3.10"
   },
   "devDependencies": {},

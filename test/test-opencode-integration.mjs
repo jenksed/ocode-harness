@@ -1,0 +1,69 @@
+#!/usr/bin/env node
+import assert from 'node:assert/strict';
+import {
+  buildOpenCodeRuntimeOverlay,
+  fingerprintBindingProfile,
+  getRoleBinding,
+  serializeOpenCodeRuntimeOverlay,
+  validateBindingProfile,
+} from '../packages/harness-runtime/lib/opencode-integration.mjs';
+
+console.log('=== Test OpenCode Integration Primitives ===\n');
+
+const profile = {
+  schema_version: 1,
+  name: 'm2_fixture',
+  bindings: {
+    reviewer: 'openai/discovered-model',
+    coder: 'freellmapi/auto:coder',
+  },
+};
+
+assert.equal(validateBindingProfile(profile), profile);
+assert.equal(getRoleBinding(profile, 'coder'), 'freellmapi/auto:coder');
+console.log('✓ Profile schema and role lookup are deterministic');
+
+const overlay = buildOpenCodeRuntimeOverlay(profile);
+assert.deepEqual(overlay, {
+  agent: {
+    coder: { model: 'freellmapi/auto:coder' },
+    reviewer: { model: 'openai/discovered-model' },
+  },
+});
+assert.equal(
+  serializeOpenCodeRuntimeOverlay(profile),
+  '{"agent":{"coder":{"model":"freellmapi/auto:coder"},"reviewer":{"model":"openai/discovered-model"}}}',
+);
+assert.deepEqual(profile.bindings, {
+  reviewer: 'openai/discovered-model',
+  coder: 'freellmapi/auto:coder',
+});
+console.log('✓ Overlay contains only sorted Ocode-owned agent model bindings');
+
+const reordered = {
+  schema_version: 1,
+  name: 'm2_fixture',
+  bindings: {
+    coder: 'freellmapi/auto:coder',
+    reviewer: 'openai/discovered-model',
+  },
+};
+assert.equal(fingerprintBindingProfile(profile), fingerprintBindingProfile(reordered));
+console.log('✓ Binding profile fingerprint is stable across key order');
+
+assert.throws(() => getRoleBinding(profile, 'planner'), /no binding for semantic role planner/);
+assert.throws(
+  () => validateBindingProfile({ ...profile, bindings: { coder: 'missing-provider-prefix' } }),
+  /provider\/model format/,
+);
+assert.throws(
+  () => validateBindingProfile({ ...profile, schema_version: 2 }),
+  /schema_version must be 1/,
+);
+assert.throws(
+  () => validateBindingProfile({ ...profile, routing: { fallback: true } }),
+  /Unknown binding profile field: routing/,
+);
+console.log('✓ Missing roles, malformed bindings, unknown schemas, and extra fields fail explicitly');
+
+console.log('\n✓ All tests passed');

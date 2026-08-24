@@ -5,7 +5,7 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "test": "node test/test-installer.mjs && node test/test-doctor.mjs && node test/test-agents.mjs && node test/test-orientation.mjs && node test/test-secrets.mjs && node test/test-ledger.mjs && node test/test-lifecycle.mjs && node test/test-evidence.mjs && node test/test-closeout.mjs && node test/test-committer.mjs && node test/test-composition.mjs && node test/test-verify.mjs && node test/test-harness-version.mjs && node test/test-harness-update.mjs && node test/test-harness-rollback.mjs",
+    "test": "node test/test-installer.mjs && node test/test-doctor.mjs && node test/test-agents.mjs && node test/test-orientation.mjs && node test/test-secrets.mjs && node test/test-ledger.mjs && node test/test-lifecycle.mjs && node test/test-evidence.mjs && node test/test-closeout.mjs && node test/test-committer.mjs && node test/test-composition.mjs && node test/test-verify.mjs && node test/test-opencode-integration.mjs && node test/test-harness-version.mjs && node test/test-harness-update.mjs && node test/test-harness-rollback.mjs",
     "test:agents": "node test/test-agents.mjs",
     "test:closeout": "node test/test-closeout.mjs",
     "test:committer": "node test/test-committer.mjs",
@@ -19,11 +19,13 @@
     "test:ledger": "node test/test-ledger.mjs",
     "test:lifecycle": "node test/test-lifecycle.mjs",
     "test:orientation": "node test/test-orientation.mjs",
+    "test:opencode-integration": "node test/test-opencode-integration.mjs",
     "test:secrets": "node test/test-secrets.mjs",
     "test:verify": "node test/test-verify.mjs",
     "bootstrap": "node installer/install.mjs",
     "doctor": "node scripts/doctor.mjs",
-    "backup": "node scripts/backup.mjs"
+    "backup": "node scripts/backup.mjs",
+    "acceptance:m2": "node scripts/acceptance-m2.mjs"
   },
   "keywords": [
     "ai",

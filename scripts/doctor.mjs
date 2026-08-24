@@ -5,6 +5,7 @@
  */
 
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 import { dirname, join } from 'node:path';
 import { existsSync, readFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';
@@ -13,7 +14,12 @@ import {
   CONFIG as DEPLOY_CONFIG,
   readMachineConfig,
   getFreellmapiBaseUrl,
+  findSourceRepo,
 } from '../packages/harness-runtime/lib/deploy.mjs';
+import {
+  buildOpenCodeRuntimeOverlay,
+  serializeOpenCodeRuntimeOverlay,
+} from '../packages/harness-runtime/lib/opencode-integration.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -26,6 +32,8 @@ const CONFIG = {
   opencodeConfig: join(homedir(), '.config', 'opencode', 'opencode.json'),
   machineConfig: DEPLOY_CONFIG.machineConfig,
 };
+
+const KNOWN_GOOD_OPENCODE_VERSION = '1.18.21';
 
 function printSection(title) {
   console.log(`\n${'='.repeat(60)}`);
@@ -43,14 +51,60 @@ function checkOpencode() {
     try {
       const opencodeVersion = execSync('opencode --version', { encoding: 'utf8' }).trim();
       console.log(`  Version: ${opencodeVersion}`);
+      if (opencodeVersion === KNOWN_GOOD_OPENCODE_VERSION) {
+        console.log('  ✓ Known-good M2 integration version');
+      } else {
+        console.warn(`  ⚠ Version differs from tested ${KNOWN_GOOD_OPENCODE_VERSION}`);
+        console.warn('    Run: npm run acceptance:m2');
+      }
     } catch (err) {
       console.error('  ✗ Could not get opencode version');
+      return false;
     }
 
     return true;
   } catch (err) {
     console.error('✗ opencode not found in PATH');
     console.error('  Please install opencode and ensure it is in your PATH');
+    return false;
+  }
+}
+
+function checkOpenCodeBindingOverlay() {
+  printSection('Checking OpenCode runtime binding overlay...');
+
+  try {
+    const profile = {
+      schema_version: 1,
+      name: 'doctor',
+      bindings: {
+        'ocode-doctor-diagnostic': 'freellmapi/auto:smart',
+      },
+    };
+    const overlay = buildOpenCodeRuntimeOverlay(profile);
+    const serialized = serializeOpenCodeRuntimeOverlay(profile);
+    const expected = {
+      agent: {
+        'ocode-doctor-diagnostic': {
+          model: 'freellmapi/auto:smart',
+        },
+      },
+    };
+
+    if (JSON.stringify(overlay) !== JSON.stringify(expected)) {
+      console.error('✗ Runtime overlay shape is not the proven agent.<role>.model contract');
+      return false;
+    }
+    if (serialized !== JSON.stringify(expected)) {
+      console.error('✗ Runtime overlay serialization is not deterministic');
+      return false;
+    }
+
+    console.log('✓ Design C overlay builder is structurally healthy');
+    console.log('  Mechanism: OPENCODE_CONFIG_CONTENT -> agent.<role>.model');
+    return true;
+  } catch (err) {
+    console.error(`✗ Runtime overlay builder failed: ${err.message}`);
     return false;
   }
 }
@@ -392,6 +446,72 @@ async function checkFreeLLMAPIHealth() {
   }
 }
 
+function checkOpenAIThroughOpenCode() {
+  printSection('Checking OpenAI catalog through OpenCode...');
+
+  const machineConfig = readDoctorMachineConfig();
+  if (!machineConfig) return false;
+  if (machineConfig.profile !== 'hybrid') {
+    console.log(`✓ OpenAI catalog check not required for profile ${machineConfig.profile}`);
+    return true;
+  }
+  if (process.env.OCODE_DOCTOR_SKIP_NETWORK === '1') {
+    console.log('✓ OpenAI catalog check skipped by OCODE_DOCTOR_SKIP_NETWORK');
+    return true;
+  }
+
+  try {
+    const output = execSync('opencode models openai', {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    if (!output.split('\n').some(line => line.startsWith('openai/'))) {
+      console.error('✗ OpenAI: no OpenCode models visible for hybrid profile');
+      return false;
+    }
+    console.log('✓ OpenAI models are visible through OpenCode');
+    return true;
+  } catch (err) {
+    console.error('✗ OpenAI models are not visible through OpenCode for hybrid profile');
+    return false;
+  }
+}
+
+function checkManagedAgentIdentity() {
+  printSection('Checking managed agent source/install identity...');
+
+  const sourceRoot = findSourceRepo(process.cwd());
+  if (!sourceRoot) {
+    console.log('✓ Source repository not available; installed agent presence checked separately');
+    return true;
+  }
+
+  const hash = path => createHash('sha256').update(readFileSync(path)).digest('hex');
+  const agentFiles = [
+    'orchestrator.md',
+    'planner.md',
+    'coder.md',
+    'verifier.md',
+    'reviewer.md',
+    'researcher.md',
+    'judge.md',
+    'committer.md',
+  ];
+  let matches = true;
+
+  for (const agentFile of agentFiles) {
+    const sourcePath = join(sourceRoot, 'agents', agentFile);
+    const installedPath = join(CONFIG.agentsDir, agentFile);
+    if (!existsSync(sourcePath) || !existsSync(installedPath) || hash(sourcePath) !== hash(installedPath)) {
+      console.error(`  ✗ ${agentFile}: source/install drift`);
+      matches = false;
+    }
+  }
+
+  if (matches) console.log('✓ All managed agent fingerprints match source');
+  return matches;
+}
+
 function checkCommitterAgent() {
   printSection('Checking committer agent...');
 
@@ -461,7 +581,7 @@ function checkHarnessRuntime() {
   }
 
   // Check lib files
-  const libFiles = ['identity.mjs', 'lifecycle.mjs', 'ledger.mjs', 'evidence.mjs', 'composition.mjs', 'closeout.mjs', 'verify.mjs'];
+  const libFiles = ['identity.mjs', 'lifecycle.mjs', 'ledger.mjs', 'evidence.mjs', 'composition.mjs', 'closeout.mjs', 'verify.mjs', 'opencode-integration.mjs'];
   let allLibFound = true;
   for (const libFile of libFiles) {
     const libPath = join(CONFIG.harnessRuntimeDir, 'lib', libFile);
@@ -691,6 +811,7 @@ async function main() {
 
   const checks = [
     checkOpencode,
+    checkOpenCodeBindingOverlay,
     checkNode,
     checkGit,
     checkAgents,
@@ -701,6 +822,8 @@ async function main() {
     checkGitExcludes,
     checkPrivateAuthState,
     checkFreeLLMAPIHealth,
+    checkOpenAIThroughOpenCode,
+    checkManagedAgentIdentity,
     checkCommitterAgent,
     checkHarnessRuntime,
     checkLedgerRuntime,

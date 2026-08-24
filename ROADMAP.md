@@ -15,7 +15,7 @@ North-star acceptance property:
 
 ## Milestones
 
-### M0 Canonical Repository Baseline — ACTIVE
+### M0 Canonical Repository Baseline — PROVEN
 
 Purpose: make the repository internally trustworthy before broader roadmap work.
 
@@ -28,7 +28,7 @@ Evidence required:
 - Committer is read-only semantic closeout preparation
 - deterministic runtime owns gate evaluation, path reconciliation, exact staging, commit execution, and optional push
 
-### M1 Portable Runtime and M1 Pro Qualification — ACTIVE
+### M1 Portable Runtime and M1 Pro Qualification — PROVEN
 
 Purpose: prove this M1 Pro can reconstruct and validate Ocode from source without copied prior-machine state.
 
@@ -41,11 +41,25 @@ Evidence required:
 - installed runtime can report version, update from source, and rollback from backup
 - OpenCode presence/version and remaining human authentication actions are explicit
 
-### M2 Observed OpenCode Integration Contract — PLANNED
+### M2 Observed OpenCode Integration Contract — PROVEN
 
-Purpose: document and verify the actual OpenCode config, agent, provider, task, and skill integration behavior before deeper integration.
+Purpose: depend on the smallest observed OpenCode contract that can execute governed semantic agents and expose bounded evidence.
 
 Depends on: M0, M1.
+
+Execution seam: PROVEN — `opencode run --agent <role> --format json` plus sanitized session export.
+
+Binding strategy: DESIGN C — RUNTIME CONFIG OVERLAY — PROVEN on OpenCode 1.18.21 with `OPENCODE_CONFIG_CONTENT` and `agent.<role>.model`.
+
+Provider proof: the same model-neutral diagnostic agent executed through a discovered FreeLLMAPI routed model and a discovered OpenAI model. A conflicting Markdown `model:` field was also overridden by the inline binding.
+
+Optional diagnostic probe: DEFERRED — no missing production property justifies a custom tool.
+
+Observation plugin: DEFERRED — the public CLI/event/export surfaces provide the M2 evidence contract.
+
+Acceptance: `npm run acceptance:m2`.
+
+M3 readiness: YES — profile schema, deterministic overlay builder, binding validation, fingerprints, tests, and migration notes exist. Production role policies and launcher application remain M3 work.
 
 ### M3 OpenCode-Native Provider Binding — PLANNED
 
@@ -99,7 +113,7 @@ Depends on: M9.
 
 M0 → M1 → M2 → M3 → M4 → M5 → M6 → M7 → M8 → M9 → M10
 
-M2–M10 remain planned. Placeholder directories or partial primitives do not imply implementation.
+M3–M10 remain planned. Placeholder directories or partial primitives do not imply implementation.
 
 ## Current Bootstrap Boundary
 

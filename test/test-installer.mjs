@@ -241,6 +241,7 @@ try {
     'lib/composition.mjs',
     'lib/closeout.mjs',
     'lib/verify.mjs',
+    'lib/opencode-integration.mjs',
     'lib/deploy.mjs',
     'bin/harness.mjs',
   ];

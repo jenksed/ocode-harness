@@ -186,9 +186,9 @@ ocode-harness/
 │   └── ocode                        # ocode wrapper
 ├── installer/
 │   └── install.mjs                  # Deterministic installer
-├── profiles/                        # Configuration profiles
-│   ├── freellmapi.json
-│   └── default.json
+├── profiles/                        # Ocode role-binding schema and M3 policy location
+│   ├── README.md
+│   └── schema.json
 ├── skills/                          # (empty for v0.1)
 ├── test/                            # Automated tests
 │   ├── test-installer.mjs
@@ -201,6 +201,7 @@ ocode-harness/
 │   └── backup.mjs                   # backup/rollback utilities
 ├── docs/                            # Documentation
 │   ├── architecture.md
+│   ├── architecture/opencode-integration-contract.md
 │   ├── installation.md
 │   ├── profiles.md
 │   ├── doctor.md

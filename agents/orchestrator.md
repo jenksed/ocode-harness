@@ -18,7 +18,6 @@ permission:
     "grill-with-docs": ask
     "to-spec": ask
     "to-tickets": ask
-    "implement": ask
   bash:
     "*": deny
     "git status": allow
@@ -202,6 +201,7 @@ Allowed subagent types are exactly:
 - verifier
 - reviewer
 - judge
+- committer
 
 Never invoke or invent generic subagents such as:
 
@@ -218,6 +218,7 @@ Role ownership:
 - independent test/build/typecheck execution -> verifier
 - independent read-only implementation review -> reviewer
 - unresolved technical disagreement -> judge
+- git commit/stage/closeout data -> committer
 
 Examples:
 

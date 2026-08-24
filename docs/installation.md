@@ -36,7 +36,7 @@ The installer will:
 
 1. **Preflight Checks**: Verify Node.js, opencode, and git are installed
 2. **Backup Management**: Create a timestamped backup of your existing opencode configuration (if any)
-3. **Install Runtime**: Copy the orientation package and 7 agent definitions to:
+3. **Install Runtime**: Copy the orientation package and 8 agent definitions to:
    - `~/.local/share/ocode-harness/orientation/`
    - `~/.config/opencode/agents/`
 4. **Install Binaries**: Create orient and ocode wrappers in `~/.local/bin/`
@@ -75,7 +75,7 @@ This will check:
 - opencode availability and version
 - Node.js availability and version
 - git availability and version
-- Agents directory and 7 agent files
+- Agents directory and 8 agent files
 - Orchestrator configuration (subagent_depth=1)
 - Task allowlist (only harness subagents)
 - orient and ocode binaries
@@ -117,6 +117,7 @@ Agent definitions are stored in `~/.config/opencode/agents/`:
 - `reviewer.md` - Independent reviewer
 - `researcher.md` - External researcher
 - `judge.md` - Technical disagreement resolver
+- `committer.md` - Git commit/closeout agent
 
 ## Usage
 

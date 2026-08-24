@@ -153,8 +153,9 @@ if (existsSync(judgePath)) {
 }
 
 // Summary
-console.log('\n=== Summary ===\n');
+  console.log('\n=== Summary ===\n');
 
+<<<<<<< HEAD
 if (missingAgents.length === 0 && invalidAgents.length === 0) {
     console.log('✓ All 8 agents are present and valid');
   process.exit(0);
@@ -163,3 +164,13 @@ if (missingAgents.length === 0 && invalidAgents.length === 0) {
   console.error(`✗ ${invalidAgents.length} agent(s) invalid`);
   process.exit(1);
 }
+=======
+  if (missingAgents.length === 0 && invalidAgents.length === 0) {
+    console.log('✓ All 8 agents are present and valid');
+    process.exit(0);
+  } else {
+    console.error(`✗ ${missingAgents.length} agent(s) missing`);
+    console.error(`✗ ${invalidAgents.length} agent(s) invalid`);
+    process.exit(1);
+  }
+>>>>>>> d0338ba (Add committer agent, quarantine incompatible skills, drift detection)

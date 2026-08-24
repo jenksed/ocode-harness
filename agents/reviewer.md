@@ -12,8 +12,6 @@ permission:
   task: deny
   skill:
     "*": deny
-    "code-review": allow
-    "domain-modeling": allow
   bash:
     "*": deny
     "git status": allow

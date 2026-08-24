@@ -12,7 +12,6 @@ permission:
   task: deny
   skill:
     "*": deny
-    "tdd": allow
     "diagnosing-bugs": allow
     "prototype": allow
   bash:

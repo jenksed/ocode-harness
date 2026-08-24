@@ -14,7 +14,6 @@ permission:
   webfetch: deny
   skill:
     "*": deny
-    "domain-modeling": allow
     "codebase-design": allow
   bash:
     "*": deny

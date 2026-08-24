@@ -1,6 +1,6 @@
 # ocode-harness v0.1
 
-A portable, deterministic harness for orchestrating AI-powered coding agents with a human-facing engineering coordinator and 7 specialized subagents.
+A portable, deterministic harness for orchestrating AI-powered coding agents with a human-facing engineering coordinator and 8 specialized subagents.
 
 ## Overview
 
@@ -13,6 +13,7 @@ ocode-harness provides a structured workflow for engineering work, ensuring evid
 - **Verifier**: Independently executes repository validation
 - **Reviewer**: Independent read-only review of changes
 - **Judge**: Scarce independent second opinion for technical disagreement
+- **Committer**: Prepares semantic closeout data and performs Git commits
 
 ## Features
 
@@ -141,7 +142,7 @@ The test suite includes:
 
 - **test-installer.mjs**: Tests installer against isolated temp HOME
 - **test-doctor.mjs**: Tests doctor command health checks
-- **test-agents.mjs**: Validates 7 agents exist with correct contracts
+- **test-agents.mjs**: Validates 8 agents exist with correct contracts
 - **test-orientation.mjs**: Runs orientation's existing tests
 - **test-secrets.mjs**: Verifies no credentials in committed files
 
@@ -159,14 +160,15 @@ node test/test-doctor.mjs
 
 ```
 ocode-harness/
-├── agents/                          # 7 agent definitions
+├── agents/                          # 8 agent definitions
 │   ├── orchestrator.md
 │   ├── planner.md
 │   ├── coder.md
 │   ├── verifier.md
 │   ├── reviewer.md
 │   ├── researcher.md
-│   └── judge.md
+│   ├── judge.md
+│   └── committer.md
 ├── packages/
 │   └── orientation/                 # Orientation package
 │       ├── lib/
@@ -217,7 +219,8 @@ ocode-harness/
 3. Coder implements change
 4. Orchestrator → Reviewer
 5. Reviewer accepts/rejects
-6. Orchestrator returns result
+6. (Optional) Orchestrator → Committer
+7. Orchestrator returns result
 
 ### STANDARD Work (Normal Feature Work)
 
@@ -226,7 +229,8 @@ ocode-harness/
 3. Orchestrator → Coder
 4. Orchestrator → Verifier (produces validationEvidence)
 5. Orchestrator → Reviewer
-6. Orchestrator returns result
+6. (Optional) Orchestrator → Committer
+7. Orchestrator returns result
 
 ### DEEP Work (Architecture, External Dependencies)
 
@@ -236,8 +240,9 @@ ocode-harness/
 4. Orchestrator → Coder
 5. Orchestrator → Verifier (produces validationEvidence)
 6. Orchestrator → Reviewer
-7. (Optional) Orchestrator → Judge
-8. Orchestrator returns result
+7. (Optional) Orchestrator → Committer
+8. (Optional) Orchestrator → Judge
+9. Orchestrator returns result
 
 ## Validation Evidence
 
@@ -268,7 +273,7 @@ Orientation artifacts are excluded from version control to prevent them from bei
 
 This initial release includes:
 
-- ✅ 7 agent definitions with complete permissions
+- ✅ 8 agent definitions with complete permissions
 - ✅ Orientation package with full probe/render functionality
 - ✅ Deterministic installer with backup/rollback
 - ✅ Doctor command for health checks

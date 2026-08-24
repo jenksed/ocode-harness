@@ -38,8 +38,8 @@ code-harness doctor
 
 ### 5. Agent Files
 
-- **Check**: All 7 agent files are present
-- **Expected**: orchestrator.md, planner.md, coder.md, verifier.md, reviewer.md, researcher.md, judge.md
+- **Check**: All 8 agent files are present
+- **Expected**: orchestrator.md, planner.md, coder.md, verifier.md, reviewer.md, researcher.md, judge.md, committer.md
 - **Details**: Verifies each agent file exists
 
 ### 6. Orchestrator Configuration
@@ -51,7 +51,7 @@ code-harness doctor
 ### 7. Task Allowlist
 
 - **Check**: Task allowlist includes only harness subagents
-- **Expected**: Allowlist contains: planner, coder, researcher, verifier, reviewer, judge
+- **Expected**: Allowlist contains: planner, coder, researcher, verifier, reviewer, judge, committer
 - **Details**: Verifies no generic subagents (general, explore, scout) are in the allowlist
 
 ### 8. orient
@@ -116,6 +116,7 @@ Checking agents...
 ✓ reviewer.md
 ✓ researcher.md
 ✓ judge.md
+✓ committer.md
 
 ============================================================
 Checking orchestrator configuration...

@@ -573,5 +573,15 @@
     }
   },
   "default_agent": "orchestrator",
-  "subagent_depth": 1
+  "subagent_depth": 1,
+  "task_allowlist": [
+    "planner",
+    "coder",
+    "researcher",
+    "verifier",
+    "reviewer",
+    "judge",
+    "committer",
+    "orchestrator"
+  ]
 }

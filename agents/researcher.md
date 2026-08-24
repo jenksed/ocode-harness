@@ -15,7 +15,6 @@ permission:
   webfetch: allow
   skill:
     "*": deny
-    "research": allow
 ---
 
 Research only the delegated question.

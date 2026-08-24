@@ -113,6 +113,7 @@ permission:
     verifier: allow
     reviewer: allow
     judge: allow
+    committer: allow
 ```
 
 **Security Features:**
@@ -285,6 +286,44 @@ permission:
 - **No external access**: Cannot search or fetch from the web
 - **No bash access**: Cannot execute any commands
 
+### Committer Permissions
+
+```yaml
+permission:
+  edit: allow
+  external_directory: deny
+  question: deny
+  task: deny
+  skill: deny
+  bash:
+    "*": deny
+    "git add": allow
+    "git add *": allow
+    "git commit": allow
+    "git commit *": allow
+    "git status": allow
+    "git status *": allow
+    "git diff": allow
+    "git diff *": allow
+    "git log": allow
+    "git log *": allow
+    "git show *": allow
+    "git push": deny
+    "git push *": deny
+    "git reset --hard": deny
+    "git reset --hard *": deny
+    "git clean": deny
+    "git clean *": deny
+    "rm -rf *": deny
+```
+
+**Security Features:**
+- **edit: allow**: Committer can stage and commit files (required for git operations)
+- **git commit only**: Can stage and commit but cannot push or reset
+- **No external access**: Cannot search or fetch from the web
+- **No bash access**: Cannot execute non-git commands
+- **Denies dangerous git commands**: Cannot push, reset, clean, or remove directories
+
 ## Task Allowlist
 
 The `task_allowlist` in the opencode configuration restricts which subagent types can be invoked.
@@ -292,19 +331,20 @@ The `task_allowlist` in the opencode configuration restricts which subagent type
 ### Harness Subagents Only
 
 ```json
-"task_allowlist": [
-  "planner",
-  "coder",
-  "researcher",
-  "verifier",
-  "reviewer",
-  "judge"
-]
+  "task_allowlist": [
+    "planner",
+    "coder",
+    "researcher",
+    "verifier",
+    "reviewer",
+    "judge",
+    "committer"
+  ]
 ```
 
 **Security Features:**
 - **Generic subagents blocked**: No generic, explore, or scout agents
-- **Harness subagents only**: Only the 7 harness agents are allowed
+- **Harness subagents only**: Only the 8 harness agents are allowed
 - **Prevents unauthorized delegation**: Orchestrator cannot invoke arbitrary agents
 
 ## Git Excludes

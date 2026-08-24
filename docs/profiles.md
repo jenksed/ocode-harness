@@ -44,7 +44,8 @@ The default profile (`profiles/default.json`) provides a minimal configuration:
     "researcher",
     "verifier",
     "reviewer",
-    "judge"
+    "judge",
+    "committer"
   ]
 }
 ```
@@ -255,7 +256,8 @@ The installer automatically uses this profile.
     "researcher",
     "verifier",
     "reviewer",
-    "judge"
+    "judge",
+    "committer"
   ]
 }
 ```
@@ -293,16 +295,17 @@ You can create custom profiles by copying and modifying `profiles/default.json` 
       }
     }
   },
-  "default_agent": "orchestrator",
-  "subagent_depth": 1,
-  "task_allowlist": [
-    "planner",
-    "coder",
-    "researcher",
-    "verifier",
-    "reviewer",
-    "judge"
-  ]
+   "default_agent": "orchestrator",
+   "subagent_depth": 1,
+   "task_allowlist": [
+     "planner",
+     "coder",
+     "researcher",
+     "verifier",
+     "reviewer",
+     "judge",
+     "committer"
+   ]
 }
 ```
 
@@ -330,16 +333,17 @@ You can create custom profiles by copying and modifying `profiles/default.json` 
       }
     }
   },
-  "default_agent": "orchestrator",
-  "subagent_depth": 1,
-  "task_allowlist": [
-    "planner",
-    "coder",
-    "researcher",
-    "verifier",
-    "reviewer",
-    "judge"
-  ]
+   "default_agent": "orchestrator",
+   "subagent_depth": 1,
+   "task_allowlist": [
+     "planner",
+     "coder",
+     "researcher",
+     "verifier",
+     "reviewer",
+     "judge",
+     "committer"
+   ]
 }
 ```
 
@@ -391,14 +395,16 @@ Set `subagent_depth` to 1 to prevent unbounded delegation:
 
 Only include harness subagents in the allowlist:
 ```json
-"task_allowlist": [
-  "planner",
-  "coder",
-  "researcher",
-  "verifier",
-  "reviewer",
-  "judge"
-]
+  "task_allowlist": [
+    "planner",
+    "coder",
+    "researcher",
+    "verifier",
+    "reviewer",
+    "judge",
+    "committer"
+  ]
+}
 ```
 
 ### 5. Document Profile Purpose

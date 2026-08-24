@@ -17,10 +17,10 @@ The orchestrator is the human-facing engineering coordinator that:
 
 **Key Permissions:**
 - Denies generic Task invocations
-- Allows only harness subagents: planner, coder, researcher, verifier, reviewer, judge
+- Allows only harness subagents: planner, coder, researcher, verifier, reviewer, judge, committer
 - Binds execution to specific git commands for safety
 
-### 2. Subagents (7 Specialized Roles)
+### 2. Subagents (8 Specialized Roles)
 
 #### Planner
 - Plans non-trivial implementation work
@@ -54,6 +54,12 @@ The orchestrator is the human-facing engineering coordinator that:
 - Scarce independent second opinion for unresolved technical disagreement
 - Uses freellmapi/gemini-3.6-flash model
 - Only resolves the specific disputed technical question
+
+#### Committer
+- Prepares semantic closeout data and performs Git commits only
+- Stages only files within the delegated scope
+- Does not push or perform complex Git operations (rebase, merge, cherry-pick, etc.)
+- Writes concise, semantic commit messages
 
 ### 3. Orientation Package
 
@@ -94,7 +100,7 @@ The doctor command (`scripts/doctor.mjs`) performs comprehensive health checks:
 - opencode availability and version
 - Node.js availability and version
 - git availability and version
-- Agents directory and 7 agent files
+- Agents directory and 8 agent files
 - Orchestrator configuration (subagent_depth=1)
 - Task allowlist (only harness subagents)
 - orient and ocode binaries
@@ -110,7 +116,8 @@ The doctor command (`scripts/doctor.mjs`) performs comprehensive health checks:
 3. Coder implements change
 4. Orchestrator -> Reviewer
 5. Reviewer accepts/rejects
-6. Orchestrator returns result
+6. (Optional) Orchestrator -> Committer
+7. Orchestrator returns result
 
 ### STANDARD Work (Normal Feature Work)
 1. Orchestrator classifies as STANDARD
@@ -118,7 +125,8 @@ The doctor command (`scripts/doctor.mjs`) performs comprehensive health checks:
 3. Orchestrator -> Coder
 4. Orchestrator -> Verifier
 5. Orchestrator -> Reviewer
-6. Orchestrator returns result
+6. (Optional) Orchestrator -> Committer
+7. Orchestrator returns result
 
 ### DEEP Work (Architecture, External Dependencies)
 1. Orchestrator classifies as DEEP
@@ -127,8 +135,9 @@ The doctor command (`scripts/doctor.mjs`) performs comprehensive health checks:
 4. Orchestrator -> Coder
 5. Orchestrator -> Verifier
 6. Orchestrator -> Reviewer
-7. (Optional) Orchestrator -> Judge
-8. Orchestrator returns result
+7. (Optional) Orchestrator -> Committer
+8. (Optional) Orchestrator -> Judge
+9. Orchestrator returns result
 
 ## Deterministic Contract
 
@@ -146,9 +155,9 @@ The doctor command (`scripts/doctor.mjs`) performs comprehensive health checks:
 
 ### Delegation Contract
 - Every Task tool call must specify `subagent_type`
-- Allowed subagent types: planner, coder, researcher, verifier, reviewer, judge
+- Allowed subagent types: planner, coder, researcher, verifier, reviewer, judge, committer
 - No generic subagents (general, explore, scout, unnamed)
-- Role ownership: coder for mutations, planner for contracts, researcher for docs, verifier for validation, reviewer for review, judge for disagreement
+- Role ownership: coder for mutations, planner for contracts, researcher for docs, verifier for validation, reviewer for review, judge for disagreement, committer for git commit/stage/closeout
 
 ## Security Model
 
@@ -166,6 +175,7 @@ The doctor command (`scripts/doctor.mjs`) performs comprehensive health checks:
 - Reviewer: Denies all external access, allows read-only git and test commands
 - Researcher: Denies all local access, allows websearch/webfetch
 - Judge: Denies all external access, denies all skills
+- Committer: Allows git add/commit only, denies git push/reset/clean, denies external access
 
 ### Git Excludes
 - Orientation artifacts (.opencode/orientation.json, .opencode/orientation.md) excluded from version control
@@ -190,7 +200,7 @@ The doctor command (`scripts/doctor.mjs`) performs comprehensive health checks:
 ### Test Suite
 - `test-installer.mjs`: Tests installer against isolated temp HOME
 - `test-doctor.mjs`: Tests doctor command health checks
-- `test-agents.mjs`: Validates 7 agents exist with correct contracts
+- `test-agents.mjs`: Validates 8 agents exist with correct contracts
 - `test-orientation.mjs`: Runs orientation's existing tests
 - `test-secrets.mjs`: Verifies no credentials in committed files
 
@@ -204,7 +214,7 @@ The doctor command (`scripts/doctor.mjs`) performs comprehensive health checks:
 ## Version 0.1 Scope
 
 This initial release includes:
-- 7 agent definitions with complete permissions
+- 8 agent definitions with complete permissions
 - Orientation package with full probe/render functionality
 - Deterministic installer with backup/rollback
 - Doctor command for health checks

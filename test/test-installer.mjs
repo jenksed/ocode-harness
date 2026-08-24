@@ -40,7 +40,7 @@ mkdirSync(join(testShareDir, 'ocode-harness', 'orientation', 'test'), { recursiv
 // Copy agents
 const testAgentsDir = join(testConfigDir, 'agents');
 mkdirSync(testAgentsDir, { recursive: true });
-const agentFiles = ['orchestrator.md', 'planner.md', 'coder.md', 'verifier.md', 'reviewer.md', 'researcher.md', 'judge.md'];
+const agentFiles = ['orchestrator.md', 'planner.md', 'coder.md', 'verifier.md', 'reviewer.md', 'researcher.md', 'judge.md', 'committer.md'];
 for (const agentFile of agentFiles) {
   copyFileSync(join(agentsDir, agentFile), join(testAgentsDir, agentFile));
 }
@@ -134,6 +134,10 @@ try {
       path: join(testBinDir, 'ocode'),
     },
     {
+      name: 'harness binary',
+      path: join(testBinDir, 'harness'),
+    },
+    {
       name: 'agents directory',
       path: testAgentsDir,
     },
@@ -142,8 +146,16 @@ try {
       path: join(testShareDir, 'ocode-harness', 'orientation'),
     },
     {
+      name: 'harness-runtime package',
+      path: join(testShareDir, 'ocode-harness', 'harness-runtime'),
+    },
+    {
       name: 'opencode configuration',
       path: join(testConfigDir, 'opencode.json'),
+    },
+    {
+      name: 'VERSION file',
+      path: join(testShareDir, 'ocode-harness', 'VERSION'),
     },
   ];
 
@@ -193,6 +205,31 @@ try {
     }
   }
 
+  // Check harness-runtime package files
+  const harnessRuntimeFiles = [
+    'package.json',
+    'lib/identity.mjs',
+    'lib/lifecycle.mjs',
+    'lib/ledger.mjs',
+    'lib/evidence.mjs',
+    'lib/composition.mjs',
+    'lib/closeout.mjs',
+    'lib/verify.mjs',
+    'lib/deploy.mjs',
+    'bin/harness.mjs',
+  ];
+
+  console.log('\n=== Harness Runtime Package Checks ===\n');
+  for (const file of harnessRuntimeFiles) {
+    const filePath = join(testShareDir, 'ocode-harness', 'harness-runtime', file);
+    if (existsSync(filePath)) {
+      console.log(`✓ ${file}`);
+    } else {
+      console.error(`✗ ${file} not found`);
+      allPassed = false;
+    }
+  }
+
   // Check opencode.json content
   if (existsSync(join(testConfigDir, 'opencode.json'))) {
     const opencodeConfig = JSON.parse(readFileSync(join(testConfigDir, 'opencode.json'), 'utf8'));
@@ -202,6 +239,54 @@ try {
       console.error('\n✗ subagent_depth is not set to 1');
       allPassed = false;
     }
+  }
+
+  // Check VERSION file content
+  if (existsSync(join(testShareDir, 'ocode-harness', 'VERSION'))) {
+    const versionContent = readFileSync(join(testShareDir, 'ocode-harness', 'VERSION'), 'utf8').trim();
+    const sourceVersion = readFileSync(join(sourceDir, 'VERSION'), 'utf8').trim();
+    if (versionContent === sourceVersion) {
+      console.log(`\n✓ VERSION file matches source: ${versionContent}`);
+    } else {
+      console.error(`\n✗ VERSION file mismatch: installed=${versionContent}, source=${sourceVersion}`);
+      allPassed = false;
+    }
+  }
+
+  // Check launchers reference installed paths (not dev repo)
+  console.log('\n=== Launcher Path Checks ===\n');
+  const orientLauncher = readFileSync(join(testBinDir, 'orient'), 'utf8');
+  const ocodeLauncher = readFileSync(join(testBinDir, 'ocode'), 'utf8');
+  const harnessLauncher = readFileSync(join(testBinDir, 'harness'), 'utf8');
+
+  if (orientLauncher.includes('.local/share/ocode-harness/orientation/bin/orient.mjs')) {
+    console.log('✓ orient launcher references installed path');
+  } else {
+    console.error('✗ orient launcher does not reference installed path');
+    allPassed = false;
+  }
+
+  if (ocodeLauncher.includes('.local/share/ocode-harness/') || ocodeLauncher.includes('orient')) {
+    console.log('✓ ocode launcher references installed paths');
+  } else {
+    console.error('✗ ocode launcher does not reference installed paths');
+    allPassed = false;
+  }
+
+  if (harnessLauncher.includes('.local/share/ocode-harness/harness-runtime/bin/harness.mjs')) {
+    console.log('✓ harness launcher references installed path');
+  } else {
+    console.error('✗ harness launcher does not reference installed path');
+    allPassed = false;
+  }
+
+  // Check no dev repo references in launchers
+  const devRepoPath = sourceDir;
+  if (!orientLauncher.includes(devRepoPath) && !ocodeLauncher.includes(devRepoPath) && !harnessLauncher.includes(devRepoPath)) {
+    console.log('✓ No dev repo references in launchers');
+  } else {
+    console.error('✗ Dev repo references found in launchers');
+    allPassed = false;
   }
 
   // Cleanup

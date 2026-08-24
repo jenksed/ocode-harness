@@ -4,6 +4,7 @@ mode: subagent
 model: freellmapi/auto:smart
 temperature: 0.1
 steps: 18
+subagent_type: subagent
 permission:
   edit: deny
   external_directory: deny

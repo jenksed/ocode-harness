@@ -4,6 +4,7 @@ mode: subagent
 model: freellmapi/auto:smart
 temperature: 0.2
 steps: 20
+subagent_type: subagent
 permission:
   edit: deny
   bash: deny

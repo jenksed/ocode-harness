@@ -4,6 +4,7 @@ mode: subagent
 model: freellmapi/gemini-3.6-flash
 temperature: 0.1
 steps: 10
+subagent_type: subagent
 permission:
   edit: deny
   bash: deny

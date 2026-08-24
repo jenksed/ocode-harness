@@ -1,9 +1,10 @@
 ---
-description: Independently executes repository validation and reports exact evidence without modifying source
+description: Independently executes repository validation and returns validationEvidence object without modifying source
 mode: subagent
 model: freellmapi/auto:smart
 temperature: 0.0
 steps: 15
+subagent_type: subagent
 permission:
   edit: deny
   external_directory: deny
@@ -49,6 +50,10 @@ Independently verify the implementation.
 Inspect repository-defined validation commands before selecting checks.
 Run relevant tests, builds, type checks, linters, or targeted reproduction commands that are permitted.
 Report exact commands, exit status, meaningful output, and which requested properties those checks actually exercise.
+Package results as a **validationEvidence** object:
+
+- `status`: `'PASS'` or `'FAIL'` (overall validation result)
+- `commands`: Array of validation command objects with `command`, `exit_code`, `output`, `duration_ms`
 
 Do not infer correctness merely because generic tests pass.
 Do not modify source.
@@ -56,6 +61,7 @@ Do not ask the human.
 
 Return:
 STATUS: PASS | FAIL | BLOCKED
+VALIDATION_EVIDENCE
 COMMANDS
 RESULTS
 PROPERTY_CHECKS

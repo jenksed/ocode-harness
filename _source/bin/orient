@@ -1,3 +1,0 @@
-#!/bin/zsh
-set -euo pipefail
-exec node "$HOME/.local/share/opencode-orientation/bin/orient.mjs" "${1:-$PWD}"

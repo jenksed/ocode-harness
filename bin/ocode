@@ -28,4 +28,8 @@ echo "context:      $PROJECT_ROOT/.opencode/orientation.md"
 echo
 
 cd "$PROJECT_ROOT"
-exec env OPENCODE_ENABLE_EXA=1 opencode "$@"
+if [ $# -gt 0 ]; then
+  exec env OPENCODE_ENABLE_EXA=1 opencode "$@"
+else
+  exec env OPENCODE_ENABLE_EXA=1 opencode
+fi

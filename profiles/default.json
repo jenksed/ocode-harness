@@ -27,6 +27,7 @@
     "researcher",
     "verifier",
     "reviewer",
-    "judge"
+    "judge",
+    "committer"
   ]
 }

@@ -6,7 +6,7 @@
 
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { existsSync, readFileSync, mkdirSync } from 'node:fs';
+import { existsSync, readFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { homedir } from 'node:os';
 
@@ -16,6 +16,8 @@ const __dirname = dirname(__filename);
 const CONFIG = {
   agentsDir: join(homedir(), '.config', 'opencode', 'agents'),
   orientationDir: join(homedir(), '.local', 'share', 'ocode-harness', 'orientation'),
+  harnessRoot: join(homedir(), '.local', 'share', 'ocode-harness'),
+  harnessRuntimeDir: join(homedir(), '.local', 'share', 'ocode-harness', 'harness-runtime'),
   opencodeConfig: join(homedir(), '.config', 'opencode', 'opencode.json'),
 };
 
@@ -111,6 +113,7 @@ function checkAgents() {
     'reviewer.md',
     'researcher.md',
     'judge.md',
+    'committer.md',
   ];
 
   let allFound = true;
@@ -152,7 +155,7 @@ function checkOrchestratorConfig() {
 
     // Check task_allowlist
     if (opencodeConfig.task_allowlist) {
-      const harnessAgents = ['planner', 'coder', 'researcher', 'verifier', 'reviewer', 'judge'];
+      const harnessAgents = ['planner', 'coder', 'researcher', 'verifier', 'reviewer', 'judge', 'committer'];
       const hasGenericAgents = harnessAgents.some(agent => !opencodeConfig.task_allowlist.includes(agent));
 
       if (hasGenericAgents) {
@@ -228,7 +231,7 @@ function checkOrientationHealth() {
     // Check if tests exist
     const testDir = join(CONFIG.orientationDir, 'test');
     if (existsSync(testDir)) {
-      const testFiles = readdir(testDir).filter(f => f.endsWith('.mjs'));
+      const testFiles = readdirSync(testDir).filter(f => f.endsWith('.mjs'));
       if (testFiles.length > 0) {
         console.log(`  ✓ Tests found: ${testFiles.join(', ')}`);
       } else {
@@ -303,6 +306,300 @@ function checkEnvVars() {
   return freellmApiKey && freellmApiKey !== '' && freellmApiKey !== '{env:FREELLMAPI_API_KEY}';
 }
 
+function checkCommitterAgent() {
+  printSection('Checking committer agent...');
+
+  if (!existsSync(CONFIG.agentsDir)) {
+    console.error('✗ Agents directory not found');
+    console.error(`  Path: ${CONFIG.agentsDir}`);
+    return false;
+  }
+
+  const committerPath = join(CONFIG.agentsDir, 'committer.md');
+  if (existsSync(committerPath)) {
+    console.log(`✓ Committer agent found: ${committerPath}`);
+
+    // Validate committer agent content
+    try {
+      const content = readFileSync(committerPath, 'utf8');
+      const requiredFields = ['---', 'description:', 'mode:', 'model:', 'permission:'];
+      let allValid = true;
+      for (const field of requiredFields) {
+        if (!content.includes(field)) {
+          console.error(`  ✗ Missing required field: ${field}`);
+          allValid = false;
+        }
+      }
+      if (content.includes('mode: subagent') && content.includes('model: freellmapi/')) {
+        console.log('  ✓ Committer agent has correct mode and model');
+      } else {
+        console.error('  ✗ Committer agent missing correct mode/model');
+        allValid = false;
+      }
+      return allValid;
+    } catch (err) {
+      console.error('  ✗ Could not read committer agent');
+      return false;
+    }
+  } else {
+    console.error(`✗ Committer agent not found: ${committerPath}`);
+    return false;
+  }
+}
+
+function checkHarnessRuntime() {
+  printSection('Checking harness-runtime package...');
+
+  if (!existsSync(CONFIG.harnessRuntimeDir)) {
+    console.error('✗ Harness-runtime package not found');
+    console.error(`  Path: ${CONFIG.harnessRuntimeDir}`);
+    console.error('  Please run: ocode-harness install');
+    return false;
+  }
+
+  console.log(`✓ Harness-runtime package found: ${CONFIG.harnessRuntimeDir}`);
+
+  const packageJsonPath = join(CONFIG.harnessRuntimeDir, 'package.json');
+  if (!existsSync(packageJsonPath)) {
+    console.error('✗ package.json not found in harness-runtime package');
+    return false;
+  }
+
+  try {
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
+    console.log(`  Package: ${packageJson.name}`);
+    console.log(`  Version: ${packageJson.version || 'unknown'}`);
+  } catch (err) {
+    console.error('✗ Could not read harness-runtime package.json');
+    return false;
+  }
+
+  // Check lib files
+  const libFiles = ['identity.mjs', 'lifecycle.mjs', 'ledger.mjs', 'evidence.mjs', 'composition.mjs', 'closeout.mjs', 'verify.mjs'];
+  let allLibFound = true;
+  for (const libFile of libFiles) {
+    const libPath = join(CONFIG.harnessRuntimeDir, 'lib', libFile);
+    if (existsSync(libPath)) {
+      console.log(`  ✓ lib/${libFile}`);
+    } else {
+      console.error(`  ✗ lib/${libFile} not found`);
+      allLibFound = false;
+    }
+  }
+
+  // Check bin file
+  const binPath = join(CONFIG.harnessRuntimeDir, 'bin', 'harness.mjs');
+  if (existsSync(binPath)) {
+    console.log('  ✓ bin/harness.mjs');
+  } else {
+    console.error('  ✗ bin/harness.mjs not found');
+    allLibFound = false;
+  }
+
+  return allLibFound;
+}
+
+function checkLedgerRuntime() {
+  printSection('Checking ledger runtime...');
+
+  const ledgerPath = join(CONFIG.harnessRuntimeDir, 'lib', 'ledger.mjs');
+  if (!existsSync(ledgerPath)) {
+    console.error('✗ ledger.mjs not found');
+    return false;
+  }
+
+  try {
+    const content = readFileSync(ledgerPath, 'utf8');
+    const requiredExports = ['createLedgerRecord', 'appendRecord', 'readRecords', 'getLatestRecord', 'getRecentRecords', 'LEDGER_SCHEMA_VERSION'];
+    let allFound = true;
+    for (const exp of requiredExports) {
+      if (content.includes(`export ${exp.startsWith('export') ? '' : 'function '}${exp}`) || content.includes(`export const ${exp}`) || content.includes(`export function ${exp}`)) {
+        console.log(`  ✓ Export: ${exp}`);
+      } else if (content.includes(exp)) {
+        console.log(`  ✓ Export: ${exp} (found in content)`);
+      } else {
+        console.error(`  ✗ Export missing: ${exp}`);
+        allFound = false;
+      }
+    }
+    return allFound;
+  } catch (err) {
+    console.error('✗ Could not read ledger.mjs');
+    return false;
+  }
+}
+
+function checkCloseoutRuntime() {
+  printSection('Checking closeout runtime...');
+
+  const closeoutPath = join(CONFIG.harnessRuntimeDir, 'lib', 'closeout.mjs');
+  if (!existsSync(closeoutPath)) {
+    console.error('✗ closeout.mjs not found');
+    return false;
+  }
+
+  try {
+    const content = readFileSync(closeoutPath, 'utf8');
+    const requiredExports = ['evaluateGates', 'executeCloseout'];
+    let allFound = true;
+    for (const exp of requiredExports) {
+      if (content.includes(`export function ${exp}`)) {
+        console.log(`  ✓ Export: ${exp}`);
+      } else if (content.includes(`export ${exp}`)) {
+        console.log(`  ✓ Export: ${exp} (found in content)`);
+      } else {
+        console.error(`  ✗ Export missing: ${exp}`);
+        allFound = false;
+      }
+    }
+    return allFound;
+  } catch (err) {
+    console.error('✗ Could not read closeout.mjs');
+    return false;
+  }
+}
+
+function checkDoctrineFiles() {
+  printSection('Checking doctrine files...');
+
+  const doctrineDir = join(CONFIG.harnessRoot, 'doctrine');
+
+  if (!existsSync(doctrineDir)) {
+    console.error('✗ Doctrine directory not found');
+    console.error(`  Path: ${doctrineDir}`);
+    console.error('  Please run: ocode-harness install');
+    return false;
+  }
+
+  console.log(`✓ Doctrine directory found: ${doctrineDir}`);
+
+  let allValid = true;
+
+  // Validate policy-version.json manifest
+  const manifestPath = join(doctrineDir, 'policy-version.json');
+  if (!existsSync(manifestPath)) {
+    console.error('  ✗ policy-version.json not found');
+    return false;
+  }
+
+  let manifest;
+  try {
+    manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  } catch (err) {
+    console.error('  ✗ Could not parse policy-version.json');
+    return false;
+  }
+
+  const requiredKeys = ['policy_version', 'doctrine', 'resources'];
+  for (const key of requiredKeys) {
+    if (!(key in manifest)) {
+      console.error(`  ✗ Missing required key in manifest: ${key}`);
+      allValid = false;
+    } else {
+      console.log(`  ✓ Manifest key present: ${key}`);
+    }
+  }
+
+  if (manifest.doctrine && typeof manifest.doctrine.version !== 'undefined') {
+    console.log(`  ✓ doctrine.version: ${manifest.doctrine.version}`);
+  } else {
+    console.error('  ✗ Missing doctrine.version in manifest');
+    allValid = false;
+  }
+
+  if (manifest.resources && typeof manifest.resources.version !== 'undefined') {
+    console.log(`  ✓ resources.version: ${manifest.resources.version}`);
+  } else {
+    console.error('  ✗ Missing resources.version in manifest');
+    allValid = false;
+  }
+
+  if (manifest.policy_version !== undefined) {
+    console.log(`  ✓ policy_version: ${manifest.policy_version}`);
+  }
+
+  // Extract VERSION header from markdown content
+  function extractVersionHeader(content) {
+    const match = content.match(/<!--\s*VERSION:\s*(\S+)\s*-->/);
+    return match ? match[1] : null;
+  }
+
+  // Validate agentic-agile.md version header matches manifest
+  const agilePath = join(doctrineDir, 'agentic-agile.md');
+  if (!existsSync(agilePath)) {
+    console.error('  ✗ agentic-agile.md not found');
+    allValid = false;
+  } else {
+    const agileContent = readFileSync(agilePath, 'utf8');
+    const agileVersion = extractVersionHeader(agileContent);
+    if (agileVersion === null) {
+      console.error('  ✗ Could not find VERSION header in agentic-agile.md');
+      allValid = false;
+    } else if (String(agileVersion) === String(manifest.doctrine?.version)) {
+      console.log(`  ✓ agentic-agile.md version header (${agileVersion}) matches manifest`);
+    } else {
+      console.error(`  ✗ agentic-agile.md version header (${agileVersion}) does not match manifest (${manifest.doctrine?.version})`);
+      allValid = false;
+    }
+  }
+
+  // Validate resource-policy.md version header matches manifest
+  const policyPath = join(doctrineDir, 'resource-policy.md');
+  if (!existsSync(policyPath)) {
+    console.error('  ✗ resource-policy.md not found');
+    allValid = false;
+  } else {
+    const policyContent = readFileSync(policyPath, 'utf8');
+    const policyVersion = extractVersionHeader(policyContent);
+    if (policyVersion === null) {
+      console.error('  ✗ Could not find VERSION header in resource-policy.md');
+      allValid = false;
+    } else if (String(policyVersion) === String(manifest.resources?.version)) {
+      console.log(`  ✓ resource-policy.md version header (${policyVersion}) matches manifest`);
+    } else {
+      console.error(`  ✗ resource-policy.md version header (${policyVersion}) does not match manifest (${manifest.resources?.version})`);
+      allValid = false;
+    }
+  }
+
+  return allValid;
+}
+
+function checkRunLedgerGitExcludes() {
+  printSection('Checking run-ledger Git excludes...');
+
+  try {
+    const gitRoot = execSync('git rev-parse --show-toplevel', { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
+
+    if (!gitRoot) {
+      console.log('  ℹ Not in a git repository');
+      return true;
+    }
+
+    const excludeFile = join(gitRoot, '.git', 'info', 'exclude');
+
+    if (!existsSync(excludeFile)) {
+      console.error('✗ .git/info/exclude not found');
+      console.error('  This file should be configured to exclude run-ledger');
+      return false;
+    }
+
+    const excludes = readFileSync(excludeFile, 'utf8');
+
+    if (excludes.includes('.opencode/run-ledger.jsonl')) {
+      console.log('  ✓ Run-ledger Git exclude configured correctly');
+      return true;
+    } else {
+      console.error('✗ Run-ledger Git exclude not configured');
+      console.error('  Expected to find: .opencode/run-ledger.jsonl');
+      return false;
+    }
+  } catch (err) {
+    console.error('  ✗ Could not check git excludes (not in git repository or git command failed)');
+    return false;
+  }
+}
+
 function main() {
   console.log('=== ocode-harness Doctor ===\n');
 
@@ -317,6 +614,12 @@ function main() {
     checkOrientationHealth,
     checkGitExcludes,
     checkEnvVars,
+    checkCommitterAgent,
+    checkHarnessRuntime,
+    checkLedgerRuntime,
+    checkCloseoutRuntime,
+    checkDoctrineFiles,
+    checkRunLedgerGitExcludes,
   ];
 
   const results = [];

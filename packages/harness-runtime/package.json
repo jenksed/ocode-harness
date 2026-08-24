@@ -1,0 +1,13 @@
+{
+  "name": "@ocode-harness/runtime",
+  "version": "0.1.0",
+  "description": "Deterministic runtime for ocode-harness closeout and evidence",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "harness": "bin/harness.mjs"
+  },
+  "scripts": {
+    "test": "node ../../test/test-ledger.mjs && node ../../test/test-lifecycle.mjs && node ../../test/test-evidence.mjs && node ../../test/test-closeout.mjs && node ../../test/test-verify.mjs"
+  }
+}

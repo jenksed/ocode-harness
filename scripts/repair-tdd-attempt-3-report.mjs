@@ -24,7 +24,7 @@ const parse=(out)=>parseSkillResult(out,(value)=>validateReportedEvidenceCapsule
 const resumed=await resumeQualificationReport({checkpoint,parseReported:parse,correct:async ({malformed_output,validation_error,checkpoint:immutable})=>{
   const project=mkdtempSync(join(tmpdir(),'ocode-report-repair-')); const before=JSON.stringify(immutable.runtime);
   const prompt=`Return JSON only. Only repair the supplied structured report. Do not perform engineering work. Do not inspect repository files. Do not invoke skills. Do not execute tests or commands. Do not create new evidence.\nMalformed report: ${malformed_output}\nValidation error: ${validation_error}\nSkill identity: ${JSON.stringify(identity)}. Requested role: coder. Provenance session_id: ${immutable.runtime.session_id}. Exact acceptance IDs: ${ids.join(', ')}. Allowed runtime evidence IDs only: tdd-red initial RED; tdd-change bounded math.mjs change; tdd-green same oracle GREEN; tdd-scope oracle and scope unchanged; tdd-method-load completed skill load. Required exact shape: ${shape}`;
-  const result=executeGovernedRole({baseDir:root,projectDir:project,role:'coder',profileName:'free',admissionDecision:admission,prompt,env});
+  const result=await executeGovernedRole({baseDir:root,projectDir:project,role:'coder',profileName:'free',admissionDecision:admission,prompt,env,streaming:true});
   if(!result.success||!result.exported)throw new Error('STRUCTURED_OUTPUT_CORRECTION_INFRASTRUCTURE_FAILURE');
   if(result.events.some((event)=>event?.type==='tool_use'))throw new Error('STRUCTURED_OUTPUT_CORRECTION_USED_TOOL');
   if(JSON.stringify(immutable.runtime)!==before)throw new Error('REPORT_CORRECTION_MUTATED_EXECUTION_CHECKPOINT');

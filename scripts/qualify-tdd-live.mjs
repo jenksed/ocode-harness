@@ -14,7 +14,7 @@ import { checkpointQualificationExecution, contextTelemetry, fixtureFingerprint,
 import { evaluateTddTrace } from '../packages/harness-runtime/lib/tdd-qualification.mjs';
 
 const root = resolve('.');
-const attemptId = 'attempt-3';
+const attemptId = process.env.TDD_QUALIFICATION_ATTEMPT || 'attempt-4';
 const expectedFingerprint = 'cbbf6040ed7cb7d929459bf0864db70a2e07a2f2452979c42ad98e040e356a3f';
 const fixturePaths = ['math.mjs', 'math.test.mjs', 'package.json', 'qualification-test-runner.mjs'];
 const source = loadSkillSource({ skillsDir: join(root, 'skills'), skillId: 'tdd' });
@@ -90,7 +90,7 @@ const fixtureFp = fixtureFingerprint({ root: fixture, paths: fixturePaths, domai
 let methodResult;
 let checkpoint;
 try {
-  methodResult = executeGovernedRole({ baseDir: root, projectDir: fixture, role: 'coder', profileName: 'free', admissionDecision, prompt: methodPrompt, env: methodEnv });
+  methodResult = await executeGovernedRole({ baseDir: root, projectDir: fixture, role: 'coder', profileName: 'free', admissionDecision, prompt: methodPrompt, env: methodEnv, streaming: true });
   if (!methodResult.success || !methodResult.exported) throw new Error(`INFRASTRUCTURE_FAILURE:${methodResult.failure_classification || 'EXPORT_UNAVAILABLE'}`);
   const load = observeCompletedSkillLoad(methodResult.events, 'tdd');
   if (!load) throw new Error('OPENCODE_SKILL_EVENT_CONTRACT_MISMATCH');
@@ -120,7 +120,7 @@ try {
     const catalog = immutable.runtime.runtime_evidence_ids.map((id) => `${id}: ${id === 'tdd-red' ? 'initial test failure' : id === 'tdd-change' ? 'authorized change' : id === 'tdd-green' ? 'post-change pass' : id === 'tdd-scope' ? 'scope/oracle preservation' : 'completed method load'}`).join('; ');
     const correctionPrompt = `Return JSON only. Only repair the supplied structured report. Do not perform engineering work. Do not inspect repository files. Do not invoke skills. Do not execute tests or commands. Do not create new evidence.\n\nMalformed report: ${malformed_output}\nValidation error: ${validation_error}\nSkill: tdd 1.0.0 ${expectedFingerprint}. Requested role: coder. Attempt provenance run_id=${immutable.runtime.run_id}, session_id=${immutable.runtime.session_id}. Exact acceptance IDs: ${acceptanceIDs.join(', ')}. Allowed runtime evidence IDs: ${catalog}. Required ReportedEvidenceCapsule v1 shape: ${reportedContract}`;
     const before = JSON.stringify(immutable.runtime);
-    const result = executeGovernedRole({ baseDir: root, projectDir: correctionDir, role: 'coder', profileName: 'free', admissionDecision: correctionAdmission, prompt: correctionPrompt, env: correctionEnv });
+    const result = await executeGovernedRole({ baseDir: root, projectDir: correctionDir, role: 'coder', profileName: 'free', admissionDecision: correctionAdmission, prompt: correctionPrompt, env: correctionEnv, streaming: true });
     if (!result.success || !result.exported) throw new Error('STRUCTURED_OUTPUT_CORRECTION_INFRASTRUCTURE_FAILURE');
     if (result.events.some((event) => event?.type === 'tool_use')) throw new Error('STRUCTURED_OUTPUT_CORRECTION_USED_TOOL');
     if (JSON.stringify(immutable.runtime) !== before) throw new Error('REPORT_CORRECTION_MUTATED_EXECUTION_CHECKPOINT');

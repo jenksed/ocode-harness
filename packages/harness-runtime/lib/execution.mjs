@@ -1,4 +1,4 @@
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { loadAgentContracts } from './agent-contract.mjs';
 import {
@@ -33,6 +33,24 @@ function run(command, args, options = {}) {
     duration_ms: Date.now() - started,
     spawn_error: result.error?.message || null,
   };
+}
+
+export function runOpenCodeStreaming(command, args, options = {}) {
+  const started = Date.now();
+  return new Promise((resolveResult) => {
+    const child = spawn(command, args, { cwd: options.cwd, env: options.env, stdio: ['ignore', 'pipe', 'pipe'] });
+    let stdout = '', stderr = '', timedOut = false, settled = false;
+    const maxBytes = options.maxBuffer || 8 * 1024 * 1024;
+    const finish = (exitCode, signal, spawnError = null) => {
+      if (settled) return; settled = true; clearTimeout(timer);
+      resolveResult({ command:[command,...args], exit_code:exitCode, signal, stdout, stderr, duration_ms:Date.now()-started, spawn_error:spawnError, termination: timedOut ? 'PROCESS_TIMEOUT' : signal ? 'PROCESS_ERROR' : 'NORMAL_EXIT' });
+    };
+    child.stdout.on('data', (chunk) => { if (stdout.length < maxBytes) stdout += chunk; });
+    child.stderr.on('data', (chunk) => { if (stderr.length < maxBytes) stderr += chunk; });
+    child.once('error', (error) => finish(null, null, error.message));
+    child.once('close', (code, signal) => finish(code, signal));
+    const timer = setTimeout(() => { timedOut = true; child.kill('SIGTERM'); setTimeout(() => child.kill('SIGKILL'), 1_000).unref(); }, options.timeout || 120_000);
+  });
 }
 
 export function parseOpenCodeEvents(stdout) {
@@ -223,6 +241,7 @@ export function admittedSubjectForExecution(resolution, admissionDecision = null
 }
 
 export function executeGovernedRole(options) {
+  if (options.streaming === true) return executeGovernedRoleStreaming(options);
   const baseDir = resolve(options.baseDir);
   const projectDir = resolve(options.projectDir);
   const { manifest, contracts } = loadAgentContracts({ baseDir });
@@ -324,4 +343,28 @@ export function executeGovernedRole(options) {
     failure_classification: failureClassification,
     ledger_record: record,
   };
+}
+
+export async function executeGovernedRoleStreaming(options) {
+  const baseDir = resolve(options.baseDir), projectDir = resolve(options.projectDir);
+  const { manifest, contracts } = loadAgentContracts({ baseDir });
+  const loaded = options.profile ? { profile: options.profile, source: options.bindingSource || `profiles/${options.profile.name}.json` } : loadBindingProfile(options.profileName, { profilesDir: resolve(baseDir, 'profiles'), manifest });
+  validateProfileCompleteness(loaded.profile, manifest);
+  const contract = contracts.get(options.role);
+  const resolution = createExecutionResolution({ role: options.role, contract, profile: loaded.profile, bindingSource: options.bindingSource || `profiles/${loaded.profile.name}.json` });
+  const admittedSubject = admittedSubjectForExecution(resolution, options.admissionDecision || null);
+  validateResolutionAvailability(resolution, { opencode: options.opencode, cwd: projectDir, env: options.env || process.env, cache: options.catalogCache, models: options.models });
+  const overlay = serializeGovernedExecutionOverlay(loaded.profile, options.role, (options.env || process.env).OPENCODE_CONFIG_CONTENT);
+  const args=['run']; if(options.pure!==false)args.push('--pure'); args.push('--agent',options.role,'--format','json','--dir',projectDir,options.prompt);
+  const execution = await runOpenCodeStreaming(options.opencode || 'opencode', args, { cwd:projectDir, env:{...(options.env||process.env),OPENCODE_CONFIG_CONTENT:overlay}, timeout:options.timeout||120000 });
+  const events=parseOpenCodeEvents(execution.stdout);
+  const sessionID=events.find((event)=>event.sessionID)?.sessionID||null;
+  let exported=null, exportResult=null;
+  if(sessionID){ exportResult=run(options.opencode||'opencode',['export',sessionID,'--sanitize'],{cwd:projectDir,env:options.env||process.env,timeout:30000}); if(!exportResult.spawn_error&&!exportResult.signal&&exportResult.exit_code===0)exported=parseExport(exportResult.stdout); }
+  const reconciliation=reconcileExecutionBinding(resolution,exported), subjectReconciliation=reconcileExecutionSubject(admittedSubject,exported);
+  const runtimeSucceeded=execution.termination==='NORMAL_EXIT'&&execution.exit_code===0;
+  const acceptance=evaluateGovernedExecutionAcceptance({runtimeSucceeded,reconciliation,subjectReconciliation});
+  const ledgerPath=options.ledgerPath||resolve(projectDir,'.opencode','run-ledger.jsonl');
+  const record=appendExecutionLedgerRecord({ledgerPath,projectDir,resolution,reconciliation,subjectReconciliation,success:acceptance.success,failureClassification:acceptance.failure_classification,elapsedMs:execution.duration_ms});
+  return {resolution,execution,events,model_output:resolveAssistantModelOutput({events,exported}),session_id:sessionID,exported,export_result:exportResult,reconciliation,subject_reconciliation:subjectReconciliation,admitted_subject:admittedSubject,admission_decision:options.admissionDecision||null,success:acceptance.success,failure_classification:acceptance.failure_classification,ledger_record:record};
 }

@@ -7,7 +7,7 @@ import {
   serializeOpenCodeRuntimeOverlay,
   validateBindingProfile,
 } from '../packages/harness-runtime/lib/opencode-integration.mjs';
-import { extractAssistantModelOutput, extractAssistantModelOutputFromExport, resolveAssistantModelOutput } from '../packages/harness-runtime/lib/execution.mjs';
+import { extractAssistantModelOutput, extractAssistantModelOutputFromExport, resolveAssistantModelOutput, runOpenCodeStreaming } from '../packages/harness-runtime/lib/execution.mjs';
 
 console.log('=== Test OpenCode Integration Primitives ===\n');
 
@@ -78,5 +78,11 @@ assert.equal(resolveAssistantModelOutput({events:[],exported}),'export JSON');
 assert.equal(extractAssistantModelOutputFromExport({messages:[{info:{role:'assistant'},parts:[{type:'text',text:'[redacted:text:secret]'}]}]}),null);
 assert.equal(resolveAssistantModelOutput({events:[],exported:null}),null);
 console.log('✓ sanitized export assistant-output fallback is deterministic and fail-closed');
+
+const streamed=await runOpenCodeStreaming(process.execPath,['-e','process.stdout.write("{\\"sessionID\\":\\"s\\"}\\n{\\"type\\":\\"text\\",\\"part\\":{\\"type\\":\\"text\\",\\"text\\":\\"ok\\"}}\\n")'],{timeout:1000});
+assert.equal(streamed.termination,'NORMAL_EXIT'); assert.equal(streamed.exit_code,0); assert.equal(streamed.stdout.includes('"sessionID"'),true);
+const timed=await runOpenCodeStreaming(process.execPath,['-e','setInterval(()=>{},1000)'],{timeout:20});
+assert.equal(timed.termination,'PROCESS_TIMEOUT');
+console.log('✓ streaming child transport preserves output and classifies timeout');
 
 console.log('\n✓ All tests passed');

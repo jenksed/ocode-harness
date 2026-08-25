@@ -7,6 +7,7 @@ import {
   serializeOpenCodeRuntimeOverlay,
   validateBindingProfile,
 } from '../packages/harness-runtime/lib/opencode-integration.mjs';
+import { extractAssistantModelOutput, extractAssistantModelOutputFromExport, resolveAssistantModelOutput } from '../packages/harness-runtime/lib/execution.mjs';
 
 console.log('=== Test OpenCode Integration Primitives ===\n');
 
@@ -67,5 +68,15 @@ assert.throws(
   /Unknown binding profile field: routing/,
 );
 console.log('✓ Missing roles, malformed bindings, unknown schemas, and extra fields fail explicitly');
+
+const live=[{type:'text',part:{type:'text',text:'live JSON'}}];
+const exported={messages:[{info:{role:'assistant'},parts:[{type:'text',text:'export JSON'}]}]};
+assert.equal(extractAssistantModelOutput(live),'live JSON');
+assert.equal(extractAssistantModelOutputFromExport(exported),'export JSON');
+assert.equal(resolveAssistantModelOutput({events:live,exported}),'live JSON');
+assert.equal(resolveAssistantModelOutput({events:[],exported}),'export JSON');
+assert.equal(extractAssistantModelOutputFromExport({messages:[{info:{role:'assistant'},parts:[{type:'text',text:'[redacted:text:secret]'}]}]}),null);
+assert.equal(resolveAssistantModelOutput({events:[],exported:null}),null);
+console.log('✓ sanitized export assistant-output fallback is deterministic and fail-closed');
 
 console.log('\n✓ All tests passed');

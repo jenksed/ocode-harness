@@ -61,6 +61,25 @@ export function extractAssistantModelOutput(events) {
   return parts.length ? parts.join('') : null;
 }
 
+/** Extract a usable final assistant text from an already-sanitized export. */
+export function extractAssistantModelOutputFromExport(exported) {
+  if (!exported || !Array.isArray(exported.messages)) return null;
+  const values = [];
+  for (const message of exported.messages) {
+    if (message?.info?.role !== 'assistant') continue;
+    for (const part of message.parts || []) {
+      if (part?.type !== 'text' || typeof part.text !== 'string') continue;
+      if (/^\[redacted:text:[^\]]+\]$/.test(part.text)) continue;
+      values.push(part.text);
+    }
+  }
+  return values.length ? values.at(-1) : null;
+}
+
+export function resolveAssistantModelOutput({ events, exported }) {
+  return extractAssistantModelOutput(events) || extractAssistantModelOutputFromExport(exported);
+}
+
 function parseExport(stdout) {
   const start = stdout.indexOf('{');
   if (start < 0) return null;
@@ -253,7 +272,7 @@ export function executeGovernedRole(options) {
     timeout: options.timeout || 120_000,
   });
   const events = parseOpenCodeEvents(execution.stdout);
-  const modelOutput = extractAssistantModelOutput(events);
+  let modelOutput = extractAssistantModelOutput(events);
   const sessionID = events.find((event) => event.sessionID)?.sessionID || null;
   let exported = null;
   let exportResult = null;
@@ -267,6 +286,7 @@ export function executeGovernedRole(options) {
       exported = parseExport(exportResult.stdout);
     }
   }
+  modelOutput = resolveAssistantModelOutput({ events, exported });
   const reconciliation = reconcileExecutionBinding(resolution, exported);
   const subjectReconciliation = reconcileExecutionSubject(admittedSubject, exported);
   const runtimeSucceeded = !execution.spawn_error && !execution.signal && execution.exit_code === 0;

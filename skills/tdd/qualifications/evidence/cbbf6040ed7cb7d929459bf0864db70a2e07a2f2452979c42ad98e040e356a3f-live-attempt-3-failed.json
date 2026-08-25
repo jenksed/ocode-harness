@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "status": "FAIL",
+  "attempt_id": "attempt-3",
+  "failure_classification": "RUNNER_RETURN_PATH_LOST_BEFORE_CHECKPOINT",
+  "skill": {
+    "skill_id": "tdd",
+    "skill_version": "1.0.0",
+    "skill_fingerprint": "cbbf6040ed7cb7d929459bf0864db70a2e07a2f2452979c42ad98e040e356a3f"
+  },
+  "sanitized_execution_reference": {
+    "session_id": "ses_fc6d05e9bffeZ6qT6Cg596n336",
+    "requested_model": "freellmapi/auto:coding",
+    "effective_model": "freellmapi/auto:coding",
+    "subject": "coder",
+    "binding_reconciliation": "UNAVAILABLE_TO_RUNNER",
+    "subject_reconciliation": "UNAVAILABLE_TO_RUNNER"
+  },
+  "observed_fixture_trace": {
+    "initial_implementation_sha256": "b27138f113fa6444f17de0ce758e98346a18fcf97cd293ca8b08ed7050df9aed",
+    "final_implementation_sha256": "82721313838ba8f45a20b957bec2cd588b0e30274864b13a1f7f17502e87a542",
+    "sequence": [
+      {"sequence": 1, "exit_code": 1, "implementation_sha256": "b27138f113fa6444f17de0ce758e98346a18fcf97cd293ca8b08ed7050df9aed"},
+      {"sequence": 2, "exit_code": 0, "implementation_sha256": "82721313838ba8f45a20b957bec2cd588b0e30274864b13a1f7f17502e87a542"}
+    ],
+    "changed_paths": ["math.mjs"],
+    "oracle_unchanged": true
+  },
+  "fail_closed_reason": "The governed runner did not return executeGovernedRole().events or model_output, so it could not checkpoint before parsing, prove the exact completed skill-load predicate, or validate a ReportedEvidenceCapsule. Sanitized export alone redacts tool input and is not substituted for parsed runtime evidence."
+}

@@ -45,8 +45,10 @@
     "acceptance:m5": "node scripts/acceptance-m5.mjs",
     "acceptance:m6.1": "node scripts/acceptance-m6.1.mjs",
     "test:tdd-skill": "node test/test-tdd-skill.mjs",
+    "test:qualification-recovery": "node test/test-qualification-recovery.mjs",
     "acceptance:m6.2": "node scripts/acceptance-m6.2.mjs",
     "qualify:tdd:live": "node scripts/qualify-tdd-live.mjs",
+    "qualify:tdd:report-repair": "node scripts/repair-tdd-attempt-3-report.mjs",
     "test:m6.3-skills": "node test/test-m6.3-skills.mjs",
     "acceptance:m6.3": "node scripts/acceptance-m6.3.mjs"
   },

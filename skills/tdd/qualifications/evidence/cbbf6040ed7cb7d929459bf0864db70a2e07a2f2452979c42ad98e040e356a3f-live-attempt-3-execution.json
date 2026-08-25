@@ -1,0 +1,363 @@
+{
+  "schema_version": 1,
+  "attempt_id": "attempt-3",
+  "skill": {
+    "skill_id": "tdd",
+    "skill_version": "1.0.0",
+    "skill_fingerprint": "cbbf6040ed7cb7d929459bf0864db70a2e07a2f2452979c42ad98e040e356a3f"
+  },
+  "runtime": {
+    "fixture_fingerprint": "e2b3c793316aa5c48afd45837a2cd197a05b1ec8c16cf6832bbf7e9d563cb556",
+    "execution": {
+      "command": [
+        "opencode",
+        "run",
+        "--pure",
+        "--agent",
+        "coder",
+        "--format",
+        "json",
+        "--dir",
+        "/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-9GTty7"
+      ],
+      "exit_code": 0,
+      "signal": null,
+      "duration_ms": 63751,
+      "spawn_error": null,
+      "export": {
+        "exit_code": 0,
+        "spawn_error": null
+      }
+    },
+    "requested_model": "freellmapi/auto:coding",
+    "effective_model": "freellmapi/auto:coding",
+    "binding_reconciliation": "MATCH",
+    "admitted_subject": "coder",
+    "effective_subject": "coder",
+    "subject_reconciliation": "MATCH",
+    "run_id": null,
+    "session_id": "ses_fc6d05e9bffeZ6qT6Cg596n336",
+    "completed_skill_load": {
+      "type": "tool_use",
+      "timestamp": 1787665827781,
+      "sessionID": "ses_fc6d05e9bffeZ6qT6Cg596n336",
+      "part": {
+        "type": "tool",
+        "tool": "skill",
+        "callID": "skill_787peqptkk7v",
+        "state": {
+          "status": "completed",
+          "input": {
+            "name": "tdd"
+          },
+          "output": "<skill_content name=\"tdd\">\n# Skill: tdd\n\n<!-- OCODE GENERATED: DO NOT EDIT\nskill_id: tdd\ncanonical_skill_fingerprint: cbbf6040ed7cb7d929459bf0864db70a2e07a2f2452979c42ad98e040e356a3f\n-->\n\n# TDD\n\n1. Load and follow tdd.\n2. Use only supplied bounded context.\n3. Run the focused repository test before implementation mutation.\n4. If it initially passes, stop with RED_NOT_ESTABLISHED.\n5. After RED, make the smallest authorized implementation change.\n6. Run the same focused test again and require GREEN.\n7. Do not stage, commit, push, or use external research.\n8. Do not broaden context without an authorized recorded expansion.\n9. Return ReportedEvidenceCapsule v1 and stop once evidence is sufficient.\n\nBase directory for this skill: /private/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-9GTty7/.opencode/skills/tdd\nRelative paths in this skill (e.g., scripts/, reference/) are relative to this base directory.\nNote: file list is sampled.\n\n<skill_files>\n\n</skill_files>\n</skill_content>",
+          "metadata": {
+            "name": "tdd",
+            "dir": "/private/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-9GTty7/.opencode/skills/tdd",
+            "truncated": false
+          },
+          "title": "Loaded skill: tdd",
+          "time": {
+            "start": 1787665827746,
+            "end": 1787665827769
+          }
+        },
+        "id": "prt_0392fc79b001R59SJPDLNqD3PH",
+        "sessionID": "ses_fc6d05e9bffeZ6qT6Cg596n336",
+        "messageID": "msg_0392fa285001zgvaVqgk2vPCdd"
+      }
+    },
+    "tool_events": [
+      {
+        "type": "tool_use",
+        "part": {
+          "type": "tool",
+          "tool": "skill",
+          "callID": "skill_787peqptkk7v",
+          "state": {
+            "status": "completed",
+            "input": {
+              "name": "tdd"
+            },
+            "output": "<skill_content name=\"tdd\">\n# Skill: tdd\n\n<!-- OCODE GENERATED: DO NOT EDIT\nskill_id: tdd\ncanonical_skill_fingerprint: cbbf6040ed7cb7d929459bf0864db70a2e07a2f2452979c42ad98e040e356a3f\n-->\n\n# TDD\n\n1. Load and follow tdd.\n2. Use only supplied bounded context.\n3. Run the focused repository test before implementation mutation.\n4. If it initially passes, stop with RED_NOT_ESTABLISHED.\n5. After RED, make the smallest authorized implementation change.\n6. Run the same focused test again and require GREEN.\n7. Do not stage, commit, push, or use external research.\n8. Do not broaden context without an authorized recorded expansion.\n9. Return ReportedEvidenceCapsule v1 and stop once evidence is sufficient.\n\nBase directory for this skill: /private/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-9GTty7/.opencode/skills/tdd\nRelative paths in this skill (e.g., scripts/, reference/) are relative to this base directory.\nNote: file list is sampled.\n\n<skill_files>\n\n</skill_files>\n</skill_content>",
+            "metadata": {
+              "name": "tdd",
+              "dir": "/private/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-9GTty7/.opencode/skills/tdd",
+              "truncated": false
+            },
+            "title": "Loaded skill: tdd",
+            "time": {
+              "start": 1787665827746,
+              "end": 1787665827769
+            }
+          },
+          "id": "prt_0392fc79b001R59SJPDLNqD3PH",
+          "sessionID": "ses_fc6d05e9bffeZ6qT6Cg596n336",
+          "messageID": "msg_0392fa285001zgvaVqgk2vPCdd"
+        }
+      },
+      {
+        "type": "tool_use",
+        "part": {
+          "type": "tool",
+          "tool": "read",
+          "callID": "read_qk8r17mksvt7",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/private/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-9GTty7/package.json"
+            },
+            "output": "<path>/private/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-9GTty7/package.json</path>\n<type>file</type>\n<content>\n1: {\"type\":\"module\",\"scripts\":{\"test\":\"node qualification-test-runner.mjs\"}}\n\n(End of file - total 1 lines)\n</content>",
+            "metadata": {
+              "preview": "{\"type\":\"module\",\"scripts\":{\"test\":\"node qualification-test-runner.mjs\"}}",
+              "truncated": false,
+              "loaded": [],
+              "display": {
+                "type": "file",
+                "path": "/private/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-9GTty7/package.json",
+                "text": "{\"type\":\"module\",\"scripts\":{\"test\":\"node qualification-test-runner.mjs\"}}",
+                "lineStart": 1,
+                "lineEnd": 1,
+                "totalLines": 1,
+                "truncated": false
+              }
+            },
+            "title": "private/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-9GTty7/package.json",
+            "time": {
+              "start": 1787665837140,
+              "end": 1787665837150
+            }
+          },
+          "id": "prt_0392fec520014CfzTcJ3W8wDby",
+          "sessionID": "ses_fc6d05e9bffeZ6qT6Cg596n336",
+          "messageID": "msg_0392fc7c2001azizA1Uoun3uPX"
+        }
+      },
+      {
+        "type": "tool_use",
+        "part": {
+          "type": "tool",
+          "tool": "read",
+          "callID": "read_1c79dy3jjb43",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/private/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-9GTty7/math.test.mjs"
+            },
+            "output": "<path>/private/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-9GTty7/math.test.mjs</path>\n<type>file</type>\n<content>\n1: import assert from 'node:assert/strict';\n2: import { isEven } from './math.mjs';\n3: assert.equal(isEven(4), true);\n4: assert.equal(isEven(5), false);\n\n(End of file - total 4 lines)\n</content>",
+            "metadata": {
+              "preview": "import assert from 'node:assert/strict';\nimport { isEven } from './math.mjs';\nassert.equal(isEven(4), true);\nassert.equal(isEven(5), false);",
+              "truncated": false,
+              "loaded": [],
+              "display": {
+                "type": "file",
+                "path": "/private/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-9GTty7/math.test.mjs",
+                "text": "import assert from 'node:assert/strict';\nimport { isEven } from './math.mjs';\nassert.equal(isEven(4), true);\nassert.equal(isEven(5), false);",
+                "lineStart": 1,
+                "lineEnd": 4,
+                "totalLines": 4,
+                "truncated": false
+              }
+            },
+            "title": "private/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-9GTty7/math.test.mjs",
+            "time": {
+              "start": 1787665837137,
+              "end": 1787665837151
+            }
+          },
+          "id": "prt_0392fec4f001n2Uv39BZZJko06",
+          "sessionID": "ses_fc6d05e9bffeZ6qT6Cg596n336",
+          "messageID": "msg_0392fc7c2001azizA1Uoun3uPX"
+        }
+      },
+      {
+        "type": "tool_use",
+        "part": {
+          "type": "tool",
+          "tool": "read",
+          "callID": "read_41k05y485mhj",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/private/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-9GTty7/math.mjs"
+            },
+            "output": "<path>/private/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-9GTty7/math.mjs</path>\n<type>file</type>\n<content>\n1: export const isEven = (value) => value % 2 === 1;\n\n(End of file - total 1 lines)\n</content>",
+            "metadata": {
+              "preview": "export const isEven = (value) => value % 2 === 1;",
+              "truncated": false,
+              "loaded": [],
+              "display": {
+                "type": "file",
+                "path": "/private/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-9GTty7/math.mjs",
+                "text": "export const isEven = (value) => value % 2 === 1;",
+                "lineStart": 1,
+                "lineEnd": 1,
+                "totalLines": 1,
+                "truncated": false
+              }
+            },
+            "title": "private/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-9GTty7/math.mjs",
+            "time": {
+              "start": 1787665837134,
+              "end": 1787665837153
+            }
+          },
+          "id": "prt_0392fec49001SSp6stdIajrORm",
+          "sessionID": "ses_fc6d05e9bffeZ6qT6Cg596n336",
+          "messageID": "msg_0392fc7c2001azizA1Uoun3uPX"
+        }
+      },
+      {
+        "type": "tool_use",
+        "part": {
+          "type": "tool",
+          "tool": "bash",
+          "callID": "bash_zb917rtatev1",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "npm test"
+            },
+            "output": "\n> test\n> node qualification-test-runner.mjs\n\nnode:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\nfalse !== true\n\n    at file:///private/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-9GTty7/math.test.mjs:3:8\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:646:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: true,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v26.3.0\n",
+            "metadata": {
+              "output": "\n> test\n> node qualification-test-runner.mjs\n\nnode:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\nfalse !== true\n\n    at file:///private/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-9GTty7/math.test.mjs:3:8\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:646:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: true,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v26.3.0\n",
+              "exit": 1,
+              "truncated": false
+            },
+            "title": "npm test",
+            "time": {
+              "start": 1787665848194,
+              "end": 1787665848204
+            }
+          },
+          "id": "prt_03930160d001cDuD5xkwMN1h3D",
+          "sessionID": "ses_fc6d05e9bffeZ6qT6Cg596n336",
+          "messageID": "msg_0392fec680016zAYlRm78j3KrR"
+        }
+      },
+      {
+        "type": "tool_use",
+        "part": {
+          "type": "tool",
+          "tool": "edit",
+          "callID": "edit_8x34fs1nxas4",
+          "state": {
+            "status": "completed",
+            "input": {
+              "filePath": "/private/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-9GTty7/math.mjs",
+              "oldString": "export const isEven = (value) => value % 2 === 1;",
+              "newString": "export const isEven = (value) => value % 2 === 0;"
+            },
+            "output": "Edit applied successfully.",
+            "metadata": {
+              "diagnostics": {},
+              "diff": "Index: /private/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-9GTty7/math.mjs\n===================================================================\n--- /private/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-9GTty7/math.mjs\n+++ /private/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-9GTty7/math.mjs\n@@ -1,1 +1,1 @@\n-export const isEven = (value) => value % 2 === 1;\n+export const isEven = (value) => value % 2 === 0;\n",
+              "filediff": {
+                "file": "/private/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-9GTty7/math.mjs",
+                "patch": "Index: /private/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-9GTty7/math.mjs\n===================================================================\n--- /private/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-9GTty7/math.mjs\n+++ /private/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-9GTty7/math.mjs\n@@ -1,1 +1,1 @@\n-export const isEven = (value) => value % 2 === 1;\n+export const isEven = (value) => value % 2 === 0;\n",
+                "additions": 1,
+                "deletions": 1
+              },
+              "truncated": false
+            },
+            "title": "private/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-9GTty7/math.mjs",
+            "time": {
+              "start": 1787665857990,
+              "end": 1787665857992
+            }
+          },
+          "id": "prt_039303dbb0013WNMfy1ncw8pYQ",
+          "sessionID": "ses_fc6d05e9bffeZ6qT6Cg596n336",
+          "messageID": "msg_0393017920010zGjEpXLuOMC0r"
+        }
+      },
+      {
+        "type": "tool_use",
+        "part": {
+          "type": "tool",
+          "tool": "bash",
+          "callID": "bash_7framvqfq9nn",
+          "state": {
+            "status": "completed",
+            "input": {
+              "command": "npm test"
+            },
+            "output": "\n> test\n> node qualification-test-runner.mjs\n\n",
+            "metadata": {
+              "output": "\n> test\n> node qualification-test-runner.mjs\n\n",
+              "exit": 0,
+              "truncated": false
+            },
+            "title": "npm test",
+            "time": {
+              "start": 1787665859843,
+              "end": 1787665860020
+            }
+          },
+          "id": "prt_039304442001b6Dhv2Z7RzC1eN",
+          "sessionID": "ses_fc6d05e9bffeZ6qT6Cg596n336",
+          "messageID": "msg_039303dce001ApkTkYuPwhEIp5"
+        }
+      }
+    ],
+    "initial_hashes": {
+      "math.mjs": "b27138f113fa6444f17de0ce758e98346a18fcf97cd293ca8b08ed7050df9aed",
+      "math.test.mjs": "36d0672f7100407246da6d5653c9a83ba7b8363e673b28222b014fb272ab686b",
+      "package.json": "8cb949728b38a06f54fc6744f72fb86a1e461b55d1debd033391ca2ddae076c5",
+      "qualification-test-runner.mjs": "eb8ab1ebcd66ddea9e4ca7e2d55d616e4b3d74a53d18beed136151fa47e735e5"
+    },
+    "final_hashes": {
+      "math.mjs": "82721313838ba8f45a20b957bec2cd588b0e30274864b13a1f7f17502e87a542",
+      "math.test.mjs": "36d0672f7100407246da6d5653c9a83ba7b8363e673b28222b014fb272ab686b",
+      "package.json": "8cb949728b38a06f54fc6744f72fb86a1e461b55d1debd033391ca2ddae076c5",
+      "qualification-test-runner.mjs": "eb8ab1ebcd66ddea9e4ca7e2d55d616e4b3d74a53d18beed136151fa47e735e5"
+    },
+    "trace": [
+      {
+        "sequence": 1,
+        "implementation_sha256": "b27138f113fa6444f17de0ce758e98346a18fcf97cd293ca8b08ed7050df9aed",
+        "exit_code": 1,
+        "stdout": "",
+        "stderr": "node:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\nfalse !== true\n\n    at file:///private/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-9GTty7/math.test.mjs:3:8\n    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:646:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: true,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v26.3.0\n"
+      },
+      {
+        "sequence": 2,
+        "implementation_sha256": "82721313838ba8f45a20b957bec2cd588b0e30274864b13a1f7f17502e87a542",
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    ],
+    "changed_paths": [
+      "math.mjs"
+    ],
+    "oracle_unchanged": true,
+    "context": {
+      "path_refs": [
+        "math.mjs",
+        "math.test.mjs",
+        "package.json"
+      ],
+      "max_expansions": 0,
+      "telemetry": {
+        "supplied_path_refs": 3,
+        "supplied_evidence_refs": 0,
+        "supplied_chars": 1005,
+        "files_inspected": 3,
+        "tool_calls": 2,
+        "external_requests": 0,
+        "repair_attempts": 0
+      },
+      "external_requests": 0
+    },
+    "runtime_evidence_ids": [
+      "tdd-red",
+      "tdd-change",
+      "tdd-green",
+      "tdd-scope",
+      "tdd-method-load"
+    ],
+    "sanitization": "No credentials, headers, environment, or raw OpenCode export retained."
+  },
+  "original_model_output": "{\n  \"schema_version\": 1,\n  \"skill\": {\n    \"skill_id\": \"tdd\",\n    \"skill_version\": \"1.0.0\",\n    \"skill_fingerprint\": \"cbbf6040ed7cb7d929459bf0864db70a2e07a2f2452979c42ad98e040e356a3f\"\n  },\n  \"subject\": {\n    \"requested_role\": \"coder\"\n  },\n  \"claims\": [],\n  \"observations\": [],\n  \"deterministic_validation\": [],\n  \"changed_files\": [\n    \"/private/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-9GTty7/math.mjs\"\n  ],\n  \"artifacts\": [],\n  \"acceptance_mapping\": [\n    {\n      \"acceptance_id\": \"behavior-bounded\",\n      \"state\": \"SATISFIED\",\n      \"supporting_evidence_refs\": [\n        \"tdd-method-load\"\n      ]\n    },\n    {\n      \"acceptance_id\": \"independent-oracle\",\n      \"state\": \"SATISFIED\",\n      \"supporting_evidence_refs\": [\n        \"tdd-method-load\"\n      ]\n    },\n    {\n      \"acceptance_id\": \"red-proven\",\n      \"state\": \"SATISFIED\",\n      \"supporting_evidence_refs\": [\n        \"tdd-red\"\n      ]\n    },\n    {\n      \"acceptance_id\": \"change-bounded\",\n      \"state\": \"SATISFIED\",\n      \"supporting_evidence_refs\": [\n        \"tdd-change\"\n      ]\n    },\n    {\n      \"acceptance_id\": \"green-proven\",\n      \"state\": \"SATISFIED\",\n      \"supporting_evidence_refs\": [\n        \"tdd-green\"\n      ]\n    },\n    {\n      \"acceptance_id\": \"regression-durable\",\n      \"state\": \"SATISFIED\",\n      \"supporting_evidence_refs\": [\n        \"tdd-green\"\n      ]\n    },\n    {\n      \"acceptance_id\": \"stop-when-proven\",\n      \"state\": \"SATISFIED\",\n      \"supporting_evidence_refs\": [\n        \"tdd-green\"\n      ]\n    }\n  ],\n  \"unresolved_items\": [],\n  \"provenance_refs\": {\n    \"run_id\": null,\n    \"session_id\": null\n  }\n}"
+}

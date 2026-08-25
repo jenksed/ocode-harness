@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "status": "FAIL",
+  "failure_classification": "STRUCTURED_OUTPUT_INVALID: no JSON object",
+  "skill": {
+    "skill_id": "tdd",
+    "skill_version": "1.0.0",
+    "skill_fingerprint": "cbbf6040ed7cb7d929459bf0864db70a2e07a2f2452979c42ad98e040e356a3f"
+  },
+  "execution": {
+    "command": [
+      "opencode",
+      "run",
+      "--pure",
+      "--agent",
+      "coder",
+      "--format",
+      "json",
+      "--dir",
+      "/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-a1VPYl",
+      "Load and follow the projected tdd skill. You have only this ContextCapsule: {\"schema_version\":1,\"objective\":\"fix isEven so the supplied focused test passes using canonical TDD\",\"constraints\":[\"use tdd\",\"establish RED before mutation\",\"change only math.mjs\",\"run npm test\",\"no stage/commit/push\",\"no external research\",\"return ReportedEvidenceCapsule after GREEN\"],\"skill\":{\"skill_id\":\"tdd\",\"skill_version\":\"1.0.0\",\"skill_fingerprint\":\"cbbf6040ed7cb7d929459bf0864db70a2e07a2f2452979c42ad98e040e356a3f\"},\"path_refs\":[{\"path\":\"math.mjs\",\"reason\":\"implementation target\"},{\"path\":\"math.test.mjs\",\"reason\":\"focused executable oracle\"},{\"path\":\"package.json\",\"reason\":\"focused test command\"}],\"evidence_refs\":[],\"assumptions\":[],\"acceptance_expectations\":[\"behavior-bounded\",\"independent-oracle\",\"red-proven\",\"change-bounded\",\"green-proven\",\"regression-durable\",\"stop-when-proven\"],\"expected_outputs\":[\"skill-result\"],\"context_budget\":{\"max_path_refs\":3,\"max_evidence_refs\":1,\"max_supplied_chars\":6000,\"telemetry_boundary\":\"CAPSULE_ONLY\"},\"context_expansion_policy\":{\"max_expansions\":0}}\n\nWork only in this fixture. Run npm test before any implementation mutation. If it fails, make the smallest change only to math.mjs and run the same npm test again. Do not inspect or change anything beyond math.mjs, math.test.mjs, package.json; do not stage, commit, push, research, or run broad tests. Stop after GREEN. Return exactly one ReportedEvidenceCapsule v1 JSON object with skill identity above, subject requested_role coder, no unresolved items, and acceptance_mapping containing exactly these IDs with these required EvidenceRef pointers: behavior-bounded:tdd-scope; independent-oracle:tdd-scope; red-proven:tdd-red; change-bounded:tdd-change; green-proven:tdd-green; regression-durable:tdd-green,tdd-scope; stop-when-proven:tdd-scope. These pointers are runtime-owned strings, not objects."
+    ],
+    "exit_code": 0,
+    "signal": null,
+    "duration_ms": 62860,
+    "spawn_error": null,
+    "export": {
+      "exit_code": 0,
+      "spawn_error": null
+    }
+  }
+}

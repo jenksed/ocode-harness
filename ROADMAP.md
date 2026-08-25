@@ -98,13 +98,15 @@ M4E Governance productization: PROVEN — `ocode govern explain/check/audit`, su
 
 M4 CLOSEOUT: PROVEN — capability, authority, configured permission, admission, effective subject, and provenance are one production governance system. M5 must translate explicit work requirements into `AdmissionRequest` rather than fork governance.
 
-### M5 Wayfinder — UNBLOCKED
+### M5 Wayfinder — ACTIVE
 
 Purpose: implement the Wayfinder workflow only after baseline, integration, and authority contracts are proven.
 
 Depends on: M4.
 
 Entry contract: [M5 entry contract](docs/architecture/m5-entry-contract.md). No Wayfinder or UncertaintyMap implementation is included in M4.
+
+M5 CORE: PROVEN — Wayfinder is a manifest-derived read-only ninth role with `uncertainty.assess`; deterministic WayfindingRequest, UncertaintyMap, dependency-aware EvidenceRef freshness, evidence ladder, exploration budget, evidence requests, routes, and planning-readiness protocol are provided by `npm run acceptance:m5-core`. Runtime qualification and M5 closeout remain pending.
 
 ### M6 Ocode-Native Pstack-Derived Skills — PLANNED
 

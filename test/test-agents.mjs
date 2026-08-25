@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * test-agents.mjs
- * Validate 8 agents exist with correct contracts
+ * Validate manifest-derived agents exist with correct contracts
  */
 
 import { fileURLToPath } from 'node:url';
@@ -96,6 +96,7 @@ if (existsSync(orchestratorPath)) {
 
   const allowedSubagents = [
     'planner: allow',
+    'wayfinder: allow',
     'coder: allow',
     'researcher: allow',
     'verifier: allow',

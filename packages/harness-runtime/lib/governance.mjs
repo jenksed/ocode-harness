@@ -18,6 +18,7 @@ export const CAPABILITY_VOCABULARY = Object.freeze({
     Object.freeze({ id: 'research.investigate', description: 'Investigate an external technical question.' }),
     Object.freeze({ id: 'review.evaluate', description: 'Evaluate implementation evidence and repository changes.' }),
     Object.freeze({ id: 'test.execute', description: 'Execute repository-defined validation commands.' }),
+    Object.freeze({ id: 'uncertainty.assess', description: 'Assess planning-blocking uncertainty and required evidence.' }),
     Object.freeze({ id: 'verification.validate', description: 'Independently validate requested engineering properties.' }),
     Object.freeze({ id: 'web.research', description: 'Research current external sources.' }),
   ]),

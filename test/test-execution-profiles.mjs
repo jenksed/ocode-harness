@@ -104,8 +104,8 @@ try {
   delete incomplete.bindings.reviewer;
   assert.throws(() => validateProfileCompleteness(incomplete, manifest), /missing governed roles: reviewer/);
   const futureManifest = structuredClone(manifest);
-  futureManifest.roles.push({ ...structuredClone(manifest.roles[0]), id: 'wayfinder', file: 'wayfinder.md' });
-  assert.throws(() => validateProfileCompleteness(free, futureManifest), /missing governed roles: wayfinder/);
+  futureManifest.roles.push({ ...structuredClone(manifest.roles[0]), id: 'future_wayfinder', file: 'future-wayfinder.md' });
+  assert.throws(() => validateProfileCompleteness(free, futureManifest), /missing governed roles: future_wayfinder/);
   assert.throws(() => validateResolutionAvailability(plannerHybrid, { models: ['openai/not-requested'] }), (error) => (
     error instanceof BindingError && error.details.requested === 'openai/gpt-5.6-sol'
   ));

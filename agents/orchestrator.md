@@ -29,6 +29,7 @@ permission:
   task:
     "*": deny
     planner: allow
+    wayfinder: allow
     coder: allow
     researcher: allow
     verifier: allow

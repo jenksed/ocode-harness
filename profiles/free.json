@@ -6,6 +6,7 @@
     "orchestrator": "freellmapi/auto:default",
     "planner": "freellmapi/auto:planning",
     "coder": "freellmapi/auto:coding",
+    "wayfinder": "freellmapi/auto:wayfinder",
     "researcher": "freellmapi/auto:research",
     "verifier": "freellmapi/auto:verification",
     "reviewer": "freellmapi/auto:review",

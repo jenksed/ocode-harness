@@ -85,6 +85,14 @@
       }
     },
     {
+      "id": "wayfinder",
+      "file": "wayfinder.md",
+      "capabilities": { "schema_version": 1, "provides": ["repository.read", "uncertainty.assess"] },
+      "authority": { "tier": "wayfinding", "may_edit": false, "may_stage": false, "may_commit": false, "may_push": false },
+      "compatible_skills": [],
+      "governance": { "human_facing": false, "deterministic_git_authority": false }
+    },
+    {
       "id": "researcher",
       "file": "researcher.md",
       "capabilities": {

@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { proveSkills, productionSkillIds, ROOT, CATALOG } from './catalog-proof-helper.mjs';
+const expected=Object.keys(CATALOG).sort();
+assert.deepEqual(productionSkillIds(),expected);
+const fingerprints=proveSkills(expected);
+assert.equal(new Set(Object.values(fingerprints)).size,6);
+const engine=readFileSync(`${ROOT}/packages/harness-runtime/lib/skill-qualification.mjs`,'utf8');
+assert.match(engine,/qualifySkillLive/); assert.match(engine,/EXECUTION_CHECKPOINTED/); assert.match(engine,/CORRECTING_REPORT/);
+const execution=readFileSync(`${ROOT}/packages/harness-runtime/lib/execution.mjs`,'utf8');
+assert.match(execution,/executeGovernedRoleSdk/); assert.match(execution,/OPENCODE_SDK/);
+for(const forbidden of ['compatible_skills','role-name authorization','skill-specific admission engine']) assert.doesNotMatch(engine,new RegExp(forbidden,'i'));
+console.log(JSON.stringify({status:'M6_5_DETERMINISTIC_PROVEN',skills:expected,fingerprints,command_execute:'NOT_PROJECTED_DENY'}));

@@ -53,8 +53,8 @@ export function extractAssistantModelOutput(events) {
   const parts = [];
   for (const event of events) {
     const part = event?.properties?.part || event?.part;
-    const isAssistantText = part?.type === 'text'
-      && (event?.type?.includes('message') || event?.properties?.message?.role === 'assistant' || event?.role === 'assistant');
+    const isAssistantText = event?.type === 'text' && part?.type === 'text'
+      || part?.type === 'text' && (event?.type?.includes('message') || event?.properties?.message?.role === 'assistant' || event?.role === 'assistant');
     if (isAssistantText && typeof part.text === 'string') parts.push(part.text);
     if (event?.role === 'assistant' && typeof event.text === 'string') parts.push(event.text);
   }

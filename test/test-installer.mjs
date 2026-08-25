@@ -248,6 +248,7 @@ try {
     'lib/closeout.mjs',
     'lib/verify.mjs',
     'lib/governance.mjs',
+    'lib/admission.mjs',
     'lib/agent-contract.mjs',
     'lib/opencode-integration.mjs',
     'lib/execution.mjs',

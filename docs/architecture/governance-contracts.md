@@ -1,16 +1,16 @@
 # Governance contracts
 
-M4A defines Ocode's governance language and structural role contracts. It does not implement admission decisions, permission projection, or effective-subject reconciliation.
+M4A defines Ocode's governance language and structural role contracts. M4B adds the deterministic, provider-independent admission core. Permission projection and effective-subject reconciliation remain deliberately deferred.
 
 ## Constitutional terms
 
 - **Capability** is engineering work a semantic role is equipped to perform. A capability is descriptive and never grants authority.
 - **Authority** is a constitutional grant to take a consequential action. The manifest fields `may_edit`, `may_stage`, `may_commit`, and `may_push` remain the current explicit authority declarations.
 - **Permission** is an OpenCode runtime or environment constraint. Permission does not define Ocode constitutional authority, and M4A does not judge permission/authority compatibility.
-- **Requirement** is an explicit capability or policy condition requested by governed work. Later M4 phases will compare requirements with subjects through the admission engine.
+- **Requirement** is an explicit capability or authority condition requested by governed work. M4B compares requirements with subjects through the admission engine.
 - **Identity** is evidence about whether observed bytes or semantic contracts match a reference. Identity supports provenance, reproducibility, drift detection, and transactional integrity.
 - **Governance** is structural and policy validity under Ocode's constitutional invariants.
-- **Admission** is the eventual `ALLOW` or `DENY` result for a concrete request and subject. M4A defines the words, not the decision engine.
+- **Admission** is the `ALLOW` or `DENY` result for a concrete request and subject.
 
 ## Predicate-based governance
 
@@ -62,6 +62,37 @@ Every role in `agents/manifest.json` has one versioned `capabilities` declaratio
 
 M3's requested/effective doctrine remains in force. A bounded `mode: primary` OpenCode overlay is an execution mechanism only. It never changes the semantic role identity, capabilities, authority, Git authority, or a future admission result. Later phases will separately reconcile declared authority with permission projection and the admitted subject with the effective OpenCode agent.
 
+## M4B admission contracts
+
+`packages/harness-runtime/lib/admission.mjs` provides pure, deterministic version-1 functions for validating an `AdmissionRequest` and evaluating an `AdmissionDecision`. Assignment admission consumes only a manifest-derived normalized role contract and explicit predicates:
+
+```text
+AdmissionRequest
+  schema_version
+  kind: CONTRACT | ASSIGNMENT
+  subject.role
+  requirements.capabilities
+  requested_authority: edit, stage, commit, push
+  optional reference_contract_fingerprint (provenance only)
+        ↓
+AdmissionDecision
+  decision: ALLOW | DENY
+  capability_evaluation
+  authority_evaluation
+  permission_evaluation: NOT_EVALUATED
+  identity_state
+  governance_state
+  reason_codes and structured failure details
+```
+
+Capability satisfaction is a subset test: required capabilities must be present in the subject's structured capabilities. Authority sufficiency maps each requested action only to its matching `may_*` declaration. Role names select a manifest-derived contract; they never create a policy exception or grant authority. Future SkillProtocol and TaskSpec inputs can therefore translate into this one request shape without a parallel governance engine.
+
+Reason codes are deliberately few and machine-readable: `REQUIRED_CAPABILITIES_SATISFIED`, `REQUIRED_CAPABILITY_MISSING`, `AUTHORITY_COMPATIBLE`, `AUTHORITY_INSUFFICIENT`, `CONTRACT_VALID`, `CONTRACT_INVALID`, `IDENTITY_DRIFT_OBSERVED`, and `IDENTITY_UNREFERENCED`. Missing capabilities and failed authority actions are structured data, not prose.
+
+The decision always records permission evaluation as `NOT_EVALUATED`. M4B neither reads nor declares OpenCode permission compatibility; M4C will add conservative projection and least-authority enforcement. M4B also does not reconcile an admitted subject with an effective OpenCode agent (M4D), provide a governance CLI (M4E), or introduce TaskSpecs, planner compilation, model routing, or provider inference.
+
+Contract admission is a structural evaluation of a normalized role contract. Assignment admission evaluates explicit requested capabilities and authority. Both preserve the M4A identity rule: `DRIFTED` is provenance evidence, not a denial predicate, so a valid request may return `DRIFTED` + `VALID` + `ALLOW`.
+
 ## M4A boundary
 
-M4A performs closed structural validation only: supported capability schema, valid vocabulary, complete manifest-derived declarations, and valid identifiers. It does not implement `AdmissionRequest`, `AdmissionDecision`, permission compatibility, runtime permission projection, or effective-subject enforcement.
+M4A performs closed structural validation only: supported capability schema, valid vocabulary, complete manifest-derived declarations, and valid identifiers. M4B builds on those inputs with admission evaluation; it still does not implement permission compatibility, runtime permission projection, or effective-subject enforcement.

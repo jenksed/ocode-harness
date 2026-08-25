@@ -88,9 +88,9 @@ Depends on: M2, M3.
 
 M4A Governance Contract Foundation: PROVEN — the constitutional language, versioned closed capability vocabulary, manifest-derived role capability contracts, structural doctor checks, and identity-state separation are implemented by `npm run acceptance:m4a`.
 
-M4B AdmissionRequest + AdmissionDecision: UNBLOCKED — implement predicate-based admission on the M4A foundation without using fingerprints as general authorization gates.
+M4B AdmissionRequest + AdmissionDecision: PROVEN — deterministic, provider-independent capability and constitutional-authority admission with identity drift retained as provenance only is implemented by `npm run acceptance:m4b`.
 
-M4C–M4E: PLANNED — permission projection, effective-subject reconciliation, and remaining enforcement work are intentionally deferred. M4 as a whole is not yet proven.
+M4C Permission Projection: UNBLOCKED — add conservative OpenCode permission projection and least-authority enforcement to the proven AdmissionDecision engine. M4D–M4E remain planned; M4 as a whole is not yet proven.
 
 ### M5 Wayfinder — PLANNED
 

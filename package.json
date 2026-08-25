@@ -27,6 +27,7 @@
     "test:subject-reconciliation": "node test/test-subject-reconciliation.mjs",
     "test:govern": "node test/test-govern-cli.mjs",
     "test:wayfinding": "node test/test-wayfinding.mjs",
+    "test:wayfinding-runtime": "node test/test-wayfinding-runtime.mjs",
     "test:secrets": "node test/test-secrets.mjs",
     "test:verify": "node test/test-verify.mjs",
     "bootstrap": "node installer/install.mjs",
@@ -40,6 +41,7 @@
     "acceptance:m4d": "node scripts/acceptance-m4d.mjs",
     "acceptance:m4": "node scripts/acceptance-m4.mjs",
     "acceptance:m5-core": "node scripts/acceptance-m5-core.mjs"
+    ,"acceptance:m5": "node scripts/acceptance-m5.mjs"
   },
   "keywords": [
     "ai",

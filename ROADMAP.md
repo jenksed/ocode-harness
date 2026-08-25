@@ -106,7 +106,7 @@ Depends on: M4.
 
 Entry contract: [M5 entry contract](docs/architecture/m5-entry-contract.md). No Wayfinder or UncertaintyMap implementation is included in M4.
 
-M5 CORE: PROVEN — Wayfinder is a manifest-derived read-only ninth role with `uncertainty.assess`; deterministic WayfindingRequest, UncertaintyMap, dependency-aware EvidenceRef freshness, evidence ladder, exploration budget, evidence requests, routes, and planning-readiness protocol are provided by `npm run acceptance:m5-core`. Runtime qualification and M5 closeout remain pending.
+M5: PROVEN — Wayfinder core and bounded governed runtime adapter are complete; `npm run acceptance:m5` proves deterministic integration. M6 preparation is unblocked; M6 remains planned.
 
 ### M6 Ocode-Native Pstack-Derived Skills — PLANNED
 

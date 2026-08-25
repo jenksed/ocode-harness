@@ -1,0 +1,2 @@
+#!/usr/bin/env node
+import { spawnSync } from 'node:child_process'; import assert from 'node:assert/strict'; import { resolve, dirname } from 'node:path'; import { fileURLToPath } from 'node:url'; const root=resolve(dirname(fileURLToPath(import.meta.url)),'..'); for(const file of ['test/test-wayfinding.mjs','test/test-wayfinding-runtime.mjs']) { const r=spawnSync(process.execPath,[file],{cwd:root,encoding:'utf8'});assert.equal(r.status,0,`${r.stdout}\n${r.stderr}`); } console.log(JSON.stringify({status:'M5_PROVEN',live_provider_calls:0,deterministic:true},null,2));

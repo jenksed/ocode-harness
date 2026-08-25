@@ -25,11 +25,15 @@ export function runWayfinding(options) {
   const admissionDecision = wayfinderAdmission(contract);
   if (admissionDecision.decision !== 'ALLOW') return { success: false, failure_classification: 'ADMISSION_DENY', admission_decision: admissionDecision, repair_count: 0 };
   const invoke = options.execute || executeGovernedRole;
-  const first = invoke({ ...options, role: 'wayfinder', admissionDecision, prompt: buildWayfindingPrompt(request) });
+  const invokeSafely = (prompt) => {
+    try { return invoke({ ...options, role: 'wayfinder', admissionDecision, prompt }); }
+    catch (error) { return { success: false, failure_classification: 'OPENCODE_PRE_EXECUTION_FAILURE', admission_decision: admissionDecision, runtime_diagnostics: { stage: 'pre_execution', error: error.message }, execution: null, session_id: null, export_result: null, ledger_record: null }; }
+  };
+  const first = invokeSafely(buildWayfindingPrompt(request));
   if (!first.success) return { ...first, wayfinding_result: null, repair_count: 0 };
   try { return { ...first, wayfinding_result: parseWayfindingResult(first.model_output ?? first.execution.stdout), repair_count: 0 }; }
   catch (error) {
-    const second = invoke({ ...options, role: 'wayfinder', admissionDecision, prompt: buildWayfindingPrompt(request, error.message) });
+    const second = invokeSafely(buildWayfindingPrompt(request, error.message));
     if (!second.success) return { ...second, wayfinding_result: null, repair_count: 1 };
     try { return { ...second, wayfinding_result: parseWayfindingResult(second.model_output ?? second.execution.stdout), repair_count: 1 }; }
     catch (secondError) { return { ...second, success: false, failure_classification: 'STRUCTURED_OUTPUT_INVALID', wayfinding_result: null, structured_output_error: secondError.message, repair_count: 1 }; }

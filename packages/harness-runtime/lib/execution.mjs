@@ -35,7 +35,7 @@ function run(command, args, options = {}) {
   };
 }
 
-function parseEvents(stdout) {
+export function parseOpenCodeEvents(stdout) {
   const events = [];
   for (const line of stdout.split('\n').filter((value) => value.trim())) {
     try {
@@ -46,6 +46,19 @@ function parseEvents(stdout) {
     }
   }
   return events;
+}
+
+/** Extract only assistant text parts from OpenCode JSONL transport events. */
+export function extractAssistantModelOutput(events) {
+  const parts = [];
+  for (const event of events) {
+    const part = event?.properties?.part || event?.part;
+    const isAssistantText = part?.type === 'text'
+      && (event?.type?.includes('message') || event?.properties?.message?.role === 'assistant' || event?.role === 'assistant');
+    if (isAssistantText && typeof part.text === 'string') parts.push(part.text);
+    if (event?.role === 'assistant' && typeof event.text === 'string') parts.push(event.text);
+  }
+  return parts.length ? parts.join('') : null;
 }
 
 function parseExport(stdout) {
@@ -239,7 +252,8 @@ export function executeGovernedRole(options) {
     env: { ...(options.env || process.env), OPENCODE_CONFIG_CONTENT: overlay },
     timeout: options.timeout || 120_000,
   });
-  const events = parseEvents(execution.stdout);
+  const events = parseOpenCodeEvents(execution.stdout);
+  const modelOutput = extractAssistantModelOutput(events);
   const sessionID = events.find((event) => event.sessionID)?.sessionID || null;
   let exported = null;
   let exportResult = null;
@@ -278,6 +292,7 @@ export function executeGovernedRole(options) {
     resolution,
     execution,
     events,
+    model_output: modelOutput,
     session_id: sessionID,
     exported,
     export_result: exportResult,

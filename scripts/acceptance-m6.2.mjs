@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import '../test/test-qualification-engine.mjs';
 import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os'; import { join, resolve } from 'node:path';

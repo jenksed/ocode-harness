@@ -78,6 +78,18 @@ assert.equal(queryResult.completion_source, 'SESSION_IDLE_QUERY');
 assert.equal(queryResult.prompt_submissions, 1);
 console.log('✓ Authoritative session-status query closes the event race without duplicate inference');
 
+const stopped = fakeSdk({ events: [rawTool] });
+const stoppedResult = await runOpenCodeSdkSession({
+  projectDir: root, role: 'coder', providerID: 'freellmapi', modelID: 'auto:coding', prompt: 'bounded', config: {}, sdk: stopped.sdk, timeout: 500,
+  methodEvidenceGate: ({ events }) => events.some((event) => event.type === 'tool_use') ? { method_evidence_sufficient: true, proof: 'runtime' } : null,
+});
+assert.equal(stoppedResult.termination, 'METHOD_PROVEN_SESSION_STOPPED');
+assert.equal(stoppedResult.completion_source, 'METHOD_EVIDENCE_SUFFICIENT');
+assert.equal(stopped.aborted, 1);
+assert.equal(stoppedResult.events.filter((event) => event.type === 'tool_use').length, 1);
+assert.deepEqual(stoppedResult.method_evidence, { method_evidence_sufficient: true, proof: 'runtime' });
+console.log('✓ Runtime evidence gate aborts the SDK method session and preserves pre-stop events');
+
 const errored = fakeSdk({ events: [
   { type: 'session.error', properties: { sessionID: 's1', error: { name: 'failure' } } },
   { type: 'session.status', properties: { sessionID: 's1', status: { type: 'idle' } } },

@@ -391,6 +391,7 @@ export async function executeGovernedRoleSdk(options) {
     tools: options.sdkTools,
     sdk: options.sdk,
     title: options.title,
+    methodEvidenceGate: options.methodEvidenceGate,
   });
   const observed = execution.effective_identity?.provider_id
     || execution.effective_identity?.model_id
@@ -407,7 +408,7 @@ export async function executeGovernedRoleSdk(options) {
     : null;
   const reconciliation = reconcileExecutionBinding(resolution, observed);
   const subjectReconciliation = reconcileExecutionSubject(admittedSubject, observed);
-  const runtimeSucceeded = execution.termination === 'SESSION_IDLE'
+  const runtimeSucceeded = (execution.termination === 'SESSION_IDLE' || execution.termination === 'METHOD_PROVEN_SESSION_STOPPED')
     && execution.exit_code === 0
     && execution.completion_source !== null;
   const acceptance = evaluateGovernedExecutionAcceptance({

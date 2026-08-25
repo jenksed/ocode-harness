@@ -95,6 +95,9 @@ export async function runOpenCodeSdkSession(options) {
   let promptAccepted = false;
   let promptSubmissions = 0;
   let completionSource = null;
+  let methodCompletion = null;
+  let methodEvidence = null;
+  let controlledStopStarted = false;
   let cleanupComplete = false;
   const sdkEvents = [];
   let resolveCompletion;
@@ -125,6 +128,22 @@ export async function runOpenCodeSdkSession(options) {
           if (isSessionError(event, sessionID)) {
             rejectCompletion(new Error(`OPENCODE_SDK_SESSION_ERROR:${JSON.stringify(eventProperties(event)?.error ?? null)}`));
             return;
+          }
+          if (!controlledStopStarted && typeof options.methodEvidenceGate === 'function') {
+            const evaluated = await options.methodEvidenceGate({
+              event: normalizeOpenCodeSdkEvent(event),
+              events: sdkEvents.map(normalizeOpenCodeSdkEvent),
+              session_id: sessionID,
+            });
+            if (evaluated?.method_evidence_sufficient === true) {
+              controlledStopStarted = true;
+              methodEvidence = structuredClone(evaluated);
+              await client.session.abort({ path: { id: sessionID }, query: { directory: options.projectDir } });
+              methodCompletion = 'METHOD_PROVEN_SESSION_STOPPED';
+              completionSource = 'METHOD_EVIDENCE_SUFFICIENT';
+              resolveCompletion();
+              return;
+            }
           }
           if (promptAccepted && isSessionIdle(event, sessionID)) {
             completionSource = 'SESSION_IDLE_EVENT';
@@ -175,7 +194,7 @@ export async function runOpenCodeSdkSession(options) {
     return {
       command: ['opencode-sdk', 'session.promptAsync'],
       transport: 'OPENCODE_SDK',
-      termination: 'SESSION_IDLE',
+      termination: methodCompletion ?? 'SESSION_IDLE',
       completion_source: completionSource,
       exit_code: 0,
       signal: null,
@@ -187,6 +206,8 @@ export async function runOpenCodeSdkSession(options) {
       messages,
       model_output: extractAssistantOutputFromMessages(messages),
       effective_identity: identity,
+      method_completion: methodCompletion,
+      method_evidence: methodEvidence,
       prompt_submissions: promptSubmissions,
       cleanup: { subscription_aborted: true, server_closed: true },
     };
@@ -213,6 +234,8 @@ export async function runOpenCodeSdkSession(options) {
       messages: [],
       model_output: null,
       effective_identity: { provider_id: null, model_id: null, agent: null },
+      method_completion: methodCompletion,
+      method_evidence: methodEvidence,
       prompt_submissions: promptSubmissions,
       cleanup: { subscription_aborted: true, server_closed: true },
     };

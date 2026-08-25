@@ -1,7 +1,6 @@
 ---
 description: Independent read-only reviewer; inspects objective, diff, source, tests, regressions, and unsupported completion claims
 mode: subagent
-model: freellmapi/auto:smart
 temperature: 0.1
 steps: 20
 subagent_type: subagent

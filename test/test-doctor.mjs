@@ -6,7 +6,7 @@
 
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
-import { existsSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 
@@ -116,6 +116,23 @@ try {
     console.log('✓ Doctor fixture has installed OpenCode config');
   } else {
     console.error('✗ Doctor fixture missing installed OpenCode config');
+    failed = true;
+  }
+
+  const installedPlanner = join(testHome, '.config', 'opencode', 'agents', 'planner.md');
+  const plannerWithModel = readFileSync(installedPlanner, 'utf8')
+    .replace('mode: subagent\n', 'mode: subagent\nmodel: freellmapi/auto:planning\n');
+  writeFileSync(installedPlanner, plannerWithModel, 'utf8');
+  const providerCoupledDoctor = spawnSync(process.execPath, [join(repoRoot, 'scripts', 'doctor.mjs')], {
+    cwd: testProject,
+    env,
+    encoding: 'utf8',
+  });
+  if (providerCoupledDoctor.status !== 0 &&
+      `${providerCoupledDoctor.stdout}\n${providerCoupledDoctor.stderr}`.includes('contains model policy')) {
+    console.log('✓ Doctor fails when a canonical agent declares model policy');
+  } else {
+    console.error('✗ Doctor did not reject canonical agent model policy');
     failed = true;
   }
 } catch (err) {

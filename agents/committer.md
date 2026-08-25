@@ -1,7 +1,6 @@
 ---
 description: Cheap semantic closeout preparation
 mode: subagent
-model: freellmapi/mistral-small-4
 temperature: 0.1
 steps: 10
 subagent_type: subagent

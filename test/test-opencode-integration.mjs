@@ -13,38 +13,40 @@ console.log('=== Test OpenCode Integration Primitives ===\n');
 const profile = {
   schema_version: 1,
   name: 'm2_fixture',
+  policy_version: 1,
   bindings: {
     reviewer: 'openai/discovered-model',
-    coder: 'freellmapi/auto:coder',
+    coder: 'freellmapi/auto:coding',
   },
 };
 
 assert.equal(validateBindingProfile(profile), profile);
-assert.equal(getRoleBinding(profile, 'coder'), 'freellmapi/auto:coder');
+assert.equal(getRoleBinding(profile, 'coder'), 'freellmapi/auto:coding');
 console.log('✓ Profile schema and role lookup are deterministic');
 
 const overlay = buildOpenCodeRuntimeOverlay(profile);
 assert.deepEqual(overlay, {
   agent: {
-    coder: { model: 'freellmapi/auto:coder' },
+    coder: { model: 'freellmapi/auto:coding' },
     reviewer: { model: 'openai/discovered-model' },
   },
 });
 assert.equal(
   serializeOpenCodeRuntimeOverlay(profile),
-  '{"agent":{"coder":{"model":"freellmapi/auto:coder"},"reviewer":{"model":"openai/discovered-model"}}}',
+  '{"agent":{"coder":{"model":"freellmapi/auto:coding"},"reviewer":{"model":"openai/discovered-model"}}}',
 );
 assert.deepEqual(profile.bindings, {
   reviewer: 'openai/discovered-model',
-  coder: 'freellmapi/auto:coder',
+  coder: 'freellmapi/auto:coding',
 });
 console.log('✓ Overlay contains only sorted Ocode-owned agent model bindings');
 
 const reordered = {
   schema_version: 1,
   name: 'm2_fixture',
+  policy_version: 1,
   bindings: {
-    coder: 'freellmapi/auto:coder',
+    coder: 'freellmapi/auto:coding',
     reviewer: 'openai/discovered-model',
   },
 };

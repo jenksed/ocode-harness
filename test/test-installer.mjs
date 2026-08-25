@@ -44,6 +44,12 @@ writeFileSync(join(testConfigDir, 'opencode.json'), JSON.stringify({
       options: {
         apiKey: '{env:OPENAI_API_KEY}'
       }
+    },
+    freellmapi: {
+      models: {
+        'auto:orchestrator': { name: 'Legacy Ocode route' },
+        'user:custom': { name: 'User custom route' }
+      }
     }
   },
   agent: {
@@ -62,7 +68,7 @@ writeFileSync(join(testConfigDir, 'opencode.json'), JSON.stringify({
 // Copy agents
 const testAgentsDir = join(testConfigDir, 'agents');
 mkdirSync(testAgentsDir, { recursive: true });
-const agentFiles = ['orchestrator.md', 'planner.md', 'coder.md', 'verifier.md', 'reviewer.md', 'researcher.md', 'judge.md', 'committer.md'];
+const agentFiles = JSON.parse(readFileSync(join(agentsDir, 'manifest.json'), 'utf8')).roles.map((role) => role.file);
 for (const agentFile of agentFiles) {
   copyFileSync(join(agentsDir, agentFile), join(testAgentsDir, agentFile));
 }
@@ -241,9 +247,12 @@ try {
     'lib/composition.mjs',
     'lib/closeout.mjs',
     'lib/verify.mjs',
+    'lib/agent-contract.mjs',
     'lib/opencode-integration.mjs',
+    'lib/execution.mjs',
     'lib/deploy.mjs',
     'bin/harness.mjs',
+    'bin/ocode.mjs',
   ];
 
   console.log('\n=== Harness Runtime Package Checks ===\n');
@@ -281,6 +290,15 @@ try {
       console.log('✓ FreeLLMAPI baseURL comes from Ocode machine config default');
     } else {
       console.error('✗ FreeLLMAPI baseURL did not come from Ocode machine config default');
+      allPassed = false;
+    }
+
+    if (!opencodeConfig.provider?.freellmapi?.models?.['auto:orchestrator'] &&
+        opencodeConfig.provider?.freellmapi?.models?.['auto:default'] &&
+        opencodeConfig.provider?.freellmapi?.models?.['user:custom']) {
+      console.log('✓ obsolete Ocode model aliases removed while user model entries are preserved');
+    } else {
+      console.error('✗ Ocode model alias migration did not preserve ownership boundaries');
       allPassed = false;
     }
   }

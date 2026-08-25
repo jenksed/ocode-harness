@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "name": "hybrid",
+  "policy_version": 1,
+  "bindings": {
+    "orchestrator": "freellmapi/auto:default",
+    "planner": "openai/gpt-5.6-sol",
+    "coder": "freellmapi/auto:coding",
+    "researcher": "freellmapi/auto:research",
+    "verifier": "freellmapi/auto:verification",
+    "reviewer": "openai/gpt-5.6-sol",
+    "judge": "openai/gpt-5.6-sol",
+    "committer": "freellmapi/auto:utility"
+  }
+}

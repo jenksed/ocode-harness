@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "roles": [
+    {
+      "id": "fixture_editor",
+      "file": "fixture_editor.md",
+      "authority": {
+        "tier": "fixture",
+        "may_edit": false,
+        "may_stage": false,
+        "may_commit": false,
+        "may_push": false
+      },
+      "compatible_skills": [],
+      "governance": {
+        "human_facing": false,
+        "deterministic_git_authority": false
+      }
+    }
+  ]
+}

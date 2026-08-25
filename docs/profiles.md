@@ -1,31 +1,37 @@
-# Profiles
+# Production execution profiles
 
-Ocode profiles are provider/model binding policy, not OpenCode provider definitions.
-
-## Responsibility split
+Ocode profiles are deterministic semantic-role → OpenCode provider/model policy. They do not define provider credentials, choose FreeLLMAPI backends, score models, or implement fallback.
 
 | State | Owner | Location |
 | --- | --- | --- |
-| Stable provider definition and exposed models | Ocode-managed OpenCode config | `opencode-config/opencode.json` |
-| Semantic role to OpenCode provider/model binding | Ocode profile | `profiles/*.json` |
-| Active profile and machine-local endpoint/push policy | Machine config | `~/.config/ocode/config.json` |
-| Provider credentials and OpenAI OAuth | OpenCode | OpenCode credential store |
+| Governed role identity and authority metadata | Ocode | `agents/manifest.json` |
+| Semantic instructions and OpenCode permissions | Ocode | `agents/*.md` |
+| Role → provider/model policy | Ocode | `profiles/free.json`, `profiles/hybrid.json` |
+| Machine default | operator | `~/.config/ocode/config.json` |
+| Provider catalog, authentication, and execution | OpenCode | OpenCode configuration/credential store |
+| Free route backend selection | FreeLLMAPI | `auto:*` router |
 
-Profile schema version 1 is defined in `profiles/schema.json`:
+The machine default is selected by `profile` in the existing machine config. A launch override has precedence and is never persisted:
 
-```json
-{
-  "schema_version": 1,
-  "name": "hybrid",
-  "bindings": {
-    "planner": "openai/discovered-model",
-    "coder": "freellmapi/auto:coder"
-  }
-}
+```bash
+ocode
+ocode --profile free
+ocode --profile hybrid
 ```
 
-Each binding is an explicit OpenCode `provider/model` reference. The runtime validates the profile and produces only `agent.<role>.model` entries for `OPENCODE_CONFIG_CONTENT`. It does not score, route, retry, or inspect provider internals.
+The free profile binds all eight governed roles to the current FreeLLMAPI execution profiles: `auto:default`, `auto:planning`, `auto:coding`, `auto:research`, `auto:verification`, `auto:review`, `auto:reasoning`, and `auto:utility`. The hybrid profile uses `openai/gpt-5.6-sol` for Planner, Reviewer, and Judge and the corresponding FreeLLMAPI routes for the remaining roles. `auto:wayfinder` is catalogued for future use but Wayfinder is not a governed M3 role. Model changes belong only in these profiles.
 
-The former `default.json` and `freellmapi.json` files were removed in M2 because they duplicated provider definitions, mixed model catalogs with policy, and had no runtime consumer. M3 will add production `free.json` and `hybrid.json` profiles after completing the canonical role policy. Until then, the machine config's `profile` value is selection state, not an implemented launcher binding.
+Inspect policy without inference:
 
-See `docs/architecture/opencode-integration-contract.md` for the observed precedence and execution contract.
+```bash
+ocode profile
+ocode profile explain planner
+ocode profile explain reviewer
+ocode profile diff free hybrid
+```
+
+Each profile carries `schema_version`, `name`, `policy_version`, and explicit `bindings`. Validation rejects missing roles, unknown roles, malformed model references, unsupported schemas, and unknown fields. Before normal launch, Ocode confirms every requested model is visible in the corresponding OpenCode catalog. Failure denies execution; Ocode never substitutes another provider/model.
+
+If `OPENCODE_CONFIG_CONTENT` already exists, Ocode parses it and preserves unrelated keys and unrelated properties on governed agent entries. It owns only `agent.<governed-role>.model`. Malformed or structurally incompatible inline configuration fails closed.
+
+For bounded governed execution, an `ExecutionResolution` records the semantic contract fingerprint separately from profile policy. Sanitized OpenCode session export supplies the effective binding. Reconciliation is `MATCH`, `MISMATCH`, or `UNKNOWN`; mismatch is a policy failure, not an invitation to bypass managed configuration.

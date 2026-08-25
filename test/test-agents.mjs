@@ -12,16 +12,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const agentsDir = join(__dirname, '..', 'agents');
-const expectedAgents = [
-  'orchestrator.md',
-  'planner.md',
-  'coder.md',
-  'verifier.md',
-  'reviewer.md',
-  'researcher.md',
-  'judge.md',
-  'committer.md',
-];
+const manifestPath = join(agentsDir, 'manifest.json');
+const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+const expectedAgents = manifest.roles.map((role) => role.file);
 
 console.log('=== Test Agents ===\n');
 
@@ -33,13 +26,11 @@ if (!existsSync(agentsDir)) {
 
 console.log('Checking agents directory: ' + agentsDir + '\n');
 
-const manifestPath = join(agentsDir, 'manifest.json');
 if (!existsSync(manifestPath)) {
   console.error('✗ manifest.json not found');
   process.exit(1);
 }
 
-const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
 const manifestFiles = manifest.roles.map(role => role.file).sort();
 const expectedFiles = [...expectedAgents].sort();
 if (JSON.stringify(manifestFiles) === JSON.stringify(expectedFiles)) {
@@ -64,7 +55,7 @@ for (const agentFile of expectedAgents) {
       const content = readFileSync(agentPath, 'utf8');
 
       // Check for required fields
-      const requiredFields = ['---', 'description:', 'mode:', 'model:'];
+      const requiredFields = ['---', 'description:', 'mode:', 'permission:'];
 
       for (const field of requiredFields) {
         if (!content.includes(field)) {
@@ -144,19 +135,14 @@ if (existsSync(orchestratorPath)) {
   }
 }
 
-// Check judge for correct model
-const judgePath = join(agentsDir, 'judge.md');
-if (existsSync(judgePath)) {
-  const content = readFileSync(judgePath, 'utf8');
-
-  console.log('\n=== Judge Model ===\n');
-
-  if (content.includes('model: freellmapi/gemini-3.6-flash')) {
-    console.log('✓ Judge uses freellmapi/gemini-3.6-flash');
-  } else if (content.includes('model:')) {
-    console.warn(`⚠ Judge uses model: ${content.match(/model:\s*([^\n]+)/)?.[1] || 'unknown'}`);
+console.log('\n=== Provider-neutral Semantic Agents ===\n');
+for (const agentFile of expectedAgents) {
+  const content = readFileSync(join(agentsDir, agentFile), 'utf8');
+  if (/^model:/m.test(content)) {
+    console.error(`✗ ${agentFile} contains mutable provider/model policy`);
+    invalidAgents.push({ file: agentFile, field: 'model' });
   } else {
-    console.error('✗ Judge missing model field');
+    console.log(`✓ ${agentFile} has no model policy`);
   }
 }
 
@@ -164,7 +150,7 @@ if (existsSync(judgePath)) {
 console.log('\n=== Summary ===\n');
 
 if (missingAgents.length === 0 && invalidAgents.length === 0) {
-  console.log('✓ All 8 agents are present and valid');
+  console.log(`✓ All ${expectedAgents.length} manifest-governed agents are present, valid, and provider-neutral`);
   process.exit(0);
 } else {
   console.error(`✗ ${missingAgents.length} agent(s) missing`);

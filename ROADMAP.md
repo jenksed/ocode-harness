@@ -59,13 +59,26 @@ Observation plugin: DEFERRED — the public CLI/event/export surfaces provide th
 
 Acceptance: `npm run acceptance:m2`.
 
-M3 readiness: YES — profile schema, deterministic overlay builder, binding validation, fingerprints, tests, and migration notes exist. Production role policies and launcher application remain M3 work.
+M3 entry gate: SATISFIED — M2 supplied the profile schema, deterministic overlay builder, binding validation, fingerprints, tests, and migration evidence that M3 has now productionized.
 
-### M3 OpenCode-Native Provider Binding — PLANNED
+### M3 Production Execution Profiles and Execution Provenance — PROVEN
 
-Purpose: bind Ocode provider configuration to OpenCode-native mechanisms without proxying OpenAI subscription auth or copying OAuth/token material.
+Purpose: make deterministic free/hybrid role binding, fail-closed resolution, requested/effective execution evidence, and operator inspection part of normal Ocode operation.
 
 Depends on: M2.
+
+Evidence required:
+- canonical semantic agents contain no provider/model policy
+- `agents/manifest.json` is the structured governed-role inventory
+- `free` and `hybrid` bind every governed role explicitly
+- normal `ocode` uses Design C with machine default or non-persistent `--profile` override
+- invalid or unavailable bindings fail before inference where deterministically checkable
+- bounded governed runs reconcile requested policy with sanitized OpenCode export and reuse the project ledger
+- operator profile, role explanation, profile diff, and run explanation commands are operational
+- semantic fingerprints remain stable across free → hybrid → free switching
+- `npm run acceptance:m3` proves real provider execution and negative behavior
+
+M4 readiness: YES — deterministic normalized role, authority, permission, semantic fingerprint, execution-resolution, and contradiction-fixture inputs exist. No M4 capability ontology or enforcement policy is included.
 
 ### M4 Capability / Permission / Authority Contracts — PLANNED
 
@@ -113,7 +126,7 @@ Depends on: M9.
 
 M0 → M1 → M2 → M3 → M4 → M5 → M6 → M7 → M8 → M9 → M10
 
-M3–M10 remain planned. Placeholder directories or partial primitives do not imply implementation.
+M4–M10 remain planned. Placeholder directories or partial primitives do not imply implementation.
 
 ## Current Bootstrap Boundary
 

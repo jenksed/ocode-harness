@@ -18,6 +18,8 @@ import {
 import { execSync } from 'node:child_process';
 import { homedir } from 'node:os';
 import { env } from 'node:process';
+import { loadAgentContracts } from './agent-contract.mjs';
+import { loadBindingProfile } from './opencode-integration.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -44,6 +46,19 @@ export const DEFAULT_MACHINE_CONFIG = {
     push: false,
   },
 };
+
+const LEGACY_OCODE_FREELLMAPI_MODELS = [
+  'auto:smart',
+  'auto:fast',
+  'auto:balanced',
+  'auto:orchestrator',
+  'auto:planner',
+  'auto:coder',
+  'auto:reviewer',
+  'auto:researcher',
+  'auto:verifier',
+  'auto:judge',
+];
 
 /**
  * Read version from VERSION file
@@ -151,7 +166,7 @@ export function getFreellmapiBaseUrl(config = readMachineConfig()) {
   return config.freellmapi?.base_url || DEFAULT_MACHINE_CONFIG.freellmapi.base_url;
 }
 
-export function buildOwnedOpenCodeConfig(sourceConfigData, machineConfig = readMachineConfig()) {
+export function buildOwnedOpenCodeConfig(sourceConfigData, machineConfig = readMachineConfig(), governedRoles) {
   const ownedConfig = structuredClone(sourceConfigData);
   const baseURL = getFreellmapiBaseUrl(machineConfig);
 
@@ -159,13 +174,23 @@ export function buildOwnedOpenCodeConfig(sourceConfigData, machineConfig = readM
   ownedConfig.provider.freellmapi ??= {};
   ownedConfig.provider.freellmapi.options ??= {};
   ownedConfig.provider.freellmapi.options.baseURL = baseURL;
+  if (governedRoles) ownedConfig.task_allowlist = [...governedRoles];
 
   return ownedConfig;
 }
 
-export function mergeOpenCodeConfig(existingConfig, sourceConfigData, machineConfig = readMachineConfig()) {
-  const ownedConfig = buildOwnedOpenCodeConfig(sourceConfigData, machineConfig);
+export function mergeOpenCodeConfig(existingConfig, sourceConfigData, machineConfig = readMachineConfig(), governedRoles) {
+  const ownedConfig = buildOwnedOpenCodeConfig(sourceConfigData, machineConfig, governedRoles);
   const merged = deepMergeOwned(existingConfig || {}, ownedConfig);
+  const currentModels = ownedConfig.provider?.freellmapi?.models || {};
+  const mergedModels = merged.provider?.freellmapi?.models;
+  if (mergedModels) {
+    for (const model of LEGACY_OCODE_FREELLMAPI_MODELS) {
+      if (!Object.hasOwn(currentModels, model)) {
+        delete mergedModels[model];
+      }
+    }
+  }
   if (merged.provider?.freellmapi?.options) {
     delete merged.provider.freellmapi.options.apiKey;
   }
@@ -199,6 +224,9 @@ export function stageCandidate(sourceRoot, stagingDir, version) {
 
   // Copy agents
   copyDir(join(sourceRoot, 'agents'), join(stagingDir, 'agents'));
+
+  // Copy deterministic execution profiles
+  copyDir(join(sourceRoot, 'profiles'), join(stagingDir, 'profiles'));
 
   // Copy skills placeholder/owned skills when present
   copyDir(join(sourceRoot, 'skills'), join(stagingDir, 'skills'));
@@ -261,7 +289,7 @@ export function validateCandidate(stagingDir) {
   }
 
   // Check harness-runtime lib files
-  const harnessLibs = ['identity.mjs', 'lifecycle.mjs', 'ledger.mjs', 'evidence.mjs', 'composition.mjs', 'closeout.mjs', 'verify.mjs', 'opencode-integration.mjs'];
+  const harnessLibs = ['identity.mjs', 'lifecycle.mjs', 'ledger.mjs', 'evidence.mjs', 'composition.mjs', 'closeout.mjs', 'verify.mjs', 'agent-contract.mjs', 'opencode-integration.mjs', 'execution.mjs'];
   for (const lib of harnessLibs) {
     const libPath = join(harnessRuntimeDir, 'lib', lib);
     checks.push({ name: `harness-runtime lib/${lib}`, ok: existsSync(libPath) });
@@ -270,6 +298,7 @@ export function validateCandidate(stagingDir) {
   // Check harness-runtime bin
   const harnessBin = join(harnessRuntimeDir, 'bin', 'harness.mjs');
   checks.push({ name: 'harness-runtime bin/harness.mjs', ok: existsSync(harnessBin) });
+  checks.push({ name: 'harness-runtime bin/ocode.mjs', ok: existsSync(join(harnessRuntimeDir, 'bin', 'ocode.mjs')) });
 
   // Check doctrine
   const doctrineDir = join(stagingDir, 'doctrine');
@@ -295,15 +324,16 @@ export function validateCandidate(stagingDir) {
 
   // Check agents
   const agentsDir = join(stagingDir, 'agents');
-  const agentFiles = ['orchestrator.md', 'planner.md', 'coder.md', 'verifier.md', 'reviewer.md', 'researcher.md', 'judge.md', 'committer.md'];
-  let allAgentsFound = true;
-  for (const agent of agentFiles) {
-    const agentPath = join(agentsDir, agent);
-    if (!existsSync(agentPath)) {
-      allAgentsFound = false;
+  try {
+    const { manifest } = loadAgentContracts({ baseDir: stagingDir });
+    checks.push({ name: `agents (manifest-derived ${manifest.roles.length})`, ok: true });
+    for (const profileName of ['free', 'hybrid']) {
+      loadBindingProfile(profileName, { profilesDir: join(stagingDir, 'profiles'), manifest });
+      checks.push({ name: `profiles/${profileName}.json`, ok: true });
     }
+  } catch (err) {
+    checks.push({ name: 'manifest-derived agents and profiles', ok: false, error: err.message });
   }
-  checks.push({ name: 'agents (all 8)', ok: allAgentsFound });
   checks.push({ name: 'agents/manifest.json', ok: existsSync(join(agentsDir, 'manifest.json')) });
 
   // Check skills directory is staged when repository has one
@@ -422,6 +452,7 @@ export function installLaunchers(targetDir) {
 
   const orientationBin = join(targetDir, 'orientation', 'bin', 'orient.mjs');
   const harnessBin = join(targetDir, 'harness-runtime', 'bin', 'harness.mjs');
+  const ocodeBin = join(targetDir, 'harness-runtime', 'bin', 'ocode.mjs');
 
   // orient launcher
   const orientLauncher = join(binDir, 'orient');
@@ -437,35 +468,7 @@ exec node "${orientationBin}" "\${1:-\${PWD}}"
   const ocodeLauncher = join(binDir, 'ocode');
   const ocodeScript = `#!/bin/sh
 set -eu
-
-REQUESTED="\${PWD}"
-
-echo "=== PROJECT ORIENTATION ==="
-orient "\${REQUESTED}"
-
-dir="\${REQUESTED}"
-PROJECT_ROOT=""
-while true; do
-  if [ -f "\${dir}/.opencode/orientation.json" ] && [ -f "\${dir}/.opencode/orientation.md" ]; then
-    PROJECT_ROOT="\${dir}"
-    break
-  fi
-  [ "\${dir}" = "/" ] && break
-  dir="\$(dirname "\${dir}")"
-done
-
-if [ -z "\${PROJECT_ROOT}" ]; then
-  echo "ERROR: orientation completed but no orientation artifact was found." >&2
-  exit 1
-fi
-
-echo "=== ORIENTATION READY ==="
-echo "project root: \${PROJECT_ROOT}"
-echo "context:      \${PROJECT_ROOT}/.opencode/orientation.md"
-echo
-
-cd "\${PROJECT_ROOT}"
-exec env OPENCODE_ENABLE_EXA=1 opencode "\${@}"
+exec node "${ocodeBin}" "\${@}"
 `;
   writeFileSync(ocodeLauncher, ocodeScript, 'utf8');
   execSync(`chmod +x "${ocodeLauncher}"`, { stdio: 'inherit' });
@@ -518,13 +521,14 @@ export function patchOpenCodeConfig(stagingDir) {
 
   const sourceConfigData = JSON.parse(readFileSync(sourceConfig, 'utf8'));
   const machineConfig = ensureMachineConfig();
+  const governedRoles = loadAgentContracts({ baseDir: stagingDir }).manifest.roles.map((role) => role.id);
 
   let existingConfig = {};
   if (existsSync(CONFIG.opencodeConfig)) {
     existingConfig = JSON.parse(readFileSync(CONFIG.opencodeConfig, 'utf8'));
   }
 
-  const mergedConfig = mergeOpenCodeConfig(existingConfig, sourceConfigData, machineConfig);
+  const mergedConfig = mergeOpenCodeConfig(existingConfig, sourceConfigData, machineConfig, governedRoles);
 
   mkdirSync(dirname(CONFIG.opencodeConfig), { recursive: true });
   writeFileSync(CONFIG.opencodeConfig, JSON.stringify(mergedConfig, null, 2), 'utf8');
@@ -602,6 +606,7 @@ export function validatePostPromotion(targetDir) {
 
   // Check harness-runtime package
   checks.push({ name: 'harness-runtime package', ok: existsSync(CONFIG.harnessRuntimeDir) });
+  checks.push({ name: 'execution profiles', ok: existsSync(join(targetDir, 'profiles', 'free.json')) && existsSync(join(targetDir, 'profiles', 'hybrid.json')) });
 
   // Check opencode config
   checks.push({ name: 'opencode configuration', ok: existsSync(CONFIG.opencodeConfig) });

@@ -5,7 +5,8 @@
   "private": true,
   "type": "module",
   "bin": {
-    "harness": "bin/harness.mjs"
+    "harness": "bin/harness.mjs",
+    "ocode": "bin/ocode.mjs"
   },
   "scripts": {
     "test": "node ../../test/test-ledger.mjs && node ../../test/test-lifecycle.mjs && node ../../test/test-evidence.mjs && node ../../test/test-closeout.mjs && node ../../test/test-verify.mjs && node ../../test/test-opencode-integration.mjs"

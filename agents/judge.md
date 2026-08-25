@@ -1,7 +1,6 @@
 ---
 description: Scarce independent second opinion for unresolved technical disagreement after normal review/repair
 mode: subagent
-model: freellmapi/gemini-3.6-flash
 temperature: 0.1
 steps: 10
 subagent_type: subagent

@@ -47,7 +47,6 @@ try {
     '---',
     'description:',
     'mode:',
-    'model:',
     'temperature:',
     'steps:',
     'permission:',
@@ -59,8 +58,8 @@ try {
   // Test 4: Correct mode
   assert(content.includes('mode: subagent'), 'Mode is subagent');
 
-  // Test 5: Correct model (cheap/abundant)
-  assert(content.includes('model: freellmapi/mistral-small-4'), 'Uses mistral-small-4 model');
+  // Test 5: Deployment model policy is external to semantic source
+  assert(!/^model:/m.test(content), 'Contains no mutable provider/model policy');
 
   // Test 6: Low temperature for consistency
   assert(content.includes('temperature: 0.1'), 'Temperature is 0.1');
@@ -153,16 +152,8 @@ try {
   assert(copiedContent === content, 'Copied file content matches original');
 
   // Test 21: Verify committer is in the expected agents list
-  const expectedAgents = [
-    'orchestrator.md',
-    'planner.md',
-    'coder.md',
-    'verifier.md',
-    'reviewer.md',
-    'researcher.md',
-    'judge.md',
-    'committer.md',
-  ];
+  const manifest = JSON.parse(readFileSync(join(agentsDir, 'manifest.json'), 'utf8'));
+  const expectedAgents = manifest.roles.map((role) => role.file);
   for (const agent of expectedAgents) {
     const agentPath = join(agentsDir, agent);
     assert(existsSync(agentPath), `Agent exists: ${agent}`);
@@ -173,9 +164,9 @@ try {
   // The key check is that edit: deny is explicitly set
   assert(content.includes('edit: deny'), 'Edit explicitly denied');
 
-  // Test 23: Verify model is a cheap/abundant model (mistral-small-4)
+  // Test 23: Verify model is absent from semantic contract
   const modelMatch = content.match(/model:\s*([^\n]+)/);
-  assert(modelMatch && modelMatch[1].includes('mistral-small'), 'Uses small/cheap model');
+  assert(modelMatch === null, 'Execution model is selected by profile policy');
 
   // Test 24: Verify temperature is low for deterministic output
   const tempMatch = content.match(/temperature:\s*([^\n]+)/);

@@ -60,6 +60,7 @@ copyFileSync(join(harnessRuntimeDir, 'lib', 'evidence.mjs'), join(testHarnessRoo
 copyFileSync(join(harnessRuntimeDir, 'lib', 'composition.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'composition.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'lib', 'closeout.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'closeout.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'lib', 'verify.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'verify.mjs'));
+copyFileSync(join(harnessRuntimeDir, 'lib', 'agent-contract.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'agent-contract.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'lib', 'opencode-integration.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'opencode-integration.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'lib', 'deploy.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'deploy.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'bin', 'harness.mjs'), join(testHarnessRoot, 'harness-runtime', 'bin', 'harness.mjs'));
@@ -79,7 +80,7 @@ if (existsSync(rootNodeModules)) {
 // Copy agents
 const testAgentsDir = join(testConfigDir, 'agents');
 mkdirSync(testAgentsDir, { recursive: true });
-const agentFiles = ['orchestrator.md', 'planner.md', 'coder.md', 'verifier.md', 'reviewer.md', 'researcher.md', 'judge.md', 'committer.md'];
+const agentFiles = JSON.parse(readFileSync(join(agentsDir, 'manifest.json'), 'utf8')).roles.map((role) => role.file);
 for (const agentFile of agentFiles) {
   copyFileSync(join(agentsDir, agentFile), join(testAgentsDir, agentFile));
 }

@@ -120,7 +120,8 @@ function discoverModels(provider) {
 }
 
 function chooseFreeLLMAPIModel(models) {
-  return models.find((model) => model === 'freellmapi/auto:smart')
+  return models.find((model) => model === 'freellmapi/auto:default')
+    || models.find((model) => model === 'freellmapi/auto:smart')
     || models.find((model) => model.startsWith('freellmapi/auto:'))
     || models[0];
 }
@@ -195,6 +196,7 @@ function executeNegativeDiagnostic(projectDir) {
   const profile = {
     schema_version: 1,
     name: 'm2_negative',
+    policy_version: 1,
     bindings: { [agentID]: unavailableModel },
   };
   const overlay = serializeOpenCodeRuntimeOverlay(profile);
@@ -281,16 +283,19 @@ try {
   const freeProfile = {
     schema_version: 1,
     name: 'm2_free',
+    policy_version: 1,
     bindings: { [agentID]: freeModel },
   };
   const hybridProfile = {
     schema_version: 1,
     name: 'm2_openai',
+    policy_version: 1,
     bindings: { [agentID]: openAIModel },
   };
   const staticOverrideProfile = {
     schema_version: 1,
     name: 'm2_static_override',
+    policy_version: 1,
     bindings: { [staticAgentID]: openAIModel },
   };
 

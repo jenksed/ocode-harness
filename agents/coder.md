@@ -1,7 +1,6 @@
 ---
 description: Implements bounded repository changes, tests them, and returns evidence without claiming unsupported completion
 mode: subagent
-model: freellmapi/auto:smart
 temperature: 0.1
 steps: 40
 subagent_type: subagent

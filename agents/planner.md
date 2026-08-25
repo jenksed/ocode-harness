@@ -1,7 +1,6 @@
 ---
 description: Plans non-trivial implementation work against repository reality, contracts, dependencies, and acceptance evidence
 mode: subagent
-model: freellmapi/auto:smart
 temperature: 0.1
 steps: 18
 subagent_type: subagent

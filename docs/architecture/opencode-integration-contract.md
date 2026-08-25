@@ -17,6 +17,10 @@ opencode run --agent <semantic-role> --format json <bounded prompt>
 
 The JSON stream yields a session ID and bounded execution/result events. Ocode can join that ID to `opencode export <session-id> --sanitize` when it needs the effective agent/provider/model record. `--pure` is used by M2 acceptance to prove no external plugin is required; it is not yet mandated for every production run.
 
+M3 applies this seam in the normal `ocode` launcher. It loads the machine default or `--profile` override, validates the manifest-complete profile and visible catalogs, merges only governed `agent.<role>.model` keys into any existing inline configuration, and then launches normal OpenCode interaction.
+
+**OBSERVED:** OpenCode 1.18.21 falls back to the configured primary agent when `opencode run --agent <subagent>` names a role whose canonical mode is `subagent`. M3 bounded governed execution adds an ephemeral `mode: primary` for only the explicitly invoked role. Sanitized export then records that role and its requested binding. Normal interactive launch and canonical agent source are unchanged.
+
 ## AGENT RESOLUTION
 
 - **OBSERVED:** An explicit `--agent ocode-m2-diagnostic` resolved a project-local `.opencode/agents/ocode-m2-diagnostic.md` fixture.
@@ -42,6 +46,7 @@ Ocode binding profiles contain only `semantic-role -> provider/model`. The deter
 - **OBSERVED:** The same model-neutral diagnostic contract returned `OCODE_M2_DIAGNOSTIC_OK` through FreeLLMAPI and OpenAI.
 - **OBSERVED:** An inline OpenAI binding overrode an equivalent diagnostic Markdown agent whose frontmatter declared `model: freellmapi/auto:smart`; `acceptance:m2` retains and replays this fixture.
 - Ocode does not select FreeLLMAPI's underlying provider, proxy OpenAI, or own either provider's credentials.
+- M3 production profiles are `profiles/free.json` and `profiles/hybrid.json`; all canonical agent Markdown is model-neutral.
 
 ## CONFIGURATION PRECEDENCE USED BY OCODE
 
@@ -54,7 +59,7 @@ No broader precedence matrix is part of this contract.
 
 ## CONFIGURATION OWNERSHIP/ISOLATION
 
-- The runtime overlay contains only Ocode-owned `agent.<role>.model` entries.
+- The normal interactive runtime overlay contains only Ocode-owned `agent.<role>.model` entries. Bounded direct role execution additionally owns the selected role's ephemeral `mode: primary` key for the OpenCode 1.18.21 behavior documented above.
 - **OBSERVED:** M2 acceptance hashes `config.json`, `opencode.json`, and `opencode.jsonc` before and after real runs; all hashes remained unchanged.
 - Stable FreeLLMAPI provider definitions remain in `opencode-config/opencode.json` and use the existing ownership-aware persistent merge.
 - Authentication remains in OpenCode's credential store. M2 never reads, copies, exports, or clones credentials.
@@ -92,6 +97,8 @@ The raw stream alone does not identify the agent/provider/model. The supported s
 Binding the diagnostic agent to `ocode-m2-missing/no-model` produced exit code 1 and a JSON `error` event with a session ID. OpenCode 1.18.21 labels this public error `UnknownError` with a bounded message; the requested provider/model remains known from the deterministic overlay and is recorded in the session when exportable.
 
 This maps to an Ocode execution/infrastructure failure. Provider recovery and fallback are deferred.
+
+M3 adds a stricter pre-inference availability check for production profile bindings. A missing catalog entry is a `BINDING_ERROR`; runtime provider/endpoint failure is `INFRASTRUCTURE_FAILURE`; requested/effective disagreement is `BINDING_MISMATCH`. Every case preserves `fallback: deny`.
 
 ## KNOWN-GOOD VERSION POLICY
 

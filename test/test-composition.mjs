@@ -58,11 +58,11 @@ try {
   assert(DOCTRINE_VERSION === '1', 'DOCTRINE_VERSION is "1"');
 
   // Test 2: ROLE_REGISTRY has all expected roles
-  const expectedRoles = ['orchestrator', 'planner', 'coder', 'researcher', 'verifier', 'reviewer', 'judge', 'committer'];
   const baseDirForRoles = resolve(__dirname, '..');
   const manifest = loadRoleManifest(baseDirForRoles);
+  const expectedRoles = manifest.roles.map((role) => role.id);
   assert(manifest.schema_version === 1, 'Agent manifest has schema_version 1');
-  assert(manifest.roles.length === expectedRoles.length, 'Agent manifest lists 8 roles');
+  assert(manifest.roles.length === expectedRoles.length, 'Expected roles derive from the agent manifest');
 
   for (const role of expectedRoles) {
     assert(ROLE_REGISTRY[role] !== undefined, `ROLE_REGISTRY has role: ${role}`);
@@ -90,7 +90,7 @@ try {
   // Test 4: listRoles function
   const roles = listRoles();
   assert(Array.isArray(roles), 'listRoles returns array');
-  assert(roles.length === 8, 'listRoles returns 8 roles');
+  assert(roles.length === expectedRoles.length, 'listRoles returns every manifest role');
   for (const role of expectedRoles) {
     assert(roles.includes(role), `listRoles includes ${role}`);
   }
@@ -212,7 +212,7 @@ try {
     const frontmatter = ROLE_REGISTRY[role].frontmatter;
     assert(frontmatter.includes('description:'), `${role} frontmatter has description`);
     assert(frontmatter.includes('mode:'), `${role} frontmatter has mode`);
-    assert(frontmatter.includes('model:'), `${role} frontmatter has model`);
+    assert(!frontmatter.includes('\nmodel:'), `${role} frontmatter is provider-neutral`);
     assert(frontmatter.includes('temperature:'), `${role} frontmatter has temperature`);
     assert(frontmatter.includes('steps:'), `${role} frontmatter has steps`);
     assert(frontmatter.includes('subagent_type:'), `${role} frontmatter has subagent_type`);
@@ -239,8 +239,8 @@ try {
   assert(reviewerFm.includes('npm test'), 'Reviewer allows npm test');
   assert(reviewerFm.includes('git diff'), 'Reviewer allows git diff');
 
-  // Test 21: Committer uses cheap model
-  assert(ROLE_REGISTRY.committer.frontmatter.includes('mistral-small'), 'Committer uses mistral-small model');
+  // Test 21: Committer semantics do not own deployment model policy
+  assert(!ROLE_REGISTRY.committer.frontmatter.includes('\nmodel:'), 'Committer is provider-neutral');
 
   // Test 22: All roles have subagent_type: subagent except orchestrator
   for (const role of expectedRoles) {

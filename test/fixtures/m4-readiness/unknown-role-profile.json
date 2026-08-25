@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "name": "unknown_role_fixture",
+  "policy_version": 1,
+  "bindings": {
+    "not_in_manifest": "freellmapi/auto:utility"
+  }
+}

@@ -18,8 +18,11 @@ import {
 } from '../packages/harness-runtime/lib/deploy.mjs';
 import {
   buildOpenCodeRuntimeOverlay,
+  fingerprintBindingProfile,
+  loadBindingProfile,
   serializeOpenCodeRuntimeOverlay,
 } from '../packages/harness-runtime/lib/opencode-integration.mjs';
+import { loadAgentContracts } from '../packages/harness-runtime/lib/agent-contract.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -77,8 +80,9 @@ function checkOpenCodeBindingOverlay() {
     const profile = {
       schema_version: 1,
       name: 'doctor',
+      policy_version: 1,
       bindings: {
-        'ocode-doctor-diagnostic': 'freellmapi/auto:smart',
+        'ocode-doctor-diagnostic': 'freellmapi/auto:default',
       },
     };
     const overlay = buildOpenCodeRuntimeOverlay(profile);
@@ -86,7 +90,7 @@ function checkOpenCodeBindingOverlay() {
     const expected = {
       agent: {
         'ocode-doctor-diagnostic': {
-          model: 'freellmapi/auto:smart',
+          model: 'freellmapi/auto:default',
         },
       },
     };
@@ -165,16 +169,18 @@ function checkAgents() {
 
   console.log(`✓ Agents directory found: ${CONFIG.agentsDir}`);
 
-  const agentFiles = [
-    'orchestrator.md',
-    'planner.md',
-    'coder.md',
-    'verifier.md',
-    'reviewer.md',
-    'researcher.md',
-    'judge.md',
-    'committer.md',
-  ];
+  const baseDir = findSourceRepo(process.cwd()) || CONFIG.harnessRoot;
+  let agentFiles;
+  try {
+    agentFiles = loadAgentContracts({
+      baseDir,
+      agentsDir: CONFIG.agentsDir,
+      manifestPath: join(baseDir, 'agents', 'manifest.json'),
+    }).manifest.roles.map((role) => role.file);
+  } catch (err) {
+    console.error(`✗ Manifest-derived agent contract validation failed: ${err.message}`);
+    return false;
+  }
 
   let allFound = true;
   for (const agentFile of agentFiles) {
@@ -188,6 +194,46 @@ function checkAgents() {
   }
 
   return allFound;
+}
+
+function checkExecutionProfilesAndContracts() {
+  printSection('Checking M3 execution profiles and agent contracts...');
+  const baseDir = findSourceRepo(process.cwd()) || CONFIG.harnessRoot;
+  try {
+    const { manifest, contracts } = loadAgentContracts({
+      baseDir,
+      agentsDir: CONFIG.agentsDir,
+      manifestPath: join(baseDir, 'agents', 'manifest.json'),
+    });
+    const machineConfig = readMachineConfig(CONFIG.machineConfig);
+    for (const profileName of ['free', 'hybrid']) {
+      const { profile } = loadBindingProfile(profileName, {
+        profilesDir: join(baseDir, 'profiles'),
+        manifest,
+      });
+      console.log(`  ✓ ${profileName}: ${fingerprintBindingProfile(profile).slice(0, 12)} (${manifest.roles.length} explicit bindings)`);
+      if (profileName === 'free' && Object.values(profile.bindings).some((binding) => binding.startsWith('openai/'))) {
+        throw new Error('free profile contains an OpenAI binding');
+      }
+    }
+    if (!['free', 'hybrid'].includes(machineConfig.profile)) {
+      throw new Error(`Unknown active machine profile: ${machineConfig.profile}`);
+    }
+    for (const contract of contracts.values()) {
+      if (contract.declared_model !== null) {
+        throw new Error(`Canonical agent ${contract.id} contains model policy`);
+      }
+      if (!/^[0-9a-f]{64}$/.test(contract.contract_fingerprint)) {
+        throw new Error(`Canonical agent ${contract.id} fingerprint is invalid`);
+      }
+    }
+    console.log(`✓ Active profile '${machineConfig.profile}' exists and all canonical agents are provider-neutral`);
+    console.log('✓ Manifest authority, OpenCode permissions, semantic content, and fingerprints parse deterministically');
+    return true;
+  } catch (err) {
+    console.error(`✗ M3 profile/contract check failed: ${err.message}`);
+    return false;
+  }
 }
 
 function checkOrchestratorConfig() {
@@ -204,6 +250,7 @@ function checkOrchestratorConfig() {
 
   try {
     const opencodeConfig = JSON.parse(readFileSync(CONFIG.opencodeConfig, 'utf8'));
+    let healthy = true;
 
     // Check subagent_depth
     if (opencodeConfig.subagent_depth === 1) {
@@ -211,24 +258,32 @@ function checkOrchestratorConfig() {
     } else {
       console.error('  ✗ subagent_depth should be 1');
       console.error(`    Current value: ${opencodeConfig.subagent_depth}`);
+      healthy = false;
     }
 
     // Check task_allowlist
-    if (opencodeConfig.task_allowlist) {
-      const harnessAgents = ['planner', 'coder', 'researcher', 'verifier', 'reviewer', 'judge', 'committer'];
-      const hasGenericAgents = harnessAgents.some(agent => !opencodeConfig.task_allowlist.includes(agent));
+    if (Array.isArray(opencodeConfig.task_allowlist)) {
+      const baseDir = findSourceRepo(process.cwd()) || CONFIG.harnessRoot;
+      const governedRoles = loadAgentContracts({ baseDir }).manifest.roles.map((role) => role.id);
+      const governedSet = new Set(governedRoles);
+      const missing = governedRoles.filter((role) => !opencodeConfig.task_allowlist.includes(role));
+      const unknown = opencodeConfig.task_allowlist.filter((role) => !governedSet.has(role));
 
-      if (hasGenericAgents) {
-        console.error('  ✗ task_allowlist should only include harness subagents');
+      if (missing.length > 0 || unknown.length > 0) {
+        console.error('  ✗ task_allowlist must exactly match manifest-governed roles');
         console.error(`    Current allowlist: ${opencodeConfig.task_allowlist.join(', ')}`);
+        if (missing.length > 0) console.error(`    Missing: ${missing.join(', ')}`);
+        if (unknown.length > 0) console.error(`    Unknown: ${unknown.join(', ')}`);
+        healthy = false;
       } else {
-        console.log('  ✓ task_allowlist includes only harness subagents');
+        console.log('  ✓ task_allowlist exactly matches manifest-governed roles');
       }
     } else {
-      console.warn('  ⚠ task_allowlist not set (using default)');
+      console.error('  ✗ task_allowlist is missing or malformed');
+      healthy = false;
     }
 
-    return opencodeConfig.subagent_depth === 1;
+    return healthy;
   } catch (err) {
     console.error('✗ Could not parse opencode configuration');
     return false;
@@ -487,16 +542,7 @@ function checkManagedAgentIdentity() {
   }
 
   const hash = path => createHash('sha256').update(readFileSync(path)).digest('hex');
-  const agentFiles = [
-    'orchestrator.md',
-    'planner.md',
-    'coder.md',
-    'verifier.md',
-    'reviewer.md',
-    'researcher.md',
-    'judge.md',
-    'committer.md',
-  ];
+  const agentFiles = loadAgentContracts({ baseDir: sourceRoot }).manifest.roles.map((role) => role.file);
   let matches = true;
 
   for (const agentFile of agentFiles) {
@@ -528,7 +574,7 @@ function checkCommitterAgent() {
     // Validate committer agent content
     try {
       const content = readFileSync(committerPath, 'utf8');
-      const requiredFields = ['---', 'description:', 'mode:', 'model:', 'permission:'];
+      const requiredFields = ['---', 'description:', 'mode:', 'permission:'];
       let allValid = true;
       for (const field of requiredFields) {
         if (!content.includes(field)) {
@@ -536,10 +582,10 @@ function checkCommitterAgent() {
           allValid = false;
         }
       }
-      if (content.includes('mode: subagent') && content.includes('model: freellmapi/')) {
-        console.log('  ✓ Committer agent has correct mode and model');
+      if (content.includes('mode: subagent') && !/^model:/m.test(content)) {
+        console.log('  ✓ Committer agent has correct mode and provider-neutral semantics');
       } else {
-        console.error('  ✗ Committer agent missing correct mode/model');
+        console.error('  ✗ Committer agent has incorrect mode or embedded model policy');
         allValid = false;
       }
       return allValid;
@@ -581,7 +627,7 @@ function checkHarnessRuntime() {
   }
 
   // Check lib files
-  const libFiles = ['identity.mjs', 'lifecycle.mjs', 'ledger.mjs', 'evidence.mjs', 'composition.mjs', 'closeout.mjs', 'verify.mjs', 'opencode-integration.mjs'];
+  const libFiles = ['identity.mjs', 'lifecycle.mjs', 'ledger.mjs', 'evidence.mjs', 'composition.mjs', 'closeout.mjs', 'verify.mjs', 'agent-contract.mjs', 'opencode-integration.mjs', 'execution.mjs'];
   let allLibFound = true;
   for (const libFile of libFiles) {
     const libPath = join(CONFIG.harnessRuntimeDir, 'lib', libFile);
@@ -812,6 +858,7 @@ async function main() {
   const checks = [
     checkOpencode,
     checkOpenCodeBindingOverlay,
+    checkExecutionProfilesAndContracts,
     checkNode,
     checkGit,
     checkAgents,

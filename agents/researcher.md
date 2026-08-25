@@ -1,7 +1,6 @@
 ---
 description: Researches current external documentation, APIs, libraries, standards, and upstream implementation evidence
 mode: subagent
-model: freellmapi/auto:smart
 temperature: 0.2
 steps: 20
 subagent_type: subagent

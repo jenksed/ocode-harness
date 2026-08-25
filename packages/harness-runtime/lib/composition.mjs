@@ -1,6 +1,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { dirname, resolve, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { loadAgentManifest, parseAgentMarkdown } from './agent-contract.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -127,18 +128,8 @@ export function loadDoctrine(baseDir) {
  * @returns {{ frontmatter: string, body: string }}
  */
 export function parseFrontmatter(content) {
-  const fmMatch = content.match(/^(---\n[\s\S]*?\n---\n?)/);
-  if (!fmMatch) {
-    throw new Error('Malformed agent file: frontmatter block (--- ... ---) not found or malformed');
-  }
-
-  const frontmatter = fmMatch[1];
-  const body = content.slice(frontmatter.length).trimStart();
-  if (body.length === 0) {
-    throw new Error('Malformed agent file: missing body after frontmatter');
-  }
-
-  return { frontmatter, body };
+  const parsed = parseAgentMarkdown(content);
+  return { frontmatter: parsed.frontmatter, body: parsed.body };
 }
 
 function extractDescription(frontmatter) {
@@ -159,32 +150,7 @@ export function loadRoleManifest(baseDir) {
     throw new Error(`Agent manifest not found: ${manifestPath}`);
   }
 
-  let manifest;
-  try {
-    manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
-  } catch (err) {
-    throw new Error(`Malformed agent manifest: ${err.message}`);
-  }
-
-  if (manifest.schema_version !== 1) {
-    throw new Error('Agent manifest schema_version must be 1');
-  }
-  if (!Array.isArray(manifest.roles) || manifest.roles.length === 0) {
-    throw new Error('Agent manifest must define a non-empty roles array');
-  }
-
-  const ids = new Set();
-  for (const role of manifest.roles) {
-    if (!role.id || !role.file) {
-      throw new Error('Agent manifest role entries require id and file');
-    }
-    if (ids.has(role.id)) {
-      throw new Error(`Duplicate role id in agent manifest: ${role.id}`);
-    }
-    ids.add(role.id);
-  }
-
-  return manifest;
+  return loadAgentManifest(manifestPath);
 }
 
 /**

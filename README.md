@@ -81,9 +81,22 @@ This creates:
 
 ```bash
 ocode
+ocode --profile free
+ocode --profile hybrid
 ```
 
-This runs orientation and starts opencode with orientation context.
+This runs orientation, resolves the machine default or per-launch override, validates every governed binding, and starts OpenCode with the Design C runtime overlay. Overrides never persist.
+
+Inspect execution policy without inference:
+
+```bash
+ocode profile
+ocode profile explain reviewer
+ocode profile diff free hybrid
+ocode explain --run <run-id>
+```
+
+Canonical agents are provider-neutral. `agents/manifest.json` owns the structured role inventory; `profiles/*.json` owns model policy. Binding failures deny execution and there is no silent cross-provider fallback.
 
 ### Run Tests
 

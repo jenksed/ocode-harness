@@ -44,6 +44,34 @@ function validateRecord(record) {
     if (typeof record.closeout.committed !== 'boolean') throw new Error('closeout.committed must be boolean');
     if (typeof record.closeout.pushed !== 'boolean') throw new Error('closeout.pushed must be boolean');
   }
+  if (record.execution_provenance !== null && record.execution_provenance !== undefined) {
+    const provenance = record.execution_provenance;
+    if (provenance.schema_version !== 1) throw new Error('execution_provenance.schema_version must be 1');
+    if (!provenance.subject || typeof provenance.subject.role !== 'string') {
+      throw new Error('execution_provenance.subject.role must be a string');
+    }
+    if (typeof provenance.subject.contract_fingerprint !== 'string') {
+      throw new Error('execution_provenance.subject.contract_fingerprint must be a string');
+    }
+    if (!provenance.execution_policy || typeof provenance.execution_policy.profile !== 'string') {
+      throw new Error('execution_provenance.execution_policy.profile must be a string');
+    }
+    if (!Number.isInteger(provenance.execution_policy.policy_version)) {
+      throw new Error('execution_provenance.execution_policy.policy_version must be an integer');
+    }
+    for (const field of ['profile_fingerprint', 'requested_model', 'binding_source', 'fallback']) {
+      if (typeof provenance.execution_policy[field] !== 'string') {
+        throw new Error(`execution_provenance.execution_policy.${field} must be a string`);
+      }
+    }
+    if (!['MATCH', 'MISMATCH', 'UNKNOWN'].includes(provenance.binding_reconciliation)) {
+      throw new Error('execution_provenance.binding_reconciliation is invalid');
+    }
+    if (typeof provenance.success !== 'boolean') throw new Error('execution_provenance.success must be boolean');
+    if (provenance.effective_model !== null && typeof provenance.effective_model !== 'string') {
+      throw new Error('execution_provenance.effective_model must be a string or null');
+    }
+  }
 }
 
 export function createLedgerRecord(params) {
@@ -80,7 +108,8 @@ export function createLedgerRecord(params) {
     provider: params.provider || null,
     elapsed_ms: params.elapsed_ms || null,
     infrastructure_failures: params.infrastructure_failures || [],
-    retry_counts: params.retry_counts || {}
+    retry_counts: params.retry_counts || {},
+    execution_provenance: params.execution_provenance || null,
   };
   
   validateRecord(record);
@@ -129,6 +158,10 @@ export function getLatestRecord(ledgerPath) {
 export function getRecentRecords(ledgerPath, count = 10) {
   const records = readRecords(ledgerPath);
   return records.slice(-count);
+}
+
+export function getRecordByRunId(ledgerPath, runId) {
+  return readRecords(ledgerPath).find((record) => record.run_id === runId) || null;
 }
 
 export { LEDGER_SCHEMA_VERSION};

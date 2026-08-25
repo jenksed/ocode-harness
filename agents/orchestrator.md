@@ -1,7 +1,6 @@
 ---
 description: Human-facing engineering coordinator; delegates implementation and returns one evidence-backed result
 mode: primary
-model: freellmapi/auto:smart
 temperature: 0.1
 steps: 40
 subagent_type: subagent

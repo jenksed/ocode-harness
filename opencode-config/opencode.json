@@ -498,71 +498,71 @@
             "output": 8192
           }
         },
-        "auto:smart": {
-          "name": "FreeLLMAPI Smart Router",
+        "auto:default": {
+          "name": "Default",
           "limit": {
             "context": 128000,
             "output": 8192
           }
         },
-        "auto:fast": {
-          "name": "FreeLLMAPI Fast Router",
+        "auto:planning": {
+          "name": "planning",
           "limit": {
             "context": 128000,
             "output": 8192
           }
         },
-        "auto:balanced": {
-          "name": "FreeLLMAPI Balanced Router",
+        "auto:review": {
+          "name": "review",
           "limit": {
             "context": 128000,
             "output": 8192
           }
         },
-        "auto:orchestrator": {
-          "name": "FreeLLMAPI Orchestrator Profile",
+        "auto:research": {
+          "name": "research",
           "limit": {
             "context": 128000,
             "output": 8192
           }
         },
-        "auto:planner": {
-          "name": "FreeLLMAPI Planner Profile",
+        "auto:verification": {
+          "name": "verification",
           "limit": {
             "context": 128000,
             "output": 8192
           }
         },
-        "auto:coder": {
-          "name": "FreeLLMAPI Coder Profile",
+        "auto:fast-worker": {
+          "name": "fast-worker",
           "limit": {
             "context": 128000,
             "output": 8192
           }
         },
-        "auto:reviewer": {
-          "name": "FreeLLMAPI Reviewer Profile",
+        "auto:wayfinder": {
+          "name": "wayfinder",
           "limit": {
             "context": 128000,
             "output": 8192
           }
         },
-        "auto:researcher": {
-          "name": "FreeLLMAPI Researcher Profile",
+        "auto:coding": {
+          "name": "coding",
           "limit": {
             "context": 128000,
             "output": 8192
           }
         },
-        "auto:verifier": {
-          "name": "FreeLLMAPI Verifier Profile",
+        "auto:reasoning": {
+          "name": "reasoning",
           "limit": {
             "context": 128000,
             "output": 8192
           }
         },
-        "auto:judge": {
-          "name": "FreeLLMAPI Judge Profile",
+        "auto:utility": {
+          "name": "utility",
           "limit": {
             "context": 128000,
             "output": 8192
@@ -572,15 +572,5 @@
     }
   },
   "default_agent": "orchestrator",
-  "subagent_depth": 1,
-  "task_allowlist": [
-    "planner",
-    "coder",
-    "researcher",
-    "verifier",
-    "reviewer",
-    "judge",
-    "committer",
-    "orchestrator"
-  ]
+  "subagent_depth": 1
 }

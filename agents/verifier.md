@@ -1,7 +1,6 @@
 ---
 description: Independently executes repository validation and returns validationEvidence object without modifying source
 mode: subagent
-model: freellmapi/auto:smart
 temperature: 0.0
 steps: 15
 subagent_type: subagent

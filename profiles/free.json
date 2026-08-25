@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "name": "free",
+  "policy_version": 1,
+  "bindings": {
+    "orchestrator": "freellmapi/auto:default",
+    "planner": "freellmapi/auto:planning",
+    "coder": "freellmapi/auto:coding",
+    "researcher": "freellmapi/auto:research",
+    "verifier": "freellmapi/auto:verification",
+    "reviewer": "freellmapi/auto:review",
+    "judge": "freellmapi/auto:reasoning",
+    "committer": "freellmapi/auto:utility"
+  }
+}

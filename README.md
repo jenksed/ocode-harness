@@ -13,7 +13,7 @@ ocode-harness provides a structured workflow for engineering work, ensuring evid
 - **Verifier**: Independently executes repository validation
 - **Reviewer**: Independent read-only review of changes
 - **Judge**: Scarce independent second opinion for technical disagreement
-- **Committer**: Prepares semantic closeout data and performs Git commits
+- **Committer**: Prepares semantic closeout data; deterministic runtime owns Git mutation
 
 ## Features
 
@@ -142,6 +142,7 @@ code-harness backup delete 1
 ## Documentation
 
 - [Architecture](docs/architecture.md) - System design and component relationships
+- [Governance contracts](docs/architecture/governance-contracts.md) - M4A capability, authority, permission, identity, governance, and admission language
 - [Installation](docs/installation.md) - Detailed installation and troubleshooting guide
 - [Profiles](docs/profiles.md) - Configuration profiles and customization
 - [Doctor](docs/doctor.md) - Health checks and troubleshooting
@@ -278,6 +279,8 @@ The closeout gates require `validationEvidence.status === 'PASS'` for STANDARD/D
 ### Permission System
 
 Each agent has a defined permission set that controls what actions it can perform. The orchestrator denies generic Task invocations and only allows harness subagents.
+
+Each manifest-governed role also has a versioned semantic capability declaration. Capabilities describe what work a role is equipped to perform; they do not grant constitutional authority. OpenCode permission remains a separate runtime constraint. See [Governance contracts](docs/architecture/governance-contracts.md).
 
 ### Git Excludes
 

@@ -2,12 +2,12 @@
   "schema_version": 1,
   "roles": [
     {
-      "id": "fixture_editor",
-      "file": "fixture_editor.md",
+      "id": "drift_fixture",
+      "file": "reference.md",
       "capabilities": {
         "schema_version": 1,
         "provides": [
-          "repository.edit"
+          "repository.read"
         ]
       },
       "authority": {

@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import { validateCapabilityDeclaration } from './governance.mjs';
 
 export const AGENT_MANIFEST_SCHEMA_VERSION = 1;
 
@@ -157,6 +158,17 @@ export function validateRoleManifest(manifest) {
   const files = new Set();
   for (const role of manifest.roles) {
     if (!isPlainObject(role)) throw new Error('Agent manifest role entries must be objects');
+    const allowedRoleFields = new Set([
+      'id',
+      'file',
+      'capabilities',
+      'authority',
+      'compatible_skills',
+      'governance',
+    ]);
+    for (const key of Object.keys(role)) {
+      if (!allowedRoleFields.has(key)) throw new Error(`Unknown agent manifest role field: ${key}`);
+    }
     if (typeof role.id !== 'string' || !/^[a-z0-9][a-z0-9_-]*$/.test(role.id)) {
       throw new Error('Agent manifest role entries require a valid id');
     }
@@ -168,6 +180,14 @@ export function validateRoleManifest(manifest) {
     ids.add(role.id);
     files.add(role.file);
 
+    if (!isPlainObject(role.capabilities)) {
+      throw new Error(`Manifest role ${role.id} requires a capability declaration`);
+    }
+    try {
+      validateCapabilityDeclaration(role.capabilities);
+    } catch (err) {
+      throw new Error(`Manifest role ${role.id} has invalid capabilities: ${err.message}`);
+    }
     if (!isPlainObject(role.authority)) throw new Error(`Manifest role ${role.id} requires authority metadata`);
     if (typeof role.authority.tier !== 'string' || !role.authority.tier) {
       throw new Error(`Manifest role ${role.id} authority.tier must be a non-empty string`);
@@ -224,6 +244,7 @@ export function createAgentContract(role, content) {
     schema_version: 1,
     id: role.id,
     file: role.file,
+    capabilities: validateCapabilityDeclaration(role.capabilities),
     authority: structuredClone(role.authority),
     governance: structuredClone(role.governance),
     permissions: structuredClone(permissions),

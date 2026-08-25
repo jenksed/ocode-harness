@@ -4,6 +4,13 @@
     {
       "id": "orchestrator",
       "file": "orchestrator.md",
+      "capabilities": {
+        "schema_version": 1,
+        "provides": [
+          "repository.read",
+          "orchestration.coordinate"
+        ]
+      },
       "authority": {
         "tier": "coordination",
         "may_edit": false,
@@ -26,6 +33,13 @@
     {
       "id": "planner",
       "file": "planner.md",
+      "capabilities": {
+        "schema_version": 1,
+        "provides": [
+          "repository.read",
+          "planning.decompose"
+        ]
+      },
       "authority": {
         "tier": "planning",
         "may_edit": false,
@@ -44,6 +58,16 @@
     {
       "id": "coder",
       "file": "coder.md",
+      "capabilities": {
+        "schema_version": 1,
+        "provides": [
+          "repository.read",
+          "repository.edit",
+          "command.execute",
+          "test.execute",
+          "implementation.change"
+        ]
+      },
       "authority": {
         "tier": "implementation",
         "may_edit": true,
@@ -63,6 +87,14 @@
     {
       "id": "researcher",
       "file": "researcher.md",
+      "capabilities": {
+        "schema_version": 1,
+        "provides": [
+          "repository.read",
+          "web.research",
+          "research.investigate"
+        ]
+      },
       "authority": {
         "tier": "research",
         "may_edit": false,
@@ -79,6 +111,15 @@
     {
       "id": "verifier",
       "file": "verifier.md",
+      "capabilities": {
+        "schema_version": 1,
+        "provides": [
+          "repository.read",
+          "command.execute",
+          "test.execute",
+          "verification.validate"
+        ]
+      },
       "authority": {
         "tier": "validation",
         "may_edit": false,
@@ -95,6 +136,15 @@
     {
       "id": "reviewer",
       "file": "reviewer.md",
+      "capabilities": {
+        "schema_version": 1,
+        "provides": [
+          "repository.read",
+          "command.execute",
+          "test.execute",
+          "review.evaluate"
+        ]
+      },
       "authority": {
         "tier": "review",
         "may_edit": false,
@@ -111,6 +161,13 @@
     {
       "id": "judge",
       "file": "judge.md",
+      "capabilities": {
+        "schema_version": 1,
+        "provides": [
+          "repository.read",
+          "judgment.adjudicate"
+        ]
+      },
       "authority": {
         "tier": "adjudication",
         "may_edit": false,
@@ -127,6 +184,13 @@
     {
       "id": "committer",
       "file": "committer.md",
+      "capabilities": {
+        "schema_version": 1,
+        "provides": [
+          "repository.read",
+          "closeout.evaluate"
+        ]
+      },
       "authority": {
         "tier": "semantic_closeout",
         "may_edit": false,

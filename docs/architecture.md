@@ -56,10 +56,10 @@ The orchestrator is the human-facing engineering coordinator that:
 - Only resolves the specific disputed technical question
 
 #### Committer
-- Prepares semantic closeout data and performs Git commits only
-- Stages only files within the delegated scope
-- Does not push or perform complex Git operations (rebase, merge, cherry-pick, etc.)
-- Writes concise, semantic commit messages
+- Prepares semantic closeout data and expected paths
+- Evaluates bounded completion evidence without mutating the repository
+- Does not stage, commit, push, or edit files
+- Deterministic runtime owns gate evaluation, exact staging, commit execution, and optional push
 
 ### 3. Orientation Package
 
@@ -157,7 +157,7 @@ The doctor command (`scripts/doctor.mjs`) performs comprehensive health checks:
 - Every Task tool call must specify `subagent_type`
 - Allowed subagent types: planner, coder, researcher, verifier, reviewer, judge, committer
 - No generic subagents (general, explore, scout, unnamed)
-- Role ownership: coder for mutations, planner for contracts, researcher for docs, verifier for validation, reviewer for review, judge for disagreement, committer for git commit/stage/closeout
+- Role ownership: coder for source mutations, planner for contracts, researcher for docs, verifier for validation, reviewer for review, judge for disagreement, committer for semantic closeout preparation, deterministic runtime for Git mutation
 
 ## Security Model
 
@@ -175,7 +175,7 @@ The doctor command (`scripts/doctor.mjs`) performs comprehensive health checks:
 - Reviewer: Denies all external access, allows read-only git and test commands
 - Researcher: Denies all local access, allows websearch/webfetch
 - Judge: Denies all external access, denies all skills
-- Committer: Allows git add/commit only, denies git push/reset/clean, denies external access
+- Committer: Read-only semantic closeout preparation; deterministic runtime owns stage, commit, and push
 
 ### Git Excludes
 - Orientation artifacts (.opencode/orientation.json, .opencode/orientation.md) excluded from version control

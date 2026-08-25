@@ -13,7 +13,7 @@ machine profile or --profile override
   → existing project run ledger
 ```
 
-Canonical agents are provider-neutral. Their stable semantic contract fingerprint covers role ID, semantic body, provider-neutral agent settings, declared OpenCode permissions, and manifest authority/governance metadata. Profile names, provider IDs, and model IDs are excluded.
+Canonical agents are provider-neutral. Their stable semantic contract fingerprint covers role ID, semantic body, provider-neutral agent settings, semantic capabilities, declared OpenCode permissions, and manifest authority/governance metadata. Profile names, provider IDs, and model IDs are excluded.
 
 `ExecutionResolution` schema version 1 is pre-inference control data:
 
@@ -45,3 +45,5 @@ The existing ledger adds one optional `execution_provenance` object with the res
 OpenCode still owns authentication, catalogs, and invocation. FreeLLMAPI still owns the underlying provider/model selected by `auto:*`. Ocode contains no inference router and performs no cross-provider fallback.
 
 OpenCode 1.18.21 honors `opencode run --agent <role>` only when the selected agent is primary. Bounded direct execution therefore adds `mode: primary` for only that explicitly invoked role in the ephemeral overlay. The normal interactive launcher adds only model bindings, and canonical agent primary/subagent modes remain unchanged.
+
+The ephemeral mode override is not a governance input. It does not change semantic identity, capabilities, constitutional authority, Git authority, or a future admission decision. See [Governance contracts](governance-contracts.md).

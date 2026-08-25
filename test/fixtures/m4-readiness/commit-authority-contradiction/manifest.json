@@ -4,6 +4,12 @@
     {
       "id": "fixture_committer",
       "file": "fixture_committer.md",
+      "capabilities": {
+        "schema_version": 1,
+        "provides": [
+          "closeout.evaluate"
+        ]
+      },
       "authority": {
         "tier": "fixture",
         "may_edit": false,

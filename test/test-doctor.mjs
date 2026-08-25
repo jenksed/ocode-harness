@@ -112,6 +112,14 @@ try {
     failed = true;
   }
 
+  if (output.includes('Checking M4A governance contracts') &&
+      output.includes('manifest-governed roles have structurally valid capability declarations')) {
+    console.log('✓ Doctor reports structural M4A governance contract health');
+  } else {
+    console.error('✗ Doctor did not report structural M4A governance contract health');
+    failed = true;
+  }
+
   if (existsSync(join(testHome, '.config', 'opencode', 'opencode.json'))) {
     console.log('✓ Doctor fixture has installed OpenCode config');
   } else {

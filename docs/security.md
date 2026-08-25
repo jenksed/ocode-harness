@@ -290,17 +290,16 @@ permission:
 
 ```yaml
 permission:
-  edit: allow
+  edit: deny
   external_directory: deny
   question: deny
   task: deny
-  skill: deny
+  websearch: deny
+  webfetch: deny
+  skill:
+    "*": deny
   bash:
     "*": deny
-    "git add": allow
-    "git add *": allow
-    "git commit": allow
-    "git commit *": allow
     "git status": allow
     "git status *": allow
     "git diff": allow
@@ -308,21 +307,14 @@ permission:
     "git log": allow
     "git log *": allow
     "git show *": allow
-    "git push": deny
-    "git push *": deny
-    "git reset --hard": deny
-    "git reset --hard *": deny
-    "git clean": deny
-    "git clean *": deny
-    "rm -rf *": deny
 ```
 
 **Security Features:**
-- **edit: allow**: Committer can stage and commit files (required for git operations)
-- **git commit only**: Can stage and commit but cannot push or reset
+- **edit: deny**: Committer cannot modify repository files
+- **Read-only Git inspection**: Can inspect status, diff, log, and shown objects
+- **No Git mutation authority**: Cannot stage, commit, or push
 - **No external access**: Cannot search or fetch from the web
-- **No bash access**: Cannot execute non-git commands
-- **Denies dangerous git commands**: Cannot push, reset, clean, or remove directories
+- **Deterministic runtime ownership**: Gate evaluation, exact staging, commit execution, and optional push occur outside the semantic role
 
 ## Task Allowlist
 

@@ -4,6 +4,12 @@
     {
       "id": "listed",
       "file": "listed.md",
+      "capabilities": {
+        "schema_version": 1,
+        "provides": [
+          "repository.read"
+        ]
+      },
       "authority": {
         "tier": "fixture",
         "may_edit": false,

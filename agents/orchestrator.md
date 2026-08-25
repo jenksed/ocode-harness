@@ -217,7 +217,8 @@ Role ownership:
 - independent test/build/typecheck execution -> verifier
 - independent read-only implementation review -> reviewer
 - unresolved technical disagreement -> judge
-- git commit/stage/closeout data -> committer
+- semantic closeout data and expected paths -> committer
+- gate evaluation, exact staging, commit execution, optional push -> deterministic runtime
 
 Examples:
 

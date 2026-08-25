@@ -23,6 +23,11 @@ import {
   serializeOpenCodeRuntimeOverlay,
 } from '../packages/harness-runtime/lib/opencode-integration.mjs';
 import { loadAgentContracts } from '../packages/harness-runtime/lib/agent-contract.mjs';
+import {
+  CAPABILITY_SCHEMA_VERSION,
+  fingerprintCapabilityVocabulary,
+  validateCapabilityVocabulary,
+} from '../packages/harness-runtime/lib/governance.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -232,6 +237,35 @@ function checkExecutionProfilesAndContracts() {
     return true;
   } catch (err) {
     console.error(`✗ M3 profile/contract check failed: ${err.message}`);
+    return false;
+  }
+}
+
+function checkGovernanceContracts() {
+  printSection('Checking M4A governance contracts...');
+  const baseDir = findSourceRepo(process.cwd()) || CONFIG.harnessRoot;
+  try {
+    const vocabulary = validateCapabilityVocabulary();
+    const { manifest, contracts } = loadAgentContracts({
+      baseDir,
+      agentsDir: CONFIG.agentsDir,
+      manifestPath: join(baseDir, 'agents', 'manifest.json'),
+    });
+    for (const role of manifest.roles) {
+      const contract = contracts.get(role.id);
+      if (contract.capabilities.schema_version !== CAPABILITY_SCHEMA_VERSION) {
+        throw new Error(`Canonical agent ${role.id} has an unsupported capability schema`);
+      }
+      if (contract.capabilities.provides.length === 0) {
+        throw new Error(`Canonical agent ${role.id} has no declared capabilities`);
+      }
+    }
+    console.log(`  ✓ capability schema v${vocabulary.schema_version}: ${fingerprintCapabilityVocabulary(vocabulary).slice(0, 12)} (${vocabulary.capabilities.length} known capabilities)`);
+    console.log(`✓ All ${manifest.roles.length} manifest-governed roles have structurally valid capability declarations`);
+    console.log('✓ Capability validation is structural; authority/permission compatibility is deferred');
+    return true;
+  } catch (err) {
+    console.error(`✗ M4A governance contract check failed: ${err.message}`);
     return false;
   }
 }
@@ -627,7 +661,7 @@ function checkHarnessRuntime() {
   }
 
   // Check lib files
-  const libFiles = ['identity.mjs', 'lifecycle.mjs', 'ledger.mjs', 'evidence.mjs', 'composition.mjs', 'closeout.mjs', 'verify.mjs', 'agent-contract.mjs', 'opencode-integration.mjs', 'execution.mjs'];
+  const libFiles = ['identity.mjs', 'lifecycle.mjs', 'ledger.mjs', 'evidence.mjs', 'composition.mjs', 'closeout.mjs', 'verify.mjs', 'governance.mjs', 'agent-contract.mjs', 'opencode-integration.mjs', 'execution.mjs'];
   let allLibFound = true;
   for (const libFile of libFiles) {
     const libPath = join(CONFIG.harnessRuntimeDir, 'lib', libFile);
@@ -859,6 +893,7 @@ async function main() {
     checkOpencode,
     checkOpenCodeBindingOverlay,
     checkExecutionProfilesAndContracts,
+    checkGovernanceContracts,
     checkNode,
     checkGit,
     checkAgents,

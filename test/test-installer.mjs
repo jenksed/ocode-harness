@@ -247,6 +247,7 @@ try {
     'lib/composition.mjs',
     'lib/closeout.mjs',
     'lib/verify.mjs',
+    'lib/governance.mjs',
     'lib/agent-contract.mjs',
     'lib/opencode-integration.mjs',
     'lib/execution.mjs',

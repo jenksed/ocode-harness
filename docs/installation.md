@@ -117,7 +117,7 @@ Agent definitions are stored in `~/.config/opencode/agents/`:
 - `reviewer.md` - Independent reviewer
 - `researcher.md` - External researcher
 - `judge.md` - Technical disagreement resolver
-- `committer.md` - Git commit/closeout agent
+- `committer.md` - Read-only semantic closeout preparation agent
 
 ## Usage
 

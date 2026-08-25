@@ -289,7 +289,7 @@ export function validateCandidate(stagingDir) {
   }
 
   // Check harness-runtime lib files
-  const harnessLibs = ['identity.mjs', 'lifecycle.mjs', 'ledger.mjs', 'evidence.mjs', 'composition.mjs', 'closeout.mjs', 'verify.mjs', 'agent-contract.mjs', 'opencode-integration.mjs', 'execution.mjs'];
+  const harnessLibs = ['identity.mjs', 'lifecycle.mjs', 'ledger.mjs', 'evidence.mjs', 'composition.mjs', 'closeout.mjs', 'verify.mjs', 'governance.mjs', 'agent-contract.mjs', 'opencode-integration.mjs', 'execution.mjs'];
   for (const lib of harnessLibs) {
     const libPath = join(harnessRuntimeDir, 'lib', lib);
     checks.push({ name: `harness-runtime lib/${lib}`, ok: existsSync(libPath) });

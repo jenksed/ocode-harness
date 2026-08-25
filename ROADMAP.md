@@ -80,11 +80,17 @@ Evidence required:
 
 M4 readiness: YES — deterministic normalized role, authority, permission, semantic fingerprint, execution-resolution, and contradiction-fixture inputs exist. No M4 capability ontology or enforcement policy is included.
 
-### M4 Capability / Permission / Authority Contracts — PLANNED
+### M4 Capability / Permission / Authority Contracts — ACTIVE
 
 Purpose: formalize agent capabilities, permissions, and authority boundaries as enforceable contracts.
 
 Depends on: M2, M3.
+
+M4A Governance Contract Foundation: PROVEN — the constitutional language, versioned closed capability vocabulary, manifest-derived role capability contracts, structural doctor checks, and identity-state separation are implemented by `npm run acceptance:m4a`.
+
+M4B AdmissionRequest + AdmissionDecision: UNBLOCKED — implement predicate-based admission on the M4A foundation without using fingerprints as general authorization gates.
+
+M4C–M4E: PLANNED — permission projection, effective-subject reconciliation, and remaining enforcement work are intentionally deferred. M4 as a whole is not yet proven.
 
 ### M5 Wayfinder — PLANNED
 

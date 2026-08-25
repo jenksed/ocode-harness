@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "provides": [
+    "repository.read",
+    "git.commit"
+  ]
+}

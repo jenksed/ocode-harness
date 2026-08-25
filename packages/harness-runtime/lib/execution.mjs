@@ -7,6 +7,7 @@ import {
   createExecutionResolution,
   loadBindingProfile,
   reconcileExecutionBinding,
+  reconcileExecutionSubject,
   serializeOpenCodeRuntimeOverlay,
   splitModelReference,
   validateProfileCompleteness,
@@ -105,7 +106,13 @@ export function validateProfileAvailability(profile, options = {}) {
   return profile;
 }
 
-export function createExecutionProvenance({ resolution, reconciliation, success, failureClassification }) {
+export function createExecutionProvenance({ resolution, reconciliation, subjectReconciliation, success, failureClassification }) {
+  const subject = subjectReconciliation || {
+    admitted_subject: resolution.subject.role,
+    effective_subject: null,
+    state: 'UNKNOWN',
+    reason_code: 'SUBJECT_UNKNOWN',
+  };
   return {
     schema_version: 1,
     subject: structuredClone(resolution.subject),
@@ -113,15 +120,20 @@ export function createExecutionProvenance({ resolution, reconciliation, success,
     validation: structuredClone(resolution.validation),
     effective_model: reconciliation.effective,
     binding_reconciliation: reconciliation.state,
+    admitted_subject: subject.admitted_subject,
+    effective_subject: subject.effective_subject,
+    subject_reconciliation: subject.state,
+    subject_reason_code: subject.reason_code,
     success,
     failure_classification: failureClassification || null,
   };
 }
 
-export function appendExecutionLedgerRecord({ ledgerPath, projectDir, resolution, reconciliation, success, failureClassification, elapsedMs }) {
+export function appendExecutionLedgerRecord({ ledgerPath, projectDir, resolution, reconciliation, subjectReconciliation, success, failureClassification, elapsedMs }) {
   const provenance = createExecutionProvenance({
     resolution,
     reconciliation,
+    subjectReconciliation,
     success,
     failureClassification,
   });
@@ -149,6 +161,35 @@ export function serializeGovernedExecutionOverlay(profile, role, existingConfigC
   return JSON.stringify(overlay);
 }
 
+export function evaluateGovernedExecutionAcceptance({ runtimeSucceeded, reconciliation, subjectReconciliation }) {
+  const success = runtimeSucceeded
+    && reconciliation.state === 'MATCH'
+    && subjectReconciliation.state === 'MATCH';
+  const failureClassification = subjectReconciliation.state === 'MISMATCH'
+    ? 'SUBJECT_MISMATCH'
+    : reconciliation.state === 'MISMATCH'
+      ? 'BINDING_MISMATCH'
+      : runtimeSucceeded
+        ? (subjectReconciliation.state === 'UNKNOWN'
+          ? 'SUBJECT_UNVERIFIED'
+          : reconciliation.state === 'UNKNOWN' ? 'INFRASTRUCTURE_FAILURE' : null)
+        : 'INFRASTRUCTURE_FAILURE';
+  return { success, failure_classification: failureClassification };
+}
+
+export function admittedSubjectForExecution(resolution, admissionDecision = null) {
+  if (admissionDecision === null) {
+    throw new BindingError('Governed execution requires an AdmissionDecision');
+  }
+  if (admissionDecision.decision !== 'ALLOW') {
+    throw new BindingError('Governed execution requires an allowed AdmissionDecision');
+  }
+  if (admissionDecision.subject?.role !== resolution.subject.role) {
+    throw new BindingError('AdmissionDecision subject does not match governed execution role');
+  }
+  return admissionDecision.subject.role;
+}
+
 export function executeGovernedRole(options) {
   const baseDir = resolve(options.baseDir);
   const projectDir = resolve(options.projectDir);
@@ -167,6 +208,8 @@ export function executeGovernedRole(options) {
     profile: loaded.profile,
     bindingSource: options.bindingSource || `profiles/${loaded.profile.name}.json`,
   });
+  const admissionDecision = options.admissionDecision || null;
+  const admittedSubject = admittedSubjectForExecution(resolution, admissionDecision);
   validateResolutionAvailability(resolution, {
     opencode: options.opencode,
     cwd: projectDir,
@@ -211,19 +254,21 @@ export function executeGovernedRole(options) {
     }
   }
   const reconciliation = reconcileExecutionBinding(resolution, exported);
+  const subjectReconciliation = reconcileExecutionSubject(admittedSubject, exported);
   const runtimeSucceeded = !execution.spawn_error && !execution.signal && execution.exit_code === 0;
-  const success = runtimeSucceeded && reconciliation.state === 'MATCH';
-  const failureClassification = reconciliation.state === 'MISMATCH'
-    ? 'BINDING_MISMATCH'
-    : runtimeSucceeded
-      ? (reconciliation.state === 'UNKNOWN' ? 'INFRASTRUCTURE_FAILURE' : null)
-      : 'INFRASTRUCTURE_FAILURE';
+  const acceptance = evaluateGovernedExecutionAcceptance({
+    runtimeSucceeded,
+    reconciliation,
+    subjectReconciliation,
+  });
+  const { success, failure_classification: failureClassification } = acceptance;
   const ledgerPath = options.ledgerPath || resolve(projectDir, '.opencode', 'run-ledger.jsonl');
   const record = appendExecutionLedgerRecord({
     ledgerPath,
     projectDir,
     resolution,
     reconciliation,
+    subjectReconciliation,
     success,
     failureClassification,
     elapsedMs: execution.duration_ms,
@@ -237,6 +282,9 @@ export function executeGovernedRole(options) {
     exported,
     export_result: exportResult,
     reconciliation,
+    subject_reconciliation: subjectReconciliation,
+    admitted_subject: admittedSubject,
+    admission_decision: admissionDecision,
     success,
     failure_classification: failureClassification,
     ledger_record: record,

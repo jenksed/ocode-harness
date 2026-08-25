@@ -5,7 +5,7 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "test": "node test/test-installer.mjs && node test/test-doctor.mjs && node test/test-agents.mjs && node test/test-orientation.mjs && node test/test-secrets.mjs && node test/test-ledger.mjs && node test/test-lifecycle.mjs && node test/test-evidence.mjs && node test/test-closeout.mjs && node test/test-committer.mjs && node test/test-composition.mjs && node test/test-verify.mjs && node test/test-opencode-integration.mjs && node test/test-execution-profiles.mjs && node test/test-governance-contracts.mjs && node test/test-admission.mjs && node test/test-permission-governance.mjs && node test/test-harness-version.mjs && node test/test-harness-update.mjs && node test/test-harness-rollback.mjs",
+    "test": "node test/test-installer.mjs && node test/test-doctor.mjs && node test/test-agents.mjs && node test/test-orientation.mjs && node test/test-secrets.mjs && node test/test-ledger.mjs && node test/test-lifecycle.mjs && node test/test-evidence.mjs && node test/test-closeout.mjs && node test/test-committer.mjs && node test/test-composition.mjs && node test/test-verify.mjs && node test/test-opencode-integration.mjs && node test/test-execution-profiles.mjs && node test/test-governance-contracts.mjs && node test/test-admission.mjs && node test/test-permission-governance.mjs && node test/test-subject-reconciliation.mjs && node test/test-harness-version.mjs && node test/test-harness-update.mjs && node test/test-harness-rollback.mjs",
     "test:agents": "node test/test-agents.mjs",
     "test:closeout": "node test/test-closeout.mjs",
     "test:committer": "node test/test-committer.mjs",
@@ -24,6 +24,7 @@
     "test:governance-contracts": "node test/test-governance-contracts.mjs",
     "test:admission": "node test/test-admission.mjs",
     "test:permission-governance": "node test/test-permission-governance.mjs",
+    "test:subject-reconciliation": "node test/test-subject-reconciliation.mjs",
     "test:secrets": "node test/test-secrets.mjs",
     "test:verify": "node test/test-verify.mjs",
     "bootstrap": "node installer/install.mjs",
@@ -33,7 +34,8 @@
     "acceptance:m3": "node scripts/acceptance-m3.mjs",
     "acceptance:m4a": "node scripts/acceptance-m4a.mjs",
     "acceptance:m4b": "node scripts/acceptance-m4b.mjs",
-    "acceptance:m4c": "node scripts/acceptance-m4c.mjs"
+    "acceptance:m4c": "node scripts/acceptance-m4c.mjs",
+    "acceptance:m4d": "node scripts/acceptance-m4d.mjs"
   },
   "keywords": [
     "ai",

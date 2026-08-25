@@ -5,7 +5,14 @@ import { canonicalJSONStringify } from './agent-contract.mjs';
 
 export const OCODE_BINDING_PROFILE_SCHEMA_VERSION = 1;
 export const EXECUTION_RESOLUTION_SCHEMA_VERSION = 1;
+export const SUBJECT_RECONCILIATION_SCHEMA_VERSION = 1;
 export const FALLBACK_POLICY = 'deny';
+
+export const SUBJECT_RECONCILIATION_STATES = Object.freeze({
+  MATCH: 'MATCH',
+  MISMATCH: 'MISMATCH',
+  UNKNOWN: 'UNKNOWN',
+});
 
 function isPlainObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -225,4 +232,39 @@ export function reconcileExecutionBinding(resolution, exported) {
   const effective = effectiveBindingFromExport(exported);
   const state = effective === null ? 'UNKNOWN' : effective === requested ? 'MATCH' : 'MISMATCH';
   return { requested, effective, state };
+}
+
+/**
+ * Extracts only agent identity carried by the sanitized OpenCode export. It
+ * deliberately does not consult requested role, overlays, profiles, or model
+ * bindings: absent observed evidence remains null.
+ */
+export function effectiveSubjectFromExport(exported) {
+  const agent = exported?.info?.agent;
+  if (typeof agent === 'string' && agent) return agent;
+  if (isPlainObject(agent)) {
+    for (const key of ['id', 'name']) {
+      if (typeof agent[key] === 'string' && agent[key]) return agent[key];
+    }
+  }
+  return null;
+}
+
+export function reconcileExecutionSubject(admittedSubject, exported) {
+  if (typeof admittedSubject !== 'string' || !admittedSubject) {
+    throw new BindingError('Admitted semantic subject must be a non-empty string');
+  }
+  const effectiveSubject = effectiveSubjectFromExport(exported);
+  const state = effectiveSubject === null
+    ? SUBJECT_RECONCILIATION_STATES.UNKNOWN
+    : effectiveSubject === admittedSubject
+      ? SUBJECT_RECONCILIATION_STATES.MATCH
+      : SUBJECT_RECONCILIATION_STATES.MISMATCH;
+  return {
+    schema_version: SUBJECT_RECONCILIATION_SCHEMA_VERSION,
+    admitted_subject: admittedSubject,
+    effective_subject: effectiveSubject,
+    state,
+    reason_code: `SUBJECT_${state}`,
+  };
 }

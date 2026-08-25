@@ -67,6 +67,18 @@ function validateRecord(record) {
     if (!['MATCH', 'MISMATCH', 'UNKNOWN'].includes(provenance.binding_reconciliation)) {
       throw new Error('execution_provenance.binding_reconciliation is invalid');
     }
+    if (typeof provenance.admitted_subject !== 'string' || !provenance.admitted_subject) {
+      throw new Error('execution_provenance.admitted_subject must be a string');
+    }
+    if (provenance.effective_subject !== null && typeof provenance.effective_subject !== 'string') {
+      throw new Error('execution_provenance.effective_subject must be a string or null');
+    }
+    if (!['MATCH', 'MISMATCH', 'UNKNOWN'].includes(provenance.subject_reconciliation)) {
+      throw new Error('execution_provenance.subject_reconciliation is invalid');
+    }
+    if (!['SUBJECT_MATCH', 'SUBJECT_MISMATCH', 'SUBJECT_UNKNOWN'].includes(provenance.subject_reason_code)) {
+      throw new Error('execution_provenance.subject_reason_code is invalid');
+    }
     if (typeof provenance.success !== 'boolean') throw new Error('execution_provenance.success must be boolean');
     if (provenance.effective_model !== null && typeof provenance.effective_model !== 'string') {
       throw new Error('execution_provenance.effective_model must be a string or null');

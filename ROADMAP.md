@@ -92,7 +92,9 @@ M4B AdmissionRequest + AdmissionDecision: PROVEN — deterministic, provider-ind
 
 M4C Permission Projection: PROVEN — a deterministic configured-permission projector for edit/test/stage/commit/push/web, requirement-scoped sufficiency, and mutation least-authority enforcement is implemented by `npm run acceptance:m4c`.
 
-M4D Effective-subject reconciliation: UNBLOCKED — reconcile the admitted semantic role with the agent OpenCode reports executing without allowing execution mode to promote authority. M4E remains planned; M4 as a whole is not yet proven.
+M4D Effective-subject reconciliation: PROVEN — sanitized observed agent identity is reconciled against the admitted subject with MATCH/MISMATCH/UNKNOWN states, mismatch/unverified execution rejection, ledger evidence, and primary-mode authority neutrality by `npm run acceptance:m4d`.
+
+M4E Governance productization: UNBLOCKED — productize the proven M4A–D system through operator explanation/check/audit commands, canonical acceptance, documentation, and milestone closeout. M4 as a whole is not yet proven.
 
 ### M5 Wayfinder — PLANNED
 

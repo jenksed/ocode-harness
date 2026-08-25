@@ -15,6 +15,7 @@ import { dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { loadAgentContracts } from '../packages/harness-runtime/lib/agent-contract.mjs';
+import { ADMISSION_KINDS, ADMISSION_REQUEST_SCHEMA_VERSION, evaluateAdmission } from '../packages/harness-runtime/lib/admission.mjs';
 import { executeGovernedRole } from '../packages/harness-runtime/lib/execution.mjs';
 import { readRecords } from '../packages/harness-runtime/lib/ledger.mjs';
 import {
@@ -29,6 +30,19 @@ const repoRoot = resolve(dirname(__filename), '..');
 const temporaryProject = mkdtempSync(join(tmpdir(), 'ocode-m3-acceptance-'));
 const catalogCache = new Map();
 let infrastructureRetries = 0;
+
+function admissionFor(role, contracts) {
+  return evaluateAdmission({
+    request: {
+      schema_version: ADMISSION_REQUEST_SCHEMA_VERSION,
+      kind: ADMISSION_KINDS.ASSIGNMENT,
+      subject: { role },
+      requirements: { capabilities: [] },
+      requested_authority: { edit: false, stage: false, commit: false, push: false },
+    },
+    contract: contracts.get(role),
+  });
+}
 
 function sha256File(path) {
   return createHash('sha256').update(readFileSync(path)).digest('hex');
@@ -91,6 +105,7 @@ function qualify(role, profileName, profiles, options = {}) {
     pure: true,
     timeout: 120_000,
     catalogCache,
+    admissionDecision: admissionFor(role, contracts),
     ...options,
   });
   let result = execute();
@@ -180,6 +195,7 @@ try {
       prompt: 'MUST_NOT_EXECUTE',
       opencode: 'must-not-be-invoked',
       models: [],
+      admissionDecision: admissionFor('reviewer', contracts),
     });
   } catch (error) {
     missingBinding = { code: error.code, message: error.message, pre_inference: true, fallback: 'deny' };
@@ -199,6 +215,7 @@ try {
       prompt: 'MUST_NOT_EXECUTE',
       opencode: 'must-not-be-invoked',
       models: catalogCache.get('freellmapi'),
+      admissionDecision: admissionFor('reviewer', contracts),
     });
   } catch (error) {
     invalidModel = { code: error.code, message: error.message, details: error.details, pre_inference: true };
@@ -221,6 +238,7 @@ try {
     retry: false,
     models: catalogCache.get('freellmapi'),
     env: { ...process.env, OPENCODE_CONFIG_CONTENT: badEndpointConfig },
+    admissionDecision: admissionFor('committer', contracts),
   });
   assert.equal(badEndpoint.success, false);
   assert.equal(badEndpoint.failure_classification, 'INFRASTRUCTURE_FAILURE');

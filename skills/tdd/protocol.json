@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "skill_id": "tdd",
+  "skill_version": "1.0.0",
+  "purpose": "Prove a bounded implementation behavior with an independent executable oracle before and after the smallest admitted change.",
+  "applicability": [
+    {"id":"observable-change","when":"Observable implementation behavior is changing."},
+    {"id":"focused-oracle","when":"A focused executable oracle exists and pre-change behavior can be evaluated."},
+    {"id":"bounded-edit","when":"A bounded implementation target has admitted edit authority and the same oracle can verify it afterward."},
+    {"id":"durable-seam","when":"Regression protection can remain after the change."}
+  ],
+  "non_applicability": [
+    {"id":"documentation-only","when":"Work is documentation-only."},
+    {"id":"investigation-only","when":"Work is investigation-only or diagnosis lacks repair authority."},
+    {"id":"design-only","when":"Work is architecture or design only."},
+    {"id":"no-oracle","when":"No executable oracle exists or verification is unsafe or unavailable."},
+    {"id":"no-edit-admission","when":"Edit authority is not admitted."},
+    {"id":"already-satisfied","when":"Behavior is already satisfied, so pre-change unmet evidence cannot be established."}
+  ],
+  "requirements": {"capabilities":["implementation.change","repository.edit","repository.read","test.execute"],"requested_authority":{"edit":true,"stage":false,"commit":false,"push":false}},
+  "method": {"stages":[
+    {"id":"establish-unmet-behavior","objective":"Use the supplied focused oracle to prove the bounded behavior is unmet before mutation.","required_inputs":["objective","oracle"],"required_outputs":["red-evidence"]},
+    {"id":"bounded-change","objective":"Make only the smallest admitted implementation change.","required_inputs":["red-evidence","authorized-scope"],"required_outputs":["change-evidence"]},
+    {"id":"establish-desired-behavior","objective":"Run the same oracle and prove the desired behavior.","required_inputs":["change-evidence","oracle"],"required_outputs":["green-evidence"]},
+    {"id":"report-evidence","objective":"Return evidence and stop once sufficient.","required_inputs":["green-evidence"],"required_outputs":["skill-result"]}
+  ],"max_structured_repairs":1},
+  "outputs":[{"id":"skill-result","kind":"EvidenceCapsule","required":true}],
+  "evidence_requirements":[{"id":"red","kind":"test","required":true},{"id":"change","kind":"source","required":true},{"id":"green","kind":"test","required":true},{"id":"scope","kind":"source","required":true}],
+  "acceptance":[{"id":"behavior-bounded","condition":"A specific observable behavior is bounded."},{"id":"independent-oracle","condition":"A focused executable oracle remains independent of the implementation change."},{"id":"red-proven","condition":"The oracle proves unmet behavior before mutation."},{"id":"change-bounded","condition":"Only admitted implementation source changes after RED."},{"id":"green-proven","condition":"The same oracle proves desired behavior after mutation."},{"id":"regression-durable","condition":"The oracle remains present and valid."},{"id":"stop-when-proven","condition":"No unrelated work follows sufficient evidence."}],
+  "failure_conditions":[{"id":"red-not-established","condition":"The initial focused oracle passes or is unavailable."},{"id":"scope-violation","condition":"A non-admitted source changes."},{"id":"green-missing","condition":"The post-change oracle does not pass."}],
+  "stop_conditions":[{"id":"evidence-sufficient","condition":"RED, bounded change, GREEN, and durable oracle evidence are retained."}],
+  "qualification_requirements":{"positive_fixture":true,"method_violation_fixture":true,"authority_capability_negative_fixture":true,"evidence_integrity_negative_fixture":true,"context_economy_observation":true,"live_qualification":"REQUIRED"}
+}

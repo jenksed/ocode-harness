@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { loadSkillSource, skillProtocolAdmissionRequest } from '../packages/harness-runtime/lib/skill-contract.mjs';
+import { loadAgentContracts } from '../packages/harness-runtime/lib/agent-contract.mjs';
+import { evaluateAdmission } from '../packages/harness-runtime/lib/admission.mjs';
+import { observeCompletedSkillLoad } from '../packages/harness-runtime/lib/skill-qualification.mjs';
+const root=resolve('.'); const source=loadSkillSource({skillsDir:resolve(root,'skills'),skillId:'tdd'});
+assert.deepEqual(source.protocol.requirements.capabilities,['implementation.change','repository.edit','repository.read','test.execute']);
+assert.deepEqual(source.protocol.requirements.requested_authority,{edit:true,stage:false,commit:false,push:false});
+assert.equal(source.protocol.qualification_requirements.live_qualification,'REQUIRED');
+const {contracts}=loadAgentContracts({baseDir:root}); assert.equal(evaluateAdmission({contract:contracts.get('coder'),request:skillProtocolAdmissionRequest(source.protocol,'coder')}).decision,'ALLOW');
+assert.match(readFileSync('agents/coder.md','utf8'),/skill:\n    "\*": deny\n    "tdd": allow/); assert.match(readFileSync('agents/coder.md','utf8'),/"git add": deny/);
+const completed={type:'tool_use',part:{type:'tool',tool:'skill',state:{status:'completed',input:{name:'tdd'}}}};
+assert.equal(observeCompletedSkillLoad([completed],'tdd'),completed); for(const event of [{...completed,part:{...completed.part,state:{status:'running',input:{name:'tdd'}}}},{...completed,part:{type:'tool',tool:'bash',state:{status:'completed',input:{name:'tdd'}}}},{type:'x'},null]) assert.equal(observeCompletedSkillLoad([event],'tdd'),null);
+console.log('TDD_SKILL_TESTS_PROVEN');

@@ -43,7 +43,10 @@
     "acceptance:m4": "node scripts/acceptance-m4.mjs",
     "acceptance:m5-core": "node scripts/acceptance-m5-core.mjs",
     "acceptance:m5": "node scripts/acceptance-m5.mjs",
-    "acceptance:m6.1": "node scripts/acceptance-m6.1.mjs"
+    "acceptance:m6.1": "node scripts/acceptance-m6.1.mjs",
+    "test:tdd-skill": "node test/test-tdd-skill.mjs",
+    "acceptance:m6.2": "node scripts/acceptance-m6.2.mjs",
+    "qualify:tdd:live": "node scripts/qualify-tdd-live.mjs"
   },
   "keywords": [
     "ai",

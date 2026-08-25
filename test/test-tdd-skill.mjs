@@ -6,6 +6,7 @@ import { loadAgentContracts } from '../packages/harness-runtime/lib/agent-contra
 import { evaluateAdmission } from '../packages/harness-runtime/lib/admission.mjs';
 import { observeCompletedSkillLoad } from '../packages/harness-runtime/lib/skill-qualification.mjs';
 const root=resolve('.'); const source=loadSkillSource({skillsDir:resolve(root,'skills'),skillId:'tdd'});
+assert.equal(source.skill_fingerprint,'cbbf6040ed7cb7d929459bf0864db70a2e07a2f2452979c42ad98e040e356a3f');
 assert.deepEqual(source.protocol.requirements.capabilities,['implementation.change','repository.edit','repository.read','test.execute']);
 assert.deepEqual(source.protocol.requirements.requested_authority,{edit:true,stage:false,commit:false,push:false});
 assert.equal(source.protocol.qualification_requirements.live_qualification,'REQUIRED');

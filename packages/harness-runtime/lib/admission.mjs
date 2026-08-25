@@ -7,6 +7,10 @@ import {
   validateCapabilityDeclaration,
   validateCapabilityIdentifier,
 } from './governance.mjs';
+import {
+  PERMISSION_PROJECTION_STATES,
+  projectPermissions,
+} from './permission-projection.mjs';
 
 export const ADMISSION_REQUEST_SCHEMA_VERSION = 1;
 export const ADMISSION_DECISION_SCHEMA_VERSION = 1;
@@ -35,6 +39,11 @@ export const ADMISSION_REASON_CODES = Object.freeze({
   CONTRACT_INVALID: 'CONTRACT_INVALID',
   IDENTITY_DRIFT_OBSERVED: 'IDENTITY_DRIFT_OBSERVED',
   IDENTITY_UNREFERENCED: 'IDENTITY_UNREFERENCED',
+  PERMISSION_PROJECTION_COMPATIBLE: 'PERMISSION_PROJECTION_COMPATIBLE',
+  PERMISSION_INSUFFICIENT: 'PERMISSION_INSUFFICIENT',
+  PERMISSION_EXCEEDS_AUTHORITY: 'PERMISSION_EXCEEDS_AUTHORITY',
+  PERMISSION_UNKNOWN_FOR_REQUIREMENT: 'PERMISSION_UNKNOWN_FOR_REQUIREMENT',
+  PERMISSION_NOT_PROJECTED: 'PERMISSION_NOT_PROJECTED',
 });
 
 const REQUESTED_AUTHORITY_FIELDS = Object.freeze(['edit', 'stage', 'commit', 'push']);
@@ -45,6 +54,12 @@ const AUTHORITY_FIELD_BY_REQUEST = Object.freeze({
   push: 'may_push',
 });
 const FINGERPRINT_PATTERN = /^[0-9a-f]{64}$/;
+const PERMISSION_BACKED_CAPABILITY_OPERATIONS = Object.freeze({
+  'repository.edit': 'edit',
+  'test.execute': 'test',
+  'web.research': 'web',
+  'command.execute': 'command_execute',
+});
 
 function isPlainObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -207,6 +222,53 @@ function notEvaluatedAuthorityEvaluation(authority) {
   };
 }
 
+function evaluatePermissions({ request, contract }) {
+  const projection = projectPermissions(contract.permissions);
+  const requiredOperations = new Set();
+  for (const capability of request.requirements.capabilities) {
+    const operation = PERMISSION_BACKED_CAPABILITY_OPERATIONS[capability];
+    if (operation) requiredOperations.add(operation);
+  }
+  for (const action of REQUESTED_AUTHORITY_FIELDS) {
+    if (request.requested_authority[action]) requiredOperations.add(action);
+  }
+  const required = [...requiredOperations].sort();
+  const insufficientOperations = required.filter((operation) => projection.operations[operation]?.state === PERMISSION_PROJECTION_STATES.DENY);
+  const unknownOperations = required.filter((operation) => projection.operations[operation]?.state === PERMISSION_PROJECTION_STATES.UNKNOWN);
+  const notProjectedOperations = required.filter((operation) => projection.not_projected[operation] === PERMISSION_PROJECTION_STATES.NOT_PROJECTED);
+  const excessMutationPermissions = REQUESTED_AUTHORITY_FIELDS
+    .filter((operation) => projection.operations[operation].state === PERMISSION_PROJECTION_STATES.ALLOW
+      && !contract.authority[AUTHORITY_FIELD_BY_REQUEST[operation]])
+    .map((operation) => ({ operation, contract_field: AUTHORITY_FIELD_BY_REQUEST[operation] }));
+  const status = insufficientOperations.length === 0
+    && unknownOperations.length === 0
+    && notProjectedOperations.length === 0
+    && excessMutationPermissions.length === 0
+    ? EVALUATION_STATES.PASS
+    : EVALUATION_STATES.FAIL;
+  return {
+    status,
+    required_operations: required,
+    projection,
+    insufficient_operations: insufficientOperations,
+    unknown_operations: unknownOperations,
+    not_projected_operations: notProjectedOperations,
+    excess_mutation_permissions: excessMutationPermissions,
+  };
+}
+
+function permissionReasonCodes(evaluation) {
+  if (evaluation.status === EVALUATION_STATES.PASS) {
+    return [ADMISSION_REASON_CODES.PERMISSION_PROJECTION_COMPATIBLE];
+  }
+  const reasons = [];
+  if (evaluation.insufficient_operations.length > 0) reasons.push(ADMISSION_REASON_CODES.PERMISSION_INSUFFICIENT);
+  if (evaluation.unknown_operations.length > 0) reasons.push(ADMISSION_REASON_CODES.PERMISSION_UNKNOWN_FOR_REQUIREMENT);
+  if (evaluation.not_projected_operations.length > 0) reasons.push(ADMISSION_REASON_CODES.PERMISSION_NOT_PROJECTED);
+  if (evaluation.excess_mutation_permissions.length > 0) reasons.push(ADMISSION_REASON_CODES.PERMISSION_EXCEEDS_AUTHORITY);
+  return reasons;
+}
+
 export function evaluateAdmission({ request, contract }) {
   const normalizedRequest = validateAdmissionRequest(request);
   const contractEvaluation = evaluateContract(contract);
@@ -227,6 +289,10 @@ export function evaluateAdmission({ request, contract }) {
         contract_errors: contractEvaluation.errors,
         missing_capabilities: [],
         insufficient_authority: [],
+        insufficient_permission_operations: [],
+        unknown_permission_operations: [],
+        not_projected_permission_operations: [],
+        excess_mutation_permissions: [],
       },
       provenance: {
         subject_contract_fingerprint: null,
@@ -246,12 +312,14 @@ export function evaluateAdmission({ request, contract }) {
     requestedAuthority: normalizedRequest.requested_authority,
     subjectAuthority: contract.authority,
   });
+  const permissionEvaluation = evaluatePermissions({ request: normalizedRequest, contract });
   const identityState = classifyIdentityState({
     currentFingerprint: contract.contract_fingerprint,
     referenceFingerprint: normalizedRequest.reference_contract_fingerprint,
   });
   const governanceState = capabilityEvaluation.status === EVALUATION_STATES.PASS
     && authorityEvaluation.status === EVALUATION_STATES.PASS
+    && permissionEvaluation.status === EVALUATION_STATES.PASS
     ? GOVERNANCE_STATES.VALID
     : GOVERNANCE_STATES.INVALID;
   const decision = governanceState === GOVERNANCE_STATES.VALID
@@ -264,6 +332,7 @@ export function evaluateAdmission({ request, contract }) {
   reasonCodes.push(authorityEvaluation.status === EVALUATION_STATES.PASS
     ? ADMISSION_REASON_CODES.AUTHORITY_COMPATIBLE
     : ADMISSION_REASON_CODES.AUTHORITY_INSUFFICIENT);
+  reasonCodes.push(...permissionReasonCodes(permissionEvaluation));
   if (identityState === IDENTITY_STATES.DRIFTED) reasonCodes.push(ADMISSION_REASON_CODES.IDENTITY_DRIFT_OBSERVED);
   if (identityState === IDENTITY_STATES.UNREFERENCED) reasonCodes.push(ADMISSION_REASON_CODES.IDENTITY_UNREFERENCED);
 
@@ -275,7 +344,7 @@ export function evaluateAdmission({ request, contract }) {
     requirements: normalizedRequest.requirements,
     capability_evaluation: capabilityEvaluation,
     authority_evaluation: authorityEvaluation,
-    permission_evaluation: { status: PERMISSION_EVALUATION_STATES.NOT_EVALUATED },
+    permission_evaluation: permissionEvaluation,
     identity_state: identityState,
     governance_state: governanceState,
     reason_codes: reasonCodes,
@@ -283,6 +352,10 @@ export function evaluateAdmission({ request, contract }) {
       contract_errors: [],
       missing_capabilities: capabilityEvaluation.missing_capabilities,
       insufficient_authority: authorityEvaluation.insufficient_authority,
+      insufficient_permission_operations: permissionEvaluation.insufficient_operations,
+      unknown_permission_operations: permissionEvaluation.unknown_operations,
+      not_projected_permission_operations: permissionEvaluation.not_projected_operations,
+      excess_mutation_permissions: permissionEvaluation.excess_mutation_permissions,
     },
     provenance: {
       subject_contract_fingerprint: contract.contract_fingerprint,

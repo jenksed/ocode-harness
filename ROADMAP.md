@@ -90,7 +90,9 @@ M4A Governance Contract Foundation: PROVEN — the constitutional language, vers
 
 M4B AdmissionRequest + AdmissionDecision: PROVEN — deterministic, provider-independent capability and constitutional-authority admission with identity drift retained as provenance only is implemented by `npm run acceptance:m4b`.
 
-M4C Permission Projection: UNBLOCKED — add conservative OpenCode permission projection and least-authority enforcement to the proven AdmissionDecision engine. M4D–M4E remain planned; M4 as a whole is not yet proven.
+M4C Permission Projection: PROVEN — a deterministic configured-permission projector for edit/test/stage/commit/push/web, requirement-scoped sufficiency, and mutation least-authority enforcement is implemented by `npm run acceptance:m4c`.
+
+M4D Effective-subject reconciliation: UNBLOCKED — reconcile the admitted semantic role with the agent OpenCode reports executing without allowing execution mode to promote authority. M4E remains planned; M4 as a whole is not yet proven.
 
 ### M5 Wayfinder — PLANNED
 

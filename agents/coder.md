@@ -17,6 +17,8 @@ permission:
     "*": allow
     "git push": deny
     "git push *": deny
+    "git add": deny
+    "git add *": deny
     "git reset --hard": deny
     "git reset --hard *": deny
     "git clean": deny

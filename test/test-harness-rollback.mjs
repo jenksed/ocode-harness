@@ -86,6 +86,7 @@ copyFileSync(join(harnessRuntimeDir, 'lib', 'composition.mjs'), join(testSourceH
 copyFileSync(join(harnessRuntimeDir, 'lib', 'closeout.mjs'), join(testSourceHarnessRuntimeDir, 'lib', 'closeout.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'lib', 'verify.mjs'), join(testSourceHarnessRuntimeDir, 'lib', 'verify.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'lib', 'governance.mjs'), join(testSourceHarnessRuntimeDir, 'lib', 'governance.mjs'));
+copyFileSync(join(harnessRuntimeDir, 'lib', 'permission-projection.mjs'), join(testSourceHarnessRuntimeDir, 'lib', 'permission-projection.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'lib', 'admission.mjs'), join(testSourceHarnessRuntimeDir, 'lib', 'admission.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'lib', 'agent-contract.mjs'), join(testSourceHarnessRuntimeDir, 'lib', 'agent-contract.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'lib', 'opencode-integration.mjs'), join(testSourceHarnessRuntimeDir, 'lib', 'opencode-integration.mjs'));
@@ -150,6 +151,7 @@ copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'composition.mjs'), join(t
 copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'closeout.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'closeout.mjs'));
 copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'verify.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'verify.mjs'));
 copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'governance.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'governance.mjs'));
+copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'permission-projection.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'permission-projection.mjs'));
 copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'admission.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'admission.mjs'));
 copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'agent-contract.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'agent-contract.mjs'));
 copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'opencode-integration.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'opencode-integration.mjs'));

@@ -157,7 +157,7 @@ for (const testCase of cases) {
       testCase.name,
     );
   }
-  assert.equal(decision.permission_evaluation.status, PERMISSION_EVALUATION_STATES.NOT_EVALUATED, testCase.name);
+  assert.notEqual(decision.permission_evaluation.status, PERMISSION_EVALUATION_STATES.NOT_EVALUATED, testCase.name);
 }
 
 const driftReference = '0'.repeat(64);
@@ -211,5 +211,5 @@ console.log(JSON.stringify({
   status: 'ADMISSION_TESTS_PROVEN',
   cases: cases.length,
   canonical_roles: [...contracts.keys()],
-  permission_evaluation: PERMISSION_EVALUATION_STATES.NOT_EVALUATED,
+  permission_evaluation: 'M4C_PROJECTED',
 }));

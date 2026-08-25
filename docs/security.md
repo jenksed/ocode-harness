@@ -140,6 +140,8 @@ permission:
     "*": allow
     "git push": deny
     "git push *": deny
+    "git add": deny
+    "git add *": deny
     "git reset --hard": deny
     "git reset --hard *": deny
     "git clean": deny
@@ -151,7 +153,7 @@ permission:
 
 **Security Features:**
 - **edit: allow**: Coder can modify source files
-- **Denies dangerous git commands**: Cannot push, reset, clean, or commit
+- **Denies dangerous git commands**: Cannot stage, push, reset, clean, or commit
 - **Denies destructive commands**: Cannot remove directories with `rm -rf`
 - **Allowed skills**: Only TDD, diagnosing-bugs, prototype
 

@@ -79,7 +79,7 @@ AdmissionDecision
   decision: ALLOW | DENY
   capability_evaluation
   authority_evaluation
-  permission_evaluation: NOT_EVALUATED
+  permission_evaluation: projected configured-permission evidence
   identity_state
   governance_state
   reason_codes and structured failure details
@@ -89,10 +89,12 @@ Capability satisfaction is a subset test: required capabilities must be present 
 
 Reason codes are deliberately few and machine-readable: `REQUIRED_CAPABILITIES_SATISFIED`, `REQUIRED_CAPABILITY_MISSING`, `AUTHORITY_COMPATIBLE`, `AUTHORITY_INSUFFICIENT`, `CONTRACT_VALID`, `CONTRACT_INVALID`, `IDENTITY_DRIFT_OBSERVED`, and `IDENTITY_UNREFERENCED`. Missing capabilities and failed authority actions are structured data, not prose.
 
-The decision always records permission evaluation as `NOT_EVALUATED`. M4B neither reads nor declares OpenCode permission compatibility; M4C will add conservative projection and least-authority enforcement. M4B also does not reconcile an admitted subject with an effective OpenCode agent (M4D), provide a governance CLI (M4E), or introduce TaskSpecs, planner compilation, model routing, or provider inference.
+M4B originally recorded permission evaluation as `NOT_EVALUATED`. M4C now projects a deliberately bounded, configured-permission view: `edit`, `test`, `stage`, `commit`, `push`, and `web` each resolve to `ALLOW`, `DENY`, or `UNKNOWN`, with compact source/evidence provenance. Generic `command.execute` is deliberately `NOT_PROJECTED`; this is distinct from an in-scope `UNKNOWN` result and never claims arbitrary shell authorization.
+
+The existing `AdmissionDecision` consumes this projection in two narrow ways. Requirement-scoped sufficiency fails closed only when a requested permission-backed operation is `DENY`, `UNKNOWN`, or `NOT_PROJECTED`. Separately, every known projected mutation `ALLOW` is always checked against its corresponding `may_edit`, `may_stage`, `may_commit`, or `may_push` declaration; permission that exceeds authority invalidates governance even if that mutation was not requested. Test and web do not invent new authority axes. The projector describes configured permission evidence, not effective runtime permission; M4D will reconcile the admitted role with the effective OpenCode agent, and M4E will productize explanation/audit.
 
 Contract admission is a structural evaluation of a normalized role contract. Assignment admission evaluates explicit requested capabilities and authority. Both preserve the M4A identity rule: `DRIFTED` is provenance evidence, not a denial predicate, so a valid request may return `DRIFTED` + `VALID` + `ALLOW`.
 
 ## M4A boundary
 
-M4A performs closed structural validation only: supported capability schema, valid vocabulary, complete manifest-derived declarations, and valid identifiers. M4B builds on those inputs with admission evaluation; it still does not implement permission compatibility, runtime permission projection, or effective-subject enforcement.
+M4A performs closed structural validation only: supported capability schema, valid vocabulary, complete manifest-derived declarations, and valid identifiers. M4B builds on those inputs with admission evaluation. M4C adds only the six-operation configured permission projection and least-authority check; it still does not implement effective-subject enforcement.

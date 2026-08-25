@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "status": "FAIL",
+  "attempt_id": "attempt-5",
+  "failure_classification": "STRUCTURED_OUTPUT_INVALID",
+  "skill": {
+    "skill_id": "tdd",
+    "skill_version": "1.0.0",
+    "skill_fingerprint": "cbbf6040ed7cb7d929459bf0864db70a2e07a2f2452979c42ad98e040e356a3f"
+  },
+  "checkpoint": "/Users/jenksed/Projects/ocode-harness/skills/tdd/qualifications/evidence/cbbf6040ed7cb7d929459bf0864db70a2e07a2f2452979c42ad98e040e356a3f-live-attempt-5-execution.json",
+  "execution": {
+    "command": [
+      "opencode",
+      "run",
+      "--pure",
+      "--agent",
+      "coder",
+      "--format",
+      "json",
+      "--dir",
+      "/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-tdd-live-lEmMKM"
+    ],
+    "exit_code": 0,
+    "signal": null,
+    "duration_ms": 116524,
+    "spawn_error": null,
+    "export": {
+      "exit_code": 0,
+      "spawn_error": null
+    }
+  }
+}

@@ -7,3 +7,5 @@ M6 must not redesign governance, capability matching, permission projection, fre
 M6 designs—not implements here—SkillProtocol, QualificationRecord, ContextCapsule, and EvidenceCapsule. Priorities: TDD, systematic debugging, codebase investigation, blast-radius analysis, architecture/change design, adversarial review. Capsules must carry minimum objective, constraints, files/references, method, evidence, and acceptance expectations—not transcripts/history.
 
 Begin by verifying final M5 HEAD/origin parity and clean state. Reuse M0–M5 proof; do not rerun acceptance:m5 to reconstruct it. Reuse the project-local OpenCode skill seam and prove only the M6 delta with qualification fixtures.
+
+M6 should treat the high context consumption observed during an early small Wayfinder qualification as a context-economy design input: prioritize evidence-first `ContextCapsule` boundaries and lightweight context telemetry, without propagating transcripts or reworking M5.

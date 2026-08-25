@@ -33,11 +33,11 @@ export function runWayfinding(options) {
   };
   const first = invokeSafely(buildWayfindingPrompt(request));
   if (!first.success) return { ...first, wayfinding_result: null, repair_count: 0 };
-  try { return { ...first, wayfinding_result: parseWayfindingResult(first.model_output ?? first.execution.stdout), repair_count: 0 }; }
+  try { return { ...first, wayfinding_result: parseWayfindingResult(first.model_output), repair_count: 0 }; }
   catch (error) {
     const second = invokeSafely(buildWayfindingPrompt(request, error.message));
     if (!second.success) return { ...second, wayfinding_result: null, repair_count: 1 };
-    try { return { ...second, wayfinding_result: parseWayfindingResult(second.model_output ?? second.execution.stdout), repair_count: 1 }; }
+    try { return { ...second, wayfinding_result: parseWayfindingResult(second.model_output), repair_count: 1 }; }
     catch (secondError) { return { ...second, success: false, failure_classification: 'STRUCTURED_OUTPUT_INVALID', wayfinding_result: null, structured_output_error: secondError.message, repair_count: 1 }; }
   }
 }

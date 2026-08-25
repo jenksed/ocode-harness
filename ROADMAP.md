@@ -98,7 +98,7 @@ M4E Governance productization: PROVEN — `ocode govern explain/check/audit`, su
 
 M4 CLOSEOUT: PROVEN — capability, authority, configured permission, admission, effective subject, and provenance are one production governance system. M5 must translate explicit work requirements into `AdmissionRequest` rather than fork governance.
 
-### M5 Wayfinder — ACTIVE
+### M5 Wayfinder — PROVEN
 
 Purpose: implement the Wayfinder workflow only after baseline, integration, and authority contracts are proven.
 
@@ -106,7 +106,10 @@ Depends on: M4.
 
 Entry contract: [M5 entry contract](docs/architecture/m5-entry-contract.md). No Wayfinder or UncertaintyMap implementation is included in M4.
 
-M5: LIVE QUALIFICATION PENDING — Wayfinder core and bounded governed runtime adapter are deterministically proven by `npm run acceptance:m5`; total M5 proof additionally requires retained live FreeLLMAPI qualification and independent evidence review. M6 remains planned.
+M5: PROVEN — `M5_DETERMINISTIC_PROVEN` acceptance plus retained bounded FreeLLMAPI Wayfinder qualification establish governed admission, free `auto:wayfinder` binding/model MATCH, observed subject MATCH, validated `WayfindingResult` (`READY_TO_PLAN`), one bounded repair, ledger provenance, and no mutation. M6 preparation is unblocked and M6 is ready to start.
+
+M6 PREPARATION UNBLOCKED: YES
+M6 READY TO START: YES
 
 ### M6 Ocode-Native Pstack-Derived Skills — PLANNED
 
@@ -142,7 +145,7 @@ Depends on: M9.
 
 M0 → M1 → M2 → M3 → M4 → M5 → M6 → M7 → M8 → M9 → M10
 
-M4–M10 remain planned. Placeholder directories or partial primitives do not imply implementation.
+M6–M10 remain planned. Placeholder directories or partial primitives do not imply implementation.
 
 ## Current Bootstrap Boundary
 

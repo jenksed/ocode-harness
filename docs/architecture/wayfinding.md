@@ -9,3 +9,5 @@ Readiness is `READY_TO_PLAN`, `PLAN_PREMATURE`, `BLOCKED`, or `ESCALATION_REQUIR
 Evidence freshness is dependency-scoped. A README change does not invalidate admission evidence that depends only on `packages/harness-runtime/lib/admission.mjs`; a change to that dependency makes it `POSSIBLY_STALE`. Repository SHA is provenance, never a global invalidation switch.
 
 The evidence ladder prefers already-current accepted evidence, local facts, cheap inspection, focused deterministic checks, broader investigation, external research, then escalation. M5 core identifies evidence; it does not execute it, route a provider, or observe effective runtime permission.
+
+M5 final qualification reused a bounded free-profile Wayfinder execution: M4 admission allowed the read-only semantic role, `freellmapi/auto:wayfinder` matched the observed effective binding and subject, structured output validated after one bounded correction, and existing ledger provenance recorded a mutation-free run. `M5_DETERMINISTIC_PROVEN` remains the deterministic-only acceptance label; retained live evidence completes M5.

@@ -13,6 +13,7 @@ import {
   validateProfileCompleteness,
 } from './opencode-integration.mjs';
 import { appendRecord, createLedgerRecord } from './ledger.mjs';
+import { runOpenCodeSdkSession } from './opencode-sdk-execution.mjs';
 
 function run(command, args, options = {}) {
   const started = Date.now();
@@ -241,6 +242,7 @@ export function admittedSubjectForExecution(resolution, admissionDecision = null
 }
 
 export function executeGovernedRole(options) {
+  if (options.transport === 'sdk') return executeGovernedRoleSdk(options);
   if (options.streaming === true) return executeGovernedRoleStreaming(options);
   const baseDir = resolve(options.baseDir);
   const projectDir = resolve(options.projectDir);
@@ -342,6 +344,106 @@ export function executeGovernedRole(options) {
     success,
     failure_classification: failureClassification,
     ledger_record: record,
+  };
+}
+
+/** Execute a governed assignment through OpenCode's authoritative session API. */
+export async function executeGovernedRoleSdk(options) {
+  const baseDir = resolve(options.baseDir);
+  const projectDir = resolve(options.projectDir);
+  const { manifest, contracts } = loadAgentContracts({ baseDir });
+  const loaded = options.profile
+    ? { profile: options.profile, source: options.bindingSource || `profiles/${options.profile.name}.json` }
+    : loadBindingProfile(options.profileName, { profilesDir: resolve(baseDir, 'profiles'), manifest });
+  validateProfileCompleteness(loaded.profile, manifest);
+  const contract = contracts.get(options.role);
+  const resolution = createExecutionResolution({
+    role: options.role,
+    contract,
+    profile: loaded.profile,
+    bindingSource: options.bindingSource || `profiles/${loaded.profile.name}.json`,
+  });
+  const admissionDecision = options.admissionDecision || null;
+  const admittedSubject = admittedSubjectForExecution(resolution, admissionDecision);
+  validateResolutionAvailability(resolution, {
+    opencode: options.opencode,
+    cwd: projectDir,
+    env: options.env || process.env,
+    cache: options.catalogCache,
+    models: options.models,
+  });
+
+  const config = JSON.parse(serializeGovernedExecutionOverlay(
+    loaded.profile,
+    options.role,
+    (options.env || process.env).OPENCODE_CONFIG_CONTENT,
+  ));
+  const { provider, model } = splitModelReference(resolution.execution_policy.requested_model);
+  const execution = await runOpenCodeSdkSession({
+    projectDir,
+    role: options.role,
+    providerID: provider,
+    modelID: model,
+    prompt: options.prompt,
+    config,
+    env: options.env || process.env,
+    timeout: options.timeout || 120_000,
+    tools: options.sdkTools,
+    sdk: options.sdk,
+    title: options.title,
+  });
+  const observed = execution.effective_identity?.provider_id
+    || execution.effective_identity?.model_id
+    || execution.effective_identity?.agent
+    ? {
+        info: {
+          model: {
+            providerID: execution.effective_identity.provider_id,
+            id: execution.effective_identity.model_id,
+          },
+          agent: execution.effective_identity.agent,
+        },
+      }
+    : null;
+  const reconciliation = reconcileExecutionBinding(resolution, observed);
+  const subjectReconciliation = reconcileExecutionSubject(admittedSubject, observed);
+  const runtimeSucceeded = execution.termination === 'SESSION_IDLE'
+    && execution.exit_code === 0
+    && execution.completion_source !== null;
+  const acceptance = evaluateGovernedExecutionAcceptance({
+    runtimeSucceeded,
+    reconciliation,
+    subjectReconciliation,
+  });
+  const ledgerPath = options.ledgerPath || resolve(projectDir, '.opencode', 'run-ledger.jsonl');
+  const record = appendExecutionLedgerRecord({
+    ledgerPath,
+    projectDir,
+    resolution,
+    reconciliation,
+    subjectReconciliation,
+    success: acceptance.success,
+    failureClassification: acceptance.failure_classification,
+    elapsedMs: execution.duration_ms,
+  });
+  return {
+    resolution,
+    execution,
+    events: execution.events,
+    model_output: execution.model_output,
+    session_id: execution.session_id,
+    exported: null,
+    export_result: null,
+    session_messages: execution.messages,
+    reconciliation,
+    subject_reconciliation: subjectReconciliation,
+    admitted_subject: admittedSubject,
+    admission_decision: admissionDecision,
+    success: acceptance.success,
+    failure_classification: acceptance.failure_classification,
+    ledger_record: record,
+    transport: 'OPENCODE_SDK',
+    completion_source: execution.completion_source,
   };
 }
 

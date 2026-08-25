@@ -20,6 +20,7 @@
     "test:lifecycle": "node test/test-lifecycle.mjs",
     "test:orientation": "node test/test-orientation.mjs",
     "test:opencode-integration": "node test/test-opencode-integration.mjs",
+    "test:opencode-sdk-execution": "node test/test-opencode-sdk-execution.mjs",
     "test:execution-profiles": "node test/test-execution-profiles.mjs",
     "test:governance-contracts": "node test/test-governance-contracts.mjs",
     "test:admission": "node test/test-admission.mjs",
@@ -75,8 +76,9 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "dependencies": {},
-  "devDependencies": {},
+  "dependencies": {
+    "@opencode-ai/sdk": "1.18.21"
+  },
   "files": [
     "agents/",
     "packages/orientation/",

@@ -8,6 +8,12 @@ import { loadAgentContracts } from '../lib/agent-contract.mjs';
 import { readMachineConfig } from '../lib/deploy.mjs';
 import { getRecordByRunId } from '../lib/ledger.mjs';
 import {
+  ADMISSION_KINDS,
+  ADMISSION_REQUEST_SCHEMA_VERSION,
+  evaluateAdmission,
+  evaluateContractAdmission,
+} from '../lib/admission.mjs';
+import {
   BindingError,
   createExecutionResolution,
   fingerprintBindingProfile,
@@ -65,6 +71,11 @@ function loadContext(profileOverride) {
     manifest,
   });
   return { harnessRoot, machineConfig, profileName, manifest, contracts, ...loaded };
+}
+
+function loadGovernanceContext() {
+  const harnessRoot = findHarnessRoot();
+  return { harnessRoot, ...loadAgentContracts({ baseDir: harnessRoot }) };
 }
 
 function short(value) {
@@ -143,10 +154,124 @@ function explainRun(runID) {
   console.log(`REQUESTED BINDING\n${provenance.execution_policy.requested_model}\n`);
   console.log(`EFFECTIVE BINDING\n${provenance.effective_model || 'UNKNOWN'}\n`);
   console.log(`RECONCILIATION\n${provenance.binding_reconciliation}\n`);
+  console.log(`ADMITTED SUBJECT\n${provenance.admitted_subject ?? 'NOT_RECORDED'}\n`);
+  console.log(`EFFECTIVE SUBJECT\n${provenance.effective_subject ?? 'UNKNOWN'}\n`);
+  console.log(`SUBJECT RECONCILIATION\n${provenance.subject_reconciliation ?? 'NOT_RECORDED'}\n`);
+  console.log(`SUBJECT REASON\n${provenance.subject_reason_code ?? 'NOT_RECORDED'}\n`);
   console.log(`RESULT\n${provenance.success ? 'SUCCESS' : 'FAILURE'}`);
   if (provenance.failure_classification) {
     console.log(`\nFAILURE CLASSIFICATION\n${provenance.failure_classification}`);
   }
+}
+
+function emptyAuthority() {
+  return { edit: false, stage: false, commit: false, push: false };
+}
+
+function requireContract(context, role) {
+  const contract = context.contracts.get(role);
+  if (!contract || !context.manifest.roles.some((entry) => entry.id === role)) {
+    throw new Error(`Unknown governed role: ${role}`);
+  }
+  return contract;
+}
+
+function parseGovernCheckArguments(args) {
+  const requirements = [];
+  const requestedAuthority = emptyAuthority();
+  for (let index = 0; index < args.length; index += 1) {
+    const value = args[index];
+    if (value === '--requires') {
+      const next = args[++index];
+      if (!next || next.startsWith('-') || next.split(',').some((item) => !item)) {
+        throw new Error('--requires requires a comma-separated capability list');
+      }
+      requirements.push(...next.split(','));
+    } else if (value.startsWith('--requires=')) {
+      const requested = value.slice('--requires='.length);
+      if (!requested || requested.split(',').some((item) => !item)) throw new Error('--requires requires a comma-separated capability list');
+      requirements.push(...requested.split(','));
+    } else if (['--edit', '--stage', '--commit', '--push'].includes(value)) {
+      requestedAuthority[value.slice(2)] = true;
+    } else {
+      throw new Error(`Unknown govern check option: ${value}`);
+    }
+  }
+  return { requirements, requestedAuthority };
+}
+
+function assignmentDecision(context, role, { requirements = [], requestedAuthority = emptyAuthority() } = {}) {
+  const contract = requireContract(context, role);
+  return evaluateAdmission({
+    contract,
+    request: {
+      schema_version: ADMISSION_REQUEST_SCHEMA_VERSION,
+      kind: ADMISSION_KINDS.ASSIGNMENT,
+      subject: { role },
+      requirements: { capabilities: requirements },
+      requested_authority: requestedAuthority,
+    },
+  });
+}
+
+function printDecision(decision) {
+  console.log(`DECISION\n${decision.decision}\n`);
+  console.log(`REQUIREMENTS\n${decision.requirements.capabilities.join(', ') || 'none'}\n`);
+  console.log(`CAPABILITY EVALUATION\n${decision.capability_evaluation.status}\n`);
+  console.log(`AUTHORITY EVALUATION\n${decision.authority_evaluation.status}\n`);
+  console.log(`PERMISSION EVALUATION\n${decision.permission_evaluation.status}\n`);
+  console.log(`IDENTITY STATE\n${decision.identity_state}\n`);
+  console.log(`GOVERNANCE STATE\n${decision.governance_state}\n`);
+  console.log(`REASON CODES\n${decision.reason_codes.join(', ')}`);
+}
+
+function printProjection(projection) {
+  console.log('\nPERMISSION PROJECTION');
+  for (const operation of Object.values(projection.operations)) {
+    console.log(`${operation.operation}: ${operation.state} (${operation.source}; ${operation.evidence.join('; ')})`);
+  }
+  for (const [operation, state] of Object.entries(projection.not_projected)) {
+    console.log(`${operation}: ${state}`);
+  }
+}
+
+function govern(context, args) {
+  const [command, role, ...options] = args;
+  if (command === 'explain' && role && options.length === 0) {
+    const contract = requireContract(context, role);
+    const decision = evaluateContractAdmission(contract);
+    console.log(`ROLE\n${role}\n`);
+    console.log(`CAPABILITIES\n${contract.capabilities.provides.join(', ')}\n`);
+    console.log(`AUTHORITY\nedit=${contract.authority.may_edit}, stage=${contract.authority.may_stage}, commit=${contract.authority.may_commit}, push=${contract.authority.may_push}`);
+    printProjection(decision.permission_evaluation.projection);
+    console.log('');
+    console.log(`BASELINE / CONTRACT ADMISSION\n${decision.decision}\n`);
+    printDecision(decision);
+    return decision;
+  }
+  if (command === 'check' && role) {
+    const contract = requireContract(context, role);
+    const decision = options.length === 0
+      ? evaluateContractAdmission(contract)
+      : assignmentDecision(context, role, parseGovernCheckArguments(options));
+    console.log(`ROLE\n${role}\n`);
+    printDecision(decision);
+    return decision;
+  }
+  if (command === 'audit' && !role) {
+    let hasDenial = false;
+    console.log(`${pad('ROLE', 14)}${pad('IDENTITY', 22)}${pad('GOVERNANCE', 14)}ADMISSION`);
+    for (const entry of context.manifest.roles) {
+      const decision = evaluateContractAdmission(requireContract(context, entry.id));
+      if (decision.decision === 'DENY') hasDenial = true;
+      console.log(`${pad(entry.id, 14)}${pad(decision.identity_state, 22)}${pad(decision.governance_state, 14)}${decision.decision}`);
+      if (decision.reason_codes.some((reason) => !['CONTRACT_VALID', 'REQUIRED_CAPABILITIES_SATISFIED', 'AUTHORITY_COMPATIBLE', 'PERMISSION_PROJECTION_COMPATIBLE', 'IDENTITY_UNREFERENCED'].includes(reason))) {
+        console.log(`  reasons: ${decision.reason_codes.join(', ')}`);
+      }
+    }
+    return { decision: hasDenial ? 'DENY' : 'ALLOW' };
+  }
+  throw new Error('Usage: ocode govern explain <role> | ocode govern check <role> [--requires capability[,capability]] [--edit] [--stage] [--commit] [--push] | ocode govern audit');
 }
 
 function orientProject() {
@@ -186,6 +311,12 @@ async function main() {
   if (remaining[0] === 'explain' && remaining[1] === '--run') {
     if (!remaining[2]) throw new Error('ocode explain --run requires a run ID');
     explainRun(remaining[2]);
+    return;
+  }
+
+  if (remaining[0] === 'govern') {
+    const decision = govern(loadGovernanceContext(), remaining.slice(1));
+    if (decision?.decision === 'DENY') process.exitCode = 1;
     return;
   }
 

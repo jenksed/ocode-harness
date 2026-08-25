@@ -28,6 +28,7 @@ import {
   fingerprintCapabilityVocabulary,
   validateCapabilityVocabulary,
 } from '../packages/harness-runtime/lib/governance.mjs';
+import { evaluateContractAdmission } from '../packages/harness-runtime/lib/admission.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -242,7 +243,7 @@ function checkExecutionProfilesAndContracts() {
 }
 
 function checkGovernanceContracts() {
-  printSection('Checking M4A governance contracts...');
+  printSection('Checking M4 governance contracts...');
   const baseDir = findSourceRepo(process.cwd()) || CONFIG.harnessRoot;
   try {
     const vocabulary = validateCapabilityVocabulary();
@@ -259,13 +260,17 @@ function checkGovernanceContracts() {
       if (contract.capabilities.provides.length === 0) {
         throw new Error(`Canonical agent ${role.id} has no declared capabilities`);
       }
+      const decision = evaluateContractAdmission(contract);
+      if (decision.decision !== 'ALLOW' || decision.governance_state !== 'VALID') {
+        throw new Error(`Canonical agent ${role.id} baseline governance is invalid: ${decision.reason_codes.join(', ')}`);
+      }
     }
     console.log(`  ✓ capability schema v${vocabulary.schema_version}: ${fingerprintCapabilityVocabulary(vocabulary).slice(0, 12)} (${vocabulary.capabilities.length} known capabilities)`);
-    console.log(`✓ All ${manifest.roles.length} manifest-governed roles have structurally valid capability declarations`);
-    console.log('✓ Capability validation is structural; authority/permission compatibility is deferred');
+    console.log(`✓ All ${manifest.roles.length} manifest-governed roles have valid baseline governance through the shared admission engine`);
+    console.log('✓ Doctor evaluates configured-permission projection, never effective runtime permission');
     return true;
   } catch (err) {
-    console.error(`✗ M4A governance contract check failed: ${err.message}`);
+    console.error(`✗ M4 governance contract check failed: ${err.message}`);
     return false;
   }
 }
@@ -661,7 +666,7 @@ function checkHarnessRuntime() {
   }
 
   // Check lib files
-  const libFiles = ['identity.mjs', 'lifecycle.mjs', 'ledger.mjs', 'evidence.mjs', 'composition.mjs', 'closeout.mjs', 'verify.mjs', 'governance.mjs', 'agent-contract.mjs', 'opencode-integration.mjs', 'execution.mjs'];
+  const libFiles = ['identity.mjs', 'lifecycle.mjs', 'ledger.mjs', 'evidence.mjs', 'composition.mjs', 'closeout.mjs', 'verify.mjs', 'governance.mjs', 'agent-contract.mjs', 'permission-projection.mjs', 'admission.mjs', 'opencode-integration.mjs', 'execution.mjs'];
   let allLibFound = true;
   for (const libFile of libFiles) {
     const libPath = join(CONFIG.harnessRuntimeDir, 'lib', libFile);

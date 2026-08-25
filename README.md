@@ -94,9 +94,14 @@ ocode profile
 ocode profile explain reviewer
 ocode profile diff free hybrid
 ocode explain --run <run-id>
+ocode govern explain <role>
+ocode govern check coder --requires implementation.change,repository.edit --edit
+ocode govern audit
 ```
 
 Canonical agents are provider-neutral. `agents/manifest.json` owns the structured role inventory; `profiles/*.json` owns model policy. Binding failures deny execution and there is no silent cross-provider fallback.
+
+`ocode govern` is a local, deterministic view of the production governance engine. `explain` renders the canonical contract, authority, configured-permission projection, and baseline admission. `check` simulates only explicit capabilities and the established mutation flags; it never creates a TaskSpec or grants authority. `audit` is manifest-derived and read-only. Configured permission is evidence, not observed effective runtime permission.
 
 ### Run Tests
 

@@ -1,6 +1,6 @@
 # Governance contracts
 
-M4A defines Ocode's governance language and structural role contracts. M4B adds the deterministic, provider-independent admission core. Permission projection and effective-subject reconciliation remain deliberately deferred.
+M4 defines Ocode's governance language, deterministic admission, configured-permission projection, and effective-subject reconciliation. Operator surfaces consume this single production model; they do not implement policy of their own.
 
 ## Constitutional terms
 
@@ -95,6 +95,14 @@ The existing `AdmissionDecision` consumes this projection in two narrow ways. Re
 
 Contract admission is a structural evaluation of a normalized role contract. Assignment admission evaluates explicit requested capabilities and authority. Both preserve the M4A identity rule: `DRIFTED` is provenance evidence, not a denial predicate, so a valid request may return `DRIFTED` + `VALID` + `ALLOW`.
 
+## Subject reconciliation and operator surfaces
+
+M4D compares the admitted semantic subject from the allowed `AdmissionDecision` with the observed `info.agent` field in the sanitized OpenCode export. Its version-1 result is `MATCH`, `MISMATCH`, or `UNKNOWN`; `MISMATCH` and `UNKNOWN` are not accepted as compliant admitted-role execution. This is independent from M3 model-binding reconciliation. The ephemeral OpenCode `mode: primary` overlay is an execution-selection mechanic only: it cannot change role identity, capabilities, authority, configured-permission governance, admission, or deterministic Git ownership.
+
+`ocode govern explain <role>`, `ocode govern check <role>`, and `ocode govern audit` load canonical manifest-derived contracts and invoke the production admission engine. They make no network, provider, OpenCode, or mutation call. `check` accepts only explicit capability requirements and the four established mutation flags; denied checks exit nonzero. `audit` evaluates baseline admission for every manifest role without a hard-coded inventory.
+
+`ocode explain --run <id>` renders independent M3 model-binding facts and M4D ledger facts: admitted subject, effective subject, subject reconciliation, and reason. The existing execution provenance record remains the sole evidence store. Doctor is a cheap consumer of the same contract-admission function: it checks installed roles remain baseline `VALID`/`ALLOW` using configured projection, never effective runtime permission.
+
 ## M4A boundary
 
-M4A performs closed structural validation only: supported capability schema, valid vocabulary, complete manifest-derived declarations, and valid identifiers. M4B builds on those inputs with admission evaluation. M4C adds only the six-operation configured permission projection and least-authority check; it still does not implement effective-subject enforcement.
+M4A performs closed structural validation only: supported capability schema, valid vocabulary, complete manifest-derived declarations, and valid identifiers. M4B builds on those inputs with admission evaluation. M4C adds the six-operation configured permission projection and least-authority check. M4D adds observed-subject reconciliation, and M4E productizes the resulting single governance system without another policy engine.

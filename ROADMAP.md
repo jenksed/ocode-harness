@@ -80,7 +80,7 @@ Evidence required:
 
 M4 readiness: YES — deterministic normalized role, authority, permission, semantic fingerprint, execution-resolution, and contradiction-fixture inputs exist. No M4 capability ontology or enforcement policy is included.
 
-### M4 Capability / Permission / Authority Contracts — ACTIVE
+### M4 Capability / Permission / Authority Contracts — PROVEN
 
 Purpose: formalize agent capabilities, permissions, and authority boundaries as enforceable contracts.
 
@@ -94,13 +94,17 @@ M4C Permission Projection: PROVEN — a deterministic configured-permission proj
 
 M4D Effective-subject reconciliation: PROVEN — sanitized observed agent identity is reconciled against the admitted subject with MATCH/MISMATCH/UNKNOWN states, mismatch/unverified execution rejection, ledger evidence, and primary-mode authority neutrality by `npm run acceptance:m4d`.
 
-M4E Governance productization: UNBLOCKED — productize the proven M4A–D system through operator explanation/check/audit commands, canonical acceptance, documentation, and milestone closeout. M4 as a whole is not yet proven.
+M4E Governance productization: PROVEN — `ocode govern explain/check/audit`, subject-aware run explanation, shared doctor governance health, canonical `npm run acceptance:m4`, documentation, and M5 entry contract are complete.
 
-### M5 Wayfinder — PLANNED
+M4 CLOSEOUT: PROVEN — capability, authority, configured permission, admission, effective subject, and provenance are one production governance system. M5 must translate explicit work requirements into `AdmissionRequest` rather than fork governance.
+
+### M5 Wayfinder — UNBLOCKED
 
 Purpose: implement the Wayfinder workflow only after baseline, integration, and authority contracts are proven.
 
 Depends on: M4.
+
+Entry contract: [M5 entry contract](docs/architecture/m5-entry-contract.md). No Wayfinder or UncertaintyMap implementation is included in M4.
 
 ### M6 Ocode-Native Pstack-Derived Skills — PLANNED
 

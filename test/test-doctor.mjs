@@ -112,9 +112,9 @@ try {
     failed = true;
   }
 
-  if (output.includes('Checking M4A governance contracts') &&
-      output.includes('manifest-governed roles have structurally valid capability declarations')) {
-    console.log('✓ Doctor reports structural M4A governance contract health');
+  if (output.includes('Checking M4 governance contracts') &&
+      output.includes('manifest-governed roles have valid baseline governance through the shared admission engine')) {
+    console.log('✓ Doctor reports shared M4 governance contract health');
   } else {
     console.error('✗ Doctor did not report structural M4A governance contract health');
     failed = true;

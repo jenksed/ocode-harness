@@ -34,7 +34,7 @@ Canonical machine-readable file: `skills/<skill-id>/protocol.json`. Its sibling 
   "applicability": [{"id":"bounded-behavior-change","when":"A behavior change can be specified and tested."}],
   "non_applicability": [{"id":"investigation-only","when":"No change is authorized or a cause is not yet established."}],
   "requirements": {
-    "capabilities": ["command.execute","implementation.change","repository.edit","repository.read","test.execute"],
+    "capabilities": ["implementation.change","repository.edit","repository.read","test.execute"],
     "requested_authority": {"edit":true,"stage":false,"commit":false,"push":false}
   },
   "method": {
@@ -65,8 +65,8 @@ Canonical machine-readable file: `skills/<skill-id>/protocol.json`. Its sibling 
 | `skill_id`, `skill_version` | Stable identity and SemVer release label. A version change does not authorize anything and cannot preserve qualification across a different fingerprint. |
 | `purpose` | One concise intended outcome. |
 | `applicability`, `non_applicability` | Non-empty, uniquely identified predicates expressed as observable `when` descriptions. They describe selection; they do not select a skill or role. |
-| `requirements.capabilities` | Unique, sorted identifiers from M4’s existing closed vocabulary only. |
-| `requirements.requested_authority` | Exactly booleans `edit`, `stage`, `commit`, `push`; no skill-specific authority exists. |
+| `requirements.capabilities` | Unique, sorted identifiers from M4’s existing closed vocabulary only. They are the maximum semantic operation envelope of this fingerprint, not advisory admission metadata. Method instructions must not require an operation absent from this set (including edit, tests, web research, or generic commands). Actual configured permission remains M4-governed. |
+| `requirements.requested_authority` | Exactly booleans `edit`, `stage`, `commit`, `push`; no skill-specific authority exists. This one static object is the entire authority request for the fingerprint: applicability and method prose must not express conditional authority, dynamic escalation, or an undeclared mutation. Materially different authority requires a different method contract or later task decomposition. |
 | `method.stages` | Ordered, unique stage IDs with objective, required input IDs, and required output IDs. This is the machine-checkable method skeleton. `max_structured_repairs` is literal `1`. |
 | `outputs` | Unique output contracts. v1 requires exactly one required `EvidenceCapsule` output named `skill-result`; optional artifacts are named here. |
 | `evidence_requirements` | Unique evidence obligations; each states its required observation kind, not a model assertion. |
@@ -84,7 +84,6 @@ Canonical machine-readable file: `skills/<skill-id>/protocol.json`. Its sibling 
   },
   "requirements": {
     "capabilities": [
-      "command.execute",
       "implementation.change",
       "repository.edit",
       "repository.read",
@@ -101,6 +100,8 @@ Canonical machine-readable file: `skills/<skill-id>/protocol.json`. Its sibling 
 ```
 
 M6.1 must pass that object unchanged to `validateAdmissionRequest()` / `evaluateAdmission()`. `reference_contract_fingerprint` is intentionally omitted: the existing M4 validator permits its absence and normalizes it to `null`; it is provenance-only, not a skill requirement. Admission, permission projection, reason codes, and effective-subject reconciliation remain M4.
+
+`command.execute` remains a structurally valid M4 capability and a SkillProtocol may declare it. Under current M4, however, it maps to `command_execute`, which is deliberately `NOT_PROJECTED`; any request requiring it deterministically receives `DENY` with `PERMISSION_NOT_PROJECTED`. M6 must not special-case it, infer permission from bash rules, use a role capability as permission, or introduce a second projector. Generic command-execution support requires a separately approved M4 permission-projection revision.
 
 ## ContextCapsule v1
 

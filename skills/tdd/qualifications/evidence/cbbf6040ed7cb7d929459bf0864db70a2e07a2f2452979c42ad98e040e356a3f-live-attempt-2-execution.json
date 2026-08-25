@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "status": "EXECUTION_CHECKPOINT",
+  "skill": {
+    "skill_id": "tdd",
+    "skill_version": "1.0.0",
+    "skill_fingerprint": "cbbf6040ed7cb7d929459bf0864db70a2e07a2f2452979c42ad98e040e356a3f"
+  },
+  "fixture_fingerprint": "09f202837386a55490c596d1691833a845ab7cb42a19e23d902a405d81452490",
+  "admission": {"decision":"ALLOW","subject":{"role":"coder"}},
+  "execution": {
+    "profile": "free",
+    "requested_model": "freellmapi/auto:coding",
+    "effective_model": "freellmapi/auto:coding",
+    "binding_reconciliation": "MATCH",
+    "admitted_subject": "coder",
+    "effective_subject": "coder",
+    "subject_reconciliation": "MATCH",
+    "session_id": "ses_fc6fd7a80ffegXJ096DuMSDQsQ",
+    "run_id": "65ba8d35-8896-478c-a7df-388b9eebef7a",
+    "opencode_version": "1.18.21",
+    "sanitized_export": true
+  },
+  "completed_tdd_skill_load": {
+    "predicate": "event.type === tool_use && event.part.type === tool && event.part.tool === skill && event.part.state.status === completed && event.part.state.input.name === tdd",
+    "observed": true,
+    "name": "tdd",
+    "projected_skill_dir": ".opencode/skills/tdd"
+  },
+  "context": {
+    "path_refs": ["math.mjs","math.test.mjs","package.json"],
+    "max_expansions": 0,
+    "external_requests": 0
+  },
+  "initial_math_sha256": "b27138f113fa6444f17de0ce758e98346a18fcf97cd293ca8b08ed7050df9aed",
+  "final_hashes": {
+    "math.mjs": "82721313838ba8f45a20b957bec2cd588b0e30274864b13a1f7f17502e87a542",
+    "math.test.mjs": "36d0672f7100407246da6d5653c9a83ba7b8363e673b28222b014fb272ab686b",
+    "package.json": "8cb949728b38a06f54fc6744f72fb86a1e461b55d1debd033391ca2ddae076c5",
+    "qualification-test-runner.mjs": "eb8ab1ebcd66ddea9e4ca7e2d55d616e4b3d74a53d18beed136151fa47e735e5"
+  },
+  "trace": [
+    {"sequence":1,"implementation_sha256":"b27138f113fa6444f17de0ce758e98346a18fcf97cd293ca8b08ed7050df9aed","exit_code":1},
+    {"sequence":2,"implementation_sha256":"82721313838ba8f45a20b957bec2cd588b0e30274864b13a1f7f17502e87a542","exit_code":0}
+  ],
+  "changed_paths": ["math.mjs"],
+  "oracle_unchanged": true,
+  "malformed_model_output": "```json\n{\n  \"schema_version\": 1,\n  \"skill_id\": \"tdd\",\n  \"skill_version\": \"1.0.0\",\n  \"skill_fingerprint\": \"cbbf6040ed7cb7d929459bf0864db70a2e07a2f2452979c42ad98e040e356a3f\",\n  \"subject\": \"coder\",\n  \"status\": \"COMPLETE\",\n  \"acceptance_mapping\": {\n    \"behavior-bounded\": \"tdd-scope\",\n    \"independent-oracle\": \"tdd-scope\",\n    \"red-proven\": \"tdd-red\",\n    \"change-bounded\": \"tdd-change\",\n    \"green-proven\": \"tdd-green\",\n    \"regression-durable\": \"tdd-green,tdd-scope\",\n    \"stop-when-proven\": \"tdd-scope\"\n  },\n  \"unresolved_items\": []\n}\n```",
+  "report_status": "MALFORMED_REPORTED_EVIDENCE_CAPSULE",
+  "sanitization": "No API keys, headers, credentials, raw environment, or unbounded session export retained."
+}

@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "status": "FAIL",
+  "failure_classification": "TDD_SKILL_LOAD_NOT_OBSERVED",
+  "skill": {
+    "skill_id": "tdd",
+    "skill_version": "1.0.0",
+    "skill_fingerprint": "cbbf6040ed7cb7d929459bf0864db70a2e07a2f2452979c42ad98e040e356a3f"
+  },
+  "fixture_fingerprint": "09f202837386a55490c596d1691833a845ab7cb42a19e23d902a405d81452490",
+  "execution": {
+    "profile": "free",
+    "requested_model": "freellmapi/auto:coding",
+    "effective_model": "freellmapi/auto:coding",
+    "binding_reconciliation": "MATCH",
+    "admitted_subject": "coder",
+    "effective_subject": "coder",
+    "subject_reconciliation": "MATCH",
+    "session_id": "ses_fc7131a15ffe0Nx5YfKZgIcbNK",
+    "opencode_version": "1.18.21",
+    "execution_exit_code": 0,
+    "sanitized_export": true
+  },
+  "admission": {"decision":"ALLOW","subject":{"role":"coder"}},
+  "observed_tool_summary": ["bash:completed","read:completed","read:completed","edit:completed","bash:completed","read:completed"],
+  "completed_tdd_skill_load": null,
+  "initial_math_sha256": "b27138f113fa6444f17de0ce758e98346a18fcf97cd293ca8b08ed7050df9aed",
+  "final_math_sha256": "82721313838ba8f45a20b957bec2cd588b0e30274864b13a1f7f17502e87a542",
+  "trace": [
+    {"sequence":1,"implementation_sha256":"b27138f113fa6444f17de0ce758e98346a18fcf97cd293ca8b08ed7050df9aed","exit_code":1},
+    {"sequence":2,"implementation_sha256":"82721313838ba8f45a20b957bec2cd588b0e30274864b13a1f7f17502e87a542","exit_code":0}
+  ],
+  "changed_paths": ["math.mjs"],
+  "oracle_unchanged": true,
+  "context": {"path_refs":["math.mjs","math.test.mjs","package.json"],"max_expansions":0,"external_requests":0},
+  "sanitization": "No API keys, headers, credentials, raw environment, raw model text, or raw OpenCode output retained."
+}

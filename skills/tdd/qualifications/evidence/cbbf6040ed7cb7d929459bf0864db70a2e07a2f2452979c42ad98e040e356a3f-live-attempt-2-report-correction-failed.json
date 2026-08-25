@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "status": "FAIL",
+  "failure_classification": "STRUCTURED_OUTPUT_INVALID",
+  "attempt_2_session_id": "ses_fc6fd7a80ffegXJ096DuMSDQsQ",
+  "correction": {
+    "session_id": "ses_fc6fc7f74ffeJKkS00xrgwNlTS",
+    "run_id": "e67decb7-c66b-4ed3-9837-6d1b202ca956",
+    "profile": "free",
+    "requested_model": "freellmapi/auto:coding",
+    "effective_model": "freellmapi/auto:coding",
+    "agent": "coder",
+    "tool_calls": [],
+    "fixture_mutation": false,
+    "trace_mutation": false,
+    "output": "I need clarification to provide the corrected ReportedEvidenceCapsule v1 JSON. I don't have access to the prior response that needs correction, and without seeing the malformed JSON, I cannot determine what needs to be fixed."
+  },
+  "reason": "The sole permitted structured-output correction did not return JSON and cannot be accepted as a ReportedEvidenceCapsule v1."
+}

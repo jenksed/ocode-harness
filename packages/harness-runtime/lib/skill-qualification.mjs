@@ -10,8 +10,9 @@ export function observeCompletedSkillLoad(events, expectedSkill) {
     && event?.part?.state?.input?.name === expectedSkill) || null;
 }
 
-export function fixtureFingerprint(root, paths) {
-  const hash=createHash('sha256').update('OCODE-TDD-FIXTURE-V1\0');
+export function fixtureFingerprint({ root, paths, domain }) {
+  if(typeof root!=='string'||!root||!Array.isArray(paths)||!paths.length||typeof domain!=='string'||!domain) throw new Error('fixtureFingerprint requires root, paths, and domain');
+  const hash=createHash('sha256').update(`OCODE-QUALIFICATION-FIXTURE-V1\0${domain}\0`);
   for(const path of [...paths].sort()) hash.update(path).update('\0').update(readFileSync(join(root,path))).update('\0');
   return hash.digest('hex');
 }

@@ -106,7 +106,7 @@ Depends on: M4.
 
 Entry contract: [M5 entry contract](docs/architecture/m5-entry-contract.md). No Wayfinder or UncertaintyMap implementation is included in M4.
 
-M5: PROVEN — Wayfinder core and bounded governed runtime adapter are complete; `npm run acceptance:m5` proves deterministic integration. M6 preparation is unblocked; M6 remains planned.
+M5: LIVE QUALIFICATION PENDING — Wayfinder core and bounded governed runtime adapter are deterministically proven by `npm run acceptance:m5`; total M5 proof additionally requires retained live FreeLLMAPI qualification and independent evidence review. M6 remains planned.
 
 ### M6 Ocode-Native Pstack-Derived Skills — PLANNED
 

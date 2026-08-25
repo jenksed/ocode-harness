@@ -111,11 +111,15 @@ M5: PROVEN — `M5_DETERMINISTIC_PROVEN` acceptance plus retained bounded FreeLL
 M6 PREPARATION UNBLOCKED: YES
 M6 READY TO START: YES
 
-### M6 Ocode-Native Pstack-Derived Skills — PLANNED
+### M6 Ocode-Native Pstack-Derived Skills — ACTIVE
 
 Purpose: add Ocode-owned skills derived from Pstack concepts without copying non-canonical local skill state.
 
 Depends on: M4, M5.
+
+M6.0 Skill System Design Lock: PROVEN — canonical skill authority, OpenCode projection, M4 admission mapping, M5 evidence/provenance reuse, exact v1 contracts, qualification lifecycle, legacy metadata disposition, upstream provenance boundary, initial catalog, and M7 consumption boundary are locked in [M6 skill system design](docs/architecture/m6-skill-system.md) and [M6 contracts v1](docs/architecture/m6-contracts-v1.md).
+
+M6.1: READY — it may implement only the focused contract/runtime-projection/qualification validation described by the [M6.1 entry contract](docs/architecture/m6.1-entry-contract.md). M6 itself remains ACTIVE.
 
 ### M7 Planner Compiler — PLANNED
 

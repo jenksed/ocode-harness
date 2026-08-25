@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "skill_id": "synthetic-basic",
+  "skill_version": "1.0.0",
+  "purpose": "Synthetic substrate fixture.",
+  "applicability": [{"id":"bounded","when":"A bounded fixture applies."}],
+  "non_applicability": [{"id":"outside","when":"The fixture does not apply."}],
+  "requirements": {"capabilities":["repository.read"],"requested_authority":{"edit":false,"stage":false,"commit":false,"push":false}},
+  "method": {"stages":[{"id":"observe","objective":"Observe fixture evidence.","required_inputs":["objective"],"required_outputs":["result"]}],"max_structured_repairs":1},
+  "outputs":[{"id":"skill-result","kind":"EvidenceCapsule","required":true}],
+  "evidence_requirements":[{"id":"proof","kind":"test","required":true}],
+  "acceptance":[{"id":"done","condition":"Evidence exists."}],
+  "failure_conditions":[{"id":"blocked","condition":"Evidence is unavailable."}],
+  "stop_conditions":[{"id":"complete","condition":"Acceptance is met."}],
+  "qualification_requirements":{"positive_fixture":true,"method_violation_fixture":true,"authority_capability_negative_fixture":true,"evidence_integrity_negative_fixture":true,"context_economy_observation":true,"live_qualification":"OPTIONAL"}
+}

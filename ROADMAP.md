@@ -121,6 +121,8 @@ M6.0 Skill System Design Lock: PROVEN — canonical skill authority, OpenCode pr
 
 M6.1: READY — it may implement only the focused contract/runtime-projection/qualification validation described by the [M6.1 entry contract](docs/architecture/m6.1-entry-contract.md). M6 itself remains ACTIVE.
 
+M6.1 Deterministic Skill Substrate: PROVEN — generic deterministic protocol validation, exact source fingerprinting, M4 admission translation, capsules/evidence reconciliation, qualification lifecycle, runtime projection drift checks, and bounded structured correction are implemented without a production skill. [M6.2 entry contract](docs/architecture/m6.2-entry-contract.md) is ready; M6 remains ACTIVE.
+
 ### M7 Planner Compiler — PLANNED
 
 Purpose: compile high-level work into deterministic task plans and contracts.

@@ -12,4 +12,13 @@ await assert.rejects(() => mediateOpenCodePermission({ event:{...event,propertie
 await assert.rejects(() => mediateOpenCodePermission({ event:{...event,properties:{...event.properties,id:'p3'}},sessionID:'s1',reply,resolver:async()=> 'ALWAYS' }), /APPROVAL_DECISION_INVALID/);
 const rejected = await mediateOpenCodePermission({ event:{...event,properties:{...event.properties,id:'p4'}},sessionID:'s1',reply,resolver:async()=> 'REJECT' });
 assert.equal(rejected.decision, 'REJECT'); assert.equal(replies.at(-1), 'reject');
+await assert.rejects(
+  () => mediateOpenCodePermission({
+    event: { ...event, properties: { ...event.properties, id: 'p5' } },
+    sessionID: 's1',
+    resolver: async () => 'ALLOW_ONCE',
+    reply: async () => { throw new Error('OPENCODE_PERMISSION_REPLY_FAILED:transport'); },
+  }),
+  /OPENCODE_PERMISSION_REPLY_FAILED:transport/,
+);
 console.log('OPENCODE_PERMISSION_MEDIATION_PROVEN');

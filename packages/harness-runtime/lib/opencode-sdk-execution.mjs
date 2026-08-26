@@ -1,4 +1,5 @@
 import { createOpencodeClient, createOpencodeServer } from '@opencode-ai/sdk';
+import { mediateOpenCodePermission } from './opencode-permission-mediation.mjs';
 
 const DEFAULT_TIMEOUT_MS = 120_000;
 
@@ -100,6 +101,8 @@ export async function runOpenCodeSdkSession(options) {
   let controlledStopStarted = false;
   let cleanupComplete = false;
   const sdkEvents = [];
+  const permissionDecisions = [];
+  const handledPermissionRequests = new Set();
   let resolveCompletion;
   let rejectCompletion;
   const completion = new Promise((resolve, reject) => {
@@ -125,6 +128,21 @@ export async function runOpenCodeSdkSession(options) {
         for await (const event of subscription.stream) {
           sdkEvents.push(structuredClone(event));
           if (!sessionID || eventSessionID(event) !== sessionID) continue;
+          const mediation = await mediateOpenCodePermission({
+            event,
+            sessionID,
+            resolver: options.permissionResolver,
+            handled: handledPermissionRequests,
+            reply: async ({ request, response }) => {
+              const replyResult = await client.session.permissions.reply({
+                path: { id: sessionID, permissionID: request.runtime_request_id },
+                query: { directory: options.projectDir },
+                body: { response },
+              });
+              if (replyResult?.error) throw new Error(`OPENCODE_PERMISSION_REPLY_FAILED:${JSON.stringify(replyResult.error)}`);
+            },
+          });
+          if (mediation.status === 'MEDIATED') permissionDecisions.push(mediation);
           if (isSessionError(event, sessionID)) {
             rejectCompletion(new Error(`OPENCODE_SDK_SESSION_ERROR:${JSON.stringify(eventProperties(event)?.error ?? null)}`));
             return;
@@ -209,6 +227,7 @@ export async function runOpenCodeSdkSession(options) {
       method_completion: methodCompletion,
       method_evidence: methodEvidence,
       prompt_submissions: promptSubmissions,
+      permission_decisions: permissionDecisions,
       cleanup: { subscription_aborted: true, server_closed: true },
     };
   } catch (error) {
@@ -237,6 +256,7 @@ export async function runOpenCodeSdkSession(options) {
       method_completion: methodCompletion,
       method_evidence: methodEvidence,
       prompt_submissions: promptSubmissions,
+      permission_decisions: permissionDecisions,
       cleanup: { subscription_aborted: true, server_closed: true },
     };
   } finally {

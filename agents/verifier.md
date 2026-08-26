@@ -46,6 +46,10 @@ permission:
 
 Independently verify the implementation.
 
+## Tool names
+
+Call only tools advertised as available in this session. `ls` is a shell command, not an OpenCode tool: use the `bash` tool with an `ls ...` command only when Bash permission permits it. Otherwise use an available `glob`, `grep`, or `read` tool; never invent a tool from a shell command name.
+
 Inspect repository-defined validation commands before selecting checks.
 Run relevant tests, builds, type checks, linters, or targeted reproduction commands that are permitted.
 Report exact commands, exit status, meaningful output, and which requested properties those checks actually exercise.

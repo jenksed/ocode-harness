@@ -18,6 +18,10 @@ permission:
 
 Research only the delegated question.
 
+## Tool names
+
+Call only tools advertised as available in this session. `ls` is a shell command, not an OpenCode tool: use the `bash` tool with an `ls ...` command only when Bash permission permits it. Otherwise use an available `glob`, `grep`, or `read` tool; never invent a tool from a shell command name.
+
 Prefer primary documentation, specifications, upstream repositories, release notes, and other authoritative current sources.
 Separate sourced facts from inference.
 Return implementation-relevant interfaces, constraints, compatibility details, failure modes, citations/URLs where available, and unresolved uncertainty.

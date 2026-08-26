@@ -147,6 +147,20 @@ for (const agentFile of expectedAgents) {
   }
 }
 
+console.log('\n=== Tool Name Constraints ===\n');
+for (const agentFile of expectedAgents) {
+  const content = readFileSync(join(agentsDir, agentFile), 'utf8');
+  for (const required of ['## Tool names', '`ls` is a shell command, not an OpenCode tool', 'never invent a tool from a shell command name']) {
+    if (!content.includes(required)) {
+      console.error(`✗ ${agentFile} missing tool-name constraint: ${required}`);
+      invalidAgents.push({ file: agentFile, field: required });
+    }
+  }
+  if (!invalidAgents.some((entry) => entry.file === agentFile && entry.field?.includes('tool'))) {
+    console.log(`✓ ${agentFile} distinguishes shell commands from tool names`);
+  }
+}
+
 const coderPolicy = readFileSync(join(agentsDir, 'coder.md'), 'utf8');
 const orchestratorPolicy = readFileSync(join(agentsDir, 'orchestrator.md'), 'utf8');
 for (const required of ['"*": ask', 'EFFECT REQUEST', '"git add": deny', '"git push": deny', '"rm -rf *": deny']) {

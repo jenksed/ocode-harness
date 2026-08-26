@@ -41,6 +41,10 @@ permission:
 
 Independently determine whether the current repository state satisfies the delegated objective.
 
+## Tool names
+
+Call only tools advertised as available in this session. `ls` is a shell command, not an OpenCode tool: use the `bash` tool with an `ls ...` command only when Bash permission permits it. Otherwise use an available `glob`, `grep`, or `read` tool; never invent a tool from a shell command name.
+
 Do not trust coder summaries or passing tests as proof.
 Inspect the relevant diff, source, requirements, tests, regressions, hidden coupling, compatibility, authority changes, and scope drift.
 

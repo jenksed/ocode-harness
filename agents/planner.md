@@ -27,6 +27,10 @@ permission:
 
 Analyze the delegated task against repository reality.
 
+## Tool names
+
+Call only tools advertised as available in this session. `ls` is a shell command, not an OpenCode tool: use the `bash` tool with an `ls ...` command only when Bash permission permits it. Otherwise use an available `glob`, `grep`, or `read` tool; never invent a tool from a shell command name.
+
 Determine what must actually become true, existing contracts, dependencies, failure modes, compatibility constraints, authority boundaries, and evidence that would establish acceptance.
 
 Separate observed repository state from inference and assumption.

@@ -14,6 +14,12 @@ import {
 } from './opencode-integration.mjs';
 import { appendRecord, createLedgerRecord } from './ledger.mjs';
 import { runOpenCodeSdkSession } from './opencode-sdk-execution.mjs';
+import {
+  createActivityExecutionContext,
+  createRuntimeActivityProjector,
+  finishActivityExecution,
+  startActivityExecution,
+} from './activity.mjs';
 
 function run(command, args, options = {}) {
   const started = Date.now();
@@ -287,12 +293,16 @@ export function executeGovernedRole(options) {
     projectDir,
     options.prompt,
   );
+  const activity = createActivityExecutionContext(options, { projectDir, role: options.role });
+  const projectRuntimeEvent = createRuntimeActivityProjector(activity);
+  startActivityExecution(activity);
   const execution = run(options.opencode || 'opencode', args, {
     cwd: projectDir,
     env: { ...(options.env || process.env), OPENCODE_CONFIG_CONTENT: overlay },
     timeout: options.timeout || 120_000,
   });
   const events = parseOpenCodeEvents(execution.stdout);
+  events.forEach(projectRuntimeEvent);
   let modelOutput = extractAssistantModelOutput(events);
   const sessionID = events.find((event) => event.sessionID)?.sessionID || null;
   let exported = null;
@@ -328,6 +338,7 @@ export function executeGovernedRole(options) {
     failureClassification,
     elapsedMs: execution.duration_ms,
   });
+  finishActivityExecution(activity, { success, session_id: sessionID, failure_classification: failureClassification });
 
   return {
     resolution,
@@ -379,6 +390,9 @@ export async function executeGovernedRoleSdk(options) {
     (options.env || process.env).OPENCODE_CONFIG_CONTENT,
   ));
   const { provider, model } = splitModelReference(resolution.execution_policy.requested_model);
+  const activity = createActivityExecutionContext(options, { projectDir, role: options.role });
+  const projectRuntimeEvent = createRuntimeActivityProjector(activity);
+  startActivityExecution(activity);
   const execution = await runOpenCodeSdkSession({
     projectDir,
     role: options.role,
@@ -392,6 +406,7 @@ export async function executeGovernedRoleSdk(options) {
     sdk: options.sdk,
     title: options.title,
     methodEvidenceGate: options.methodEvidenceGate,
+    onRuntimeEvent: projectRuntimeEvent,
   });
   const observed = execution.effective_identity?.provider_id
     || execution.effective_identity?.model_id
@@ -427,6 +442,11 @@ export async function executeGovernedRoleSdk(options) {
     failureClassification: acceptance.failure_classification,
     elapsedMs: execution.duration_ms,
   });
+  finishActivityExecution(activity, {
+    success: acceptance.success,
+    session_id: execution.session_id,
+    failure_classification: acceptance.failure_classification,
+  });
   return {
     resolution,
     execution,
@@ -459,8 +479,12 @@ export async function executeGovernedRoleStreaming(options) {
   validateResolutionAvailability(resolution, { opencode: options.opencode, cwd: projectDir, env: options.env || process.env, cache: options.catalogCache, models: options.models });
   const overlay = serializeGovernedExecutionOverlay(loaded.profile, options.role, (options.env || process.env).OPENCODE_CONFIG_CONTENT);
   const args=['run']; if(options.pure!==false)args.push('--pure'); args.push('--agent',options.role,'--format','json','--dir',projectDir,options.prompt);
+  const activity = createActivityExecutionContext(options, { projectDir, role: options.role });
+  const projectRuntimeEvent = createRuntimeActivityProjector(activity);
+  startActivityExecution(activity);
   const execution = await runOpenCodeStreaming(options.opencode || 'opencode', args, { cwd:projectDir, env:{...(options.env||process.env),OPENCODE_CONFIG_CONTENT:overlay}, timeout:options.timeout||120000 });
   const events=parseOpenCodeEvents(execution.stdout);
+  events.forEach(projectRuntimeEvent);
   const sessionID=events.find((event)=>event.sessionID)?.sessionID||null;
   let exported=null, exportResult=null;
   if(sessionID){ exportResult=run(options.opencode||'opencode',['export',sessionID,'--sanitize'],{cwd:projectDir,env:options.env||process.env,timeout:30000}); if(!exportResult.spawn_error&&!exportResult.signal&&exportResult.exit_code===0)exported=parseExport(exportResult.stdout); }
@@ -469,5 +493,6 @@ export async function executeGovernedRoleStreaming(options) {
   const acceptance=evaluateGovernedExecutionAcceptance({runtimeSucceeded,reconciliation,subjectReconciliation});
   const ledgerPath=options.ledgerPath||resolve(projectDir,'.opencode','run-ledger.jsonl');
   const record=appendExecutionLedgerRecord({ledgerPath,projectDir,resolution,reconciliation,subjectReconciliation,success:acceptance.success,failureClassification:acceptance.failure_classification,elapsedMs:execution.duration_ms});
+  finishActivityExecution(activity, { success: acceptance.success, session_id: sessionID, failure_classification: acceptance.failure_classification });
   return {resolution,execution,events,model_output:resolveAssistantModelOutput({events,exported}),session_id:sessionID,exported,export_result:exportResult,reconciliation,subject_reconciliation:subjectReconciliation,admitted_subject:admittedSubject,admission_decision:options.admissionDecision||null,success:acceptance.success,failure_classification:acceptance.failure_classification,ledger_record:record};
 }

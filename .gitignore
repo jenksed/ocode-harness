@@ -7,3 +7,4 @@ test-debug.mjs
 coverage/
 .nyc_output/
 .opencode/skills/
+.opencode/activity/

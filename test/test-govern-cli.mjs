@@ -6,6 +6,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { appendRecord, createLedgerRecord } from '../packages/harness-runtime/lib/ledger.mjs';
 import { loadAgentContracts } from '../packages/harness-runtime/lib/agent-contract.mjs';
+import { activityStorePath, appendActivityEvent, createActivityEvent } from '../packages/harness-runtime/lib/activity.mjs';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const cli = resolve(repoRoot, 'packages/harness-runtime/bin/ocode.mjs');
@@ -58,5 +59,17 @@ try {
   assert.match(runExplanation.stdout, /SUBJECT RECONCILIATION\nMATCH/);
   assert.match(runExplanation.stdout, /SUBJECT REASON\nSUBJECT_MATCH/);
   console.log('✓ run explanation renders independent M3 binding and M4D subject provenance');
-  console.log(JSON.stringify({ status: 'GOVERN_CLI_TESTS_PROVEN', operator_surfaces: ['explain', 'check', 'audit', 'explain --run'] }));
+  appendActivityEvent(activityStorePath(projectRoot), createActivityEvent({
+    event_type: 'WORKFLOW_STARTED', workflow_id: 'cli-observable-workflow', agent_role: 'orchestrator', agent_instance_id: 'cli-orchestrator', status: 'STARTED', summary: 'Fixture runtime workflow',
+  }));
+  const activity = invoke(['activity', '--workflow', 'cli-observable-workflow']);
+  assert.equal(activity.status, 0, activity.stderr);
+  assert.match(activity.stdout, /"WORKFLOW_STARTED"/);
+  assert.match(activity.stdout, /"active_agents"/);
+  const rawActivity = invoke(['activity', '--raw', '--workflow', 'cli-observable-workflow']);
+  assert.equal(rawActivity.status, 0, rawActivity.stderr);
+  assert.equal(rawActivity.stdout.trim().split('\n').length, 1);
+  assert.match(rawActivity.stdout, /"workflow_id":"cli-observable-workflow"/);
+  console.log('✓ activity CLI exposes JSON summaries and raw runtime records without profile/model setup');
+  console.log(JSON.stringify({ status: 'GOVERN_CLI_TESTS_PROVEN', operator_surfaces: ['explain', 'check', 'audit', 'explain --run', 'activity'] }));
 } finally { rmSync(projectRoot, { recursive: true, force: true }); }

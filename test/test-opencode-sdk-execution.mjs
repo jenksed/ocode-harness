@@ -5,6 +5,7 @@ import { join, resolve } from 'node:path';
 import { executeGovernedRole } from '../packages/harness-runtime/lib/execution.mjs';
 import { checkpointQualificationExecution } from '../packages/harness-runtime/lib/skill-qualification.mjs';
 import { normalizeOpenCodeSdkEvent, runOpenCodeSdkSession } from '../packages/harness-runtime/lib/opencode-sdk-execution.mjs';
+import { activityStorePath, queryActivity } from '../packages/harness-runtime/lib/activity.mjs';
 
 const root = resolve('.');
 const projectDir = mkdtempSync(join(tmpdir(), 'ocode-sdk-test-'));
@@ -107,23 +108,51 @@ assert.equal(timeoutResult.termination, 'PROCESS_TIMEOUT');
 assert.equal(waiting.closed, 1);
 console.log('✓ Timeout before authoritative completion fails closed and aborts the session');
 
-const governedFake = fakeSdk({ events: [{ type: 'session.status', properties: { sessionID: 's1', status: { type: 'idle' } } }] });
+const governedFake = fakeSdk({ events: [
+  { type: 'permission.updated', properties: { id: 'permission-sdk', type: 'bash', sessionID: 's1', callID: 'call-sdk', title: 'Run command', metadata: {}, time: { created: 1 } } },
+  { type: 'permission.replied', properties: { sessionID: 's1', permissionID: 'permission-sdk', response: 'once' } },
+  { type: 'message.part.updated', properties: { part: { id: 'tool-sdk', sessionID: 's1', messageID: 'm-sdk', type: 'tool', callID: 'call-sdk', tool: 'bash', state: { status: 'completed', input: {}, output: 'must not persist', title: 'Run command', metadata: {}, time: { start: 1, end: 2 } } } } },
+  { type: 'session.status', properties: { sessionID: 's1', status: { type: 'idle' } } },
+] });
 const governed = await executeGovernedRole({
   transport: 'sdk', baseDir: root, projectDir, role: 'coder', profile,
   bindingSource: 'test', admissionDecision: allow, prompt: 'bounded', models: ['freellmapi/auto:coding'],
   sdk: governedFake.sdk, timeout: 500,
+  workflowId: 'sdk-observable-workflow', parentAgentRole: 'orchestrator', parentSessionId: 'parent-session', delegationId: 'sdk-coder-delegation',
 });
 assert.equal(governed.transport, 'OPENCODE_SDK');
 assert.equal(governed.reconciliation.state, 'MATCH');
 assert.equal(governed.subject_reconciliation.state, 'MATCH');
 assert.equal(governed.model_output, '{"ok":true}');
 assert.equal(governed.ledger_record.execution_provenance.binding_reconciliation, 'MATCH');
+const activity = queryActivity(activityStorePath(projectDir), { workflow_id: 'sdk-observable-workflow' });
+assert.equal(activity.events.some((event) => event.event_type === 'DELEGATION_CREATED'), true);
+assert.equal(activity.events.some((event) => event.event_type === 'AGENT_STARTED' && event.agent_role === 'coder'), true);
+assert.equal(activity.events.some((event) => event.event_type === 'AGENT_COMPLETED' && event.agent_role === 'coder'), true);
+assert.equal(activity.workflow_graph.edges[0].parent_agent_role, 'orchestrator');
+assert.equal(activity.workflow_graph.edges[0].child_agent_role, 'coder');
+assert.equal(activity.effects.event_types.includes('APPROVAL_GRANTED'), true);
+assert.equal(activity.effects.event_types.includes('EFFECT_EXECUTED'), true);
+assert.equal(JSON.stringify(activity.effects).includes('must not persist'), false);
+const reviewerFake = fakeSdk({
+  events: [{ type: 'session.status', properties: { sessionID: 's1', status: { type: 'idle' } } }],
+  messages: [{ info: { id: 'review-1', sessionID: 's1', role: 'assistant', providerID: 'freellmapi', modelID: 'auto:review', agent: 'reviewer' }, parts: [{ id: 'review-text', sessionID: 's1', messageID: 'review-1', type: 'text', text: 'model prose is not a verdict' }] }],
+});
+await executeGovernedRole({
+  transport: 'sdk', baseDir: root, projectDir, role: 'reviewer', profile,
+  bindingSource: 'test', admissionDecision: { decision: 'ALLOW', subject: { role: 'reviewer' } }, prompt: 'independent review', models: ['freellmapi/auto:review'], sdk: reviewerFake.sdk, timeout: 500,
+  workflowId: 'sdk-observable-workflow', parentAgentRole: 'coder', parentSessionId: 's1', delegationId: 'sdk-review-delegation',
+});
+const reviewActivity = queryActivity(activityStorePath(projectDir), { workflow_id: 'sdk-observable-workflow' });
+assert.equal(reviewActivity.events.some((event) => event.event_type === 'REVIEW_STARTED' && event.agent_role === 'reviewer'), true);
+assert.equal(reviewActivity.events.some((event) => event.event_type === 'REVIEW_ACCEPTED'), false);
+assert.equal(reviewActivity.review.status, 'STARTED');
 const checkpoint = checkpointQualificationExecution({
   attempt_id: 'sdk-test', skill: { skill_id: 'tdd', skill_version: '1.0.0', skill_fingerprint: 'a'.repeat(64) },
   runtime: { session_id: governed.session_id, events: governed.events }, original_model_output: governed.model_output,
 });
 assert.equal(checkpoint.runtime.session_id, 's1');
-console.log('✓ Governed result preserves binding, subject, ledger, output, events, and checkpoint compatibility');
+console.log('✓ Governed result preserves binding, subject, ledger, output, runtime activity correlation, and checkpoint compatibility');
 
 const deniedFake = fakeSdk();
 await assert.rejects(() => executeGovernedRole({

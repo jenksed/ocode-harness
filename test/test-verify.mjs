@@ -41,6 +41,7 @@ try {
   const verifyPath = join(harnessRuntimeDir, 'lib', 'verify.mjs');
   const verifyModule = await import(verifyPath);
   const { runVerification, VALIDATION_CATEGORIES, MAX_OUTPUT_BYTES } = verifyModule;
+  const activityModule = await import(join(harnessRuntimeDir, 'lib', 'activity.mjs'));
 
   console.log('Testing constants...\n');
 
@@ -76,6 +77,10 @@ try {
   assert(passResult.commands[0].exit_code === 0, 'First command exit code is 0');
   assert(typeof passResult.commands[0].duration_ms === 'number', 'Duration recorded');
   assert(passResult.commands[0].duration_ms >= 0, 'Duration non-negative');
+  const verificationActivity = activityModule.queryActivity(activityModule.activityStorePath(testDir));
+  assert(verificationActivity.events.some((event) => event.event_type === 'VERIFICATION_STARTED'), 'Runtime verification start event recorded');
+  assert(verificationActivity.events.some((event) => event.event_type === 'VERIFICATION_COMPLETED'), 'Runtime verification completion event recorded');
+  assert(verificationActivity.verification.status === 'COMPLETED', 'Verification activity is distinguishable from agent prose');
 
   console.log('\nTesting runVerification with explicit failing command...\n');
 

@@ -1,6 +1,11 @@
 import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { readFileSync, existsSync } from 'node:fs';
+import {
+  createActivityExecutionContext,
+  finishActivityExecution,
+  startActivityExecution,
+} from './activity.mjs';
 
 const MAX_OUTPUT_BYTES = 10240; // 10KB bound
 
@@ -238,6 +243,11 @@ export function runVerification(options = {}) {
   if (!hasCommands) {
     throw new Error('No validation commands available. Run orientation first or provide explicit commands via --commands.');
   }
+
+  // This is the deterministic verification seam, not a report extracted from
+  // verifier prose. It can join a parent workflow through the supplied IDs.
+  const activity = createActivityExecutionContext(options, { projectDir: projectRoot, role: 'verifier' });
+  startActivityExecution(activity);
   
   // Execute all commands across all categories
   const results = [];
@@ -278,7 +288,7 @@ export function runVerification(options = {}) {
     infrastructure_failures: infrastructureFailures
   };
   
-  return {
+  const verification = {
     status,
     commands: results,
     summary,
@@ -286,6 +296,11 @@ export function runVerification(options = {}) {
     orientation_path: orientationPath,
     timestamp: new Date().toISOString()
   };
+  finishActivityExecution(activity, {
+    success: status === 'PASS',
+    failure_classification: status === 'PASS' ? null : status,
+  });
+  return verification;
 }
 
 /**

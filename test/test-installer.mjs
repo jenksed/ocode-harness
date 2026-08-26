@@ -247,6 +247,7 @@ try {
     'lib/composition.mjs',
     'lib/closeout.mjs',
     'lib/verify.mjs',
+    'lib/activity.mjs',
     'lib/governance.mjs',
     'lib/permission-projection.mjs',
     'lib/admission.mjs',

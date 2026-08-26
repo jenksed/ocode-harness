@@ -124,6 +124,9 @@ export async function runOpenCodeSdkSession(options) {
       try {
         for await (const event of subscription.stream) {
           sdkEvents.push(structuredClone(event));
+          // Observability callbacks consume native transport events only. A
+          // persistence failure must not alter the governed runtime outcome.
+          try { await options.onRuntimeEvent?.(event); } catch { /* best-effort operational telemetry */ }
           if (!sessionID || eventSessionID(event) !== sessionID) continue;
           if (isSessionError(event, sessionID)) {
             rejectCompletion(new Error(`OPENCODE_SDK_SESSION_ERROR:${JSON.stringify(eventProperties(event)?.error ?? null)}`));

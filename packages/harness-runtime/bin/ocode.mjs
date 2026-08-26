@@ -23,6 +23,7 @@ import {
   validateProfileCompleteness,
 } from '../lib/opencode-integration.mjs';
 import { validateProfileAvailability } from '../lib/execution.mjs';
+import { activityStorePath, queryActivity } from '../lib/activity.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 
@@ -193,6 +194,30 @@ function explainRun(runID) {
   }
 }
 
+function printActivity(args) {
+  let raw = false;
+  let workflowID = null;
+  let limit = 100;
+  for (let index = 0; index < args.length; index += 1) {
+    const value = args[index];
+    if (value === '--raw') raw = true;
+    else if (value === '--workflow') {
+      workflowID = args[++index];
+      if (!workflowID || workflowID.startsWith('-')) throw new Error('ocode activity --workflow requires a workflow ID');
+    } else if (value === '--limit') {
+      limit = Number(args[++index]);
+      if (!Number.isInteger(limit) || limit < 1) throw new Error('ocode activity --limit requires a positive integer');
+    } else throw new Error('Usage: ocode activity [--raw] [--workflow <id>] [--limit <count>]');
+  }
+  const projectRoot = findProjectRoot(process.cwd());
+  const result = queryActivity(activityStorePath(projectRoot), { workflow_id: workflowID, limit });
+  if (raw) {
+    for (const event of result.events) console.log(JSON.stringify(event));
+    return;
+  }
+  console.log(JSON.stringify(result, null, 2));
+}
+
 function emptyAuthority() {
   return { edit: false, stage: false, commit: false, push: false };
 }
@@ -340,6 +365,11 @@ async function main() {
   if (remaining[0] === 'explain' && remaining[1] === '--run') {
     if (!remaining[2]) throw new Error('ocode explain --run requires a run ID');
     explainRun(remaining[2]);
+    return;
+  }
+
+  if (remaining[0] === 'activity') {
+    printActivity(remaining.slice(1));
     return;
   }
 

@@ -6,12 +6,13 @@ This directory is the active program-control entry point for Ocode. It exists to
 
 1. Human owner intent is authoritative for protected product/program properties and delegation.
 2. Repository architecture and governance contracts constrain implementation and authority mechanisms.
-3. `program/roadmap.json` is the canonical machine-readable active roadmap and planning state.
-4. `program/evidence-ledger.json` is the canonical current-state evidence ledger.
-5. `program/releases/state.json` is the canonical declaration of repository-known stable/candidate/dev release state.
-6. `program/owner-decisions.json` records explicit owner decisions, defaults, and unresolved owner questions.
-7. `program/completion-definition.md` defines bounded mature completion.
-8. `program/work-packages/` contains materialized executable work. A work package is not implementation authorization unless its roadmap lifecycle is `authorized`.
+3. `program/intent.md` records the protected program intent accepted for this program model.
+4. `program/roadmap.json` is the canonical machine-readable active roadmap and planning state.
+5. `program/evidence-ledger.json` is the canonical current-state evidence ledger.
+6. `program/releases/state.json` is the canonical declaration of repository-known stable/candidate/dev release state.
+7. `program/owner-decisions.json` records explicit owner decisions, defaults, and unresolved owner questions.
+8. `program/completion-definition.md` defines bounded mature completion.
+9. `program/work-packages/` contains materialized executable work. A work package is not implementation authorization unless its roadmap lifecycle is `authorized`.
 
 `ROADMAP.md` is preserved as historical provenance. It is superseded for active planning authority. Existing architecture, milestone entry contracts, tests, and retained qualification records remain evidence or architectural constraints according to their own scope; this program layer does not silently rewrite them.
 
@@ -93,7 +94,7 @@ No later milestone may consume candidate/stable semantics until MS-R1 is accepte
 Run:
 
 ```bash
-node scripts/validate-program.mjs
+npm run program:validate
 ```
 
 The validator checks canonical program structure only: duplicate/orphan IDs, cycles, lifecycle/horizon requirements, acceptance evidence declarations, owner-decision blocks, release checkpoint usability, exact stable identity, supersession declarations, and competing active-roadmap declarations. It is intentionally not a strategic judge.

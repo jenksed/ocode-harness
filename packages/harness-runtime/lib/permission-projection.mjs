@@ -1,4 +1,4 @@
-export const PERMISSION_PROJECTION_SCHEMA_VERSION = 1;
+export const PERMISSION_PROJECTION_SCHEMA_VERSION = 2;
 
 export const PERMISSION_OPERATIONS = Object.freeze([
   'edit',
@@ -12,6 +12,7 @@ export const PERMISSION_OPERATIONS = Object.freeze([
 export const PERMISSION_PROJECTION_STATES = Object.freeze({
   ALLOW: 'ALLOW',
   DENY: 'DENY',
+  ASK: 'ASK',
   UNKNOWN: 'UNKNOWN',
   NOT_PROJECTED: 'NOT_PROJECTED',
 });
@@ -29,6 +30,7 @@ function isPlainObject(value) {
 
 function normalizePermission(value) {
   if (value === 'allow') return PERMISSION_PROJECTION_STATES.ALLOW;
+  if (value === 'ask') return PERMISSION_PROJECTION_STATES.ASK;
   if (value === 'deny') return PERMISSION_PROJECTION_STATES.DENY;
   return PERMISSION_PROJECTION_STATES.UNKNOWN;
 }
@@ -130,7 +132,7 @@ export function projectPermissions(permissions = {}) {
     schema_version: PERMISSION_PROJECTION_SCHEMA_VERSION,
     operations: Object.fromEntries(PERMISSION_OPERATIONS.map((operation) => [operation, operations[operation]])),
     not_projected: {
-      command_execute: PERMISSION_PROJECTION_STATES.NOT_PROJECTED,
+      command_execute: projectBashCommand(permissions.bash, '*').state,
     },
   };
 }

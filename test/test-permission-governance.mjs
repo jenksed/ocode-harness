@@ -22,7 +22,7 @@ import {
   projectPermissions,
 } from '../packages/harness-runtime/lib/permission-projection.mjs';
 
-const { ALLOW, DENY, UNKNOWN, NOT_PROJECTED } = PERMISSION_PROJECTION_STATES;
+const { ALLOW, ASK, DENY, UNKNOWN, NOT_PROJECTED } = PERMISSION_PROJECTION_STATES;
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const { contracts } = loadAgentContracts({ baseDir: repoRoot });
 const authority = (overrides = {}) => ({ edit: false, stage: false, commit: false, push: false, ...overrides });
@@ -62,10 +62,11 @@ assert.equal(full.operations.stage.state, DENY);
 assert.equal(full.operations.commit.state, DENY);
 assert.equal(full.operations.push.state, DENY);
 assert.equal(full.operations.web.state, ALLOW);
-assert.equal(full.not_projected.command_execute, NOT_PROJECTED);
+assert.equal(full.not_projected.command_execute, DENY);
 
 const unknown = projectPermissions({ edit: 'ask', bash: { 'git status': 'allow' } });
-assert.equal(unknown.operations.edit.state, UNKNOWN);
+assert.equal(unknown.operations.edit.state, ASK);
+assert.notEqual(ASK, UNKNOWN);
 assert.equal(unknown.operations.test.state, UNKNOWN);
 assert.equal(unknown.operations.web.state, UNKNOWN);
 assert.deepEqual(full, projectPermissions({
@@ -104,10 +105,9 @@ const irrelevantUnknown = decide('coder', ['implementation.change'], {}, {
 assert.equal(irrelevantUnknown.decision, ADMISSION_DECISIONS.ALLOW);
 assert.equal(irrelevantUnknown.permission_evaluation.status, EVALUATION_STATES.PASS);
 
-const outsideProjector = decide('coder', ['command.execute']);
-assert.equal(outsideProjector.decision, ADMISSION_DECISIONS.DENY);
-assert.ok(outsideProjector.reason_codes.includes(ADMISSION_REASON_CODES.PERMISSION_NOT_PROJECTED));
-assert.deepEqual(outsideProjector.failure_details.not_projected_permission_operations, ['command_execute']);
+const commandAsk = decide('coder', ['command.execute'], {}, { ...coder, permissions: { ...coder.permissions, bash: { '*': 'ask' } } });
+assert.equal(commandAsk.decision, ADMISSION_DECISIONS.ALLOW);
+assert.equal(commandAsk.permission_evaluation.projection.not_projected.command_execute, ASK);
 
 const reviewer = contracts.get('reviewer');
 const mutationPermissions = {
@@ -138,6 +138,6 @@ assert.equal(permissiveWebWithoutNewAuthority.permission_evaluation.status, EVAL
 console.log(JSON.stringify({
   status: 'PERMISSION_PROJECTION_TESTS_PROVEN',
   operations: PERMISSION_OPERATIONS,
-  states: [ALLOW, DENY, UNKNOWN],
-  generic_command_execute: NOT_PROJECTED,
+  states: [ALLOW, ASK, DENY, UNKNOWN, NOT_PROJECTED],
+  generic_command_execute: 'ASK_BACKED_WHEN_CONFIGURED',
 }));

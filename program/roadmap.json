@@ -1,0 +1,1556 @@
+{
+  "schema_version": 1,
+  "program_id": "ocode-harness",
+  "authority": {
+    "status": "ACTIVE_PROPOSAL_REVIEW_BRANCH",
+    "canonical_machine_readable_roadmap": "program/roadmap.json",
+    "entry_point": "program/README.md",
+    "completion_definition": "program/completion-definition.md",
+    "evidence_ledger": "program/evidence-ledger.json",
+    "release_state": "program/releases/state.json",
+    "owner_decisions": "program/owner-decisions.json",
+    "supersedes_for_active_planning": [
+      "ROADMAP.md"
+    ],
+    "does_not_supersede_architecture_contracts": [
+      "docs/architecture/governance-contracts.md",
+      "docs/architecture/opencode-integration-contract.md",
+      "docs/architecture/wayfinding.md",
+      "docs/architecture/m6-skill-system.md",
+      "docs/architecture/m6-contracts-v1.md"
+    ],
+    "rule": "Repository architecture/contracts constrain roadmap mechanisms. Owner intent constrains protected properties. Roadmap planning cannot silently override either."
+  },
+  "baseline": {
+    "repository": "jenksed/ocode-harness",
+    "starting_branch": "main",
+    "starting_sha": "e08c5a1f21e18dcc16676d1928919972f7ce8339",
+    "review_branch": "program/long-range-roadmap",
+    "remote_initial_dirty_state": "not_applicable_git_refs_are_clean_objects",
+    "workstation_dirty_state": "UNKNOWN_NOT_OBSERVABLE_FROM_GITHUB_CONNECTOR",
+    "observed_at": "2026-08-25"
+  },
+  "hierarchy": [
+    "PROGRAM_INTENT",
+    "COMPLETION_DEFINITION",
+    "CAPABILITY_ERAS",
+    "RELEASE_TRAINS",
+    "MAJOR_MILESTONES",
+    "WORK_PACKAGES",
+    "IMPLEMENTATION_TASKS",
+    "ACCEPTANCE_EVIDENCE"
+  ],
+  "planning_horizons": {
+    "ACTIVE": "Implementation-ready now. Horizon alone does not grant implementation authority.",
+    "NEXT": "Ready for future decomposition once hard prerequisites and evidence gates are satisfied.",
+    "LATER": "Durable properties defined; mechanism and task detail intentionally deferred.",
+    "STRATEGIC": "Long-range conditional direction; must be rediscovered and evidence-promoted before decomposition."
+  },
+  "planning_lifecycle": {
+    "states": [
+      "future",
+      "decomposition_ready",
+      "authorized",
+      "executing",
+      "evidence_pending",
+      "accepted",
+      "superseded"
+    ],
+    "transitions": {
+      "future": [
+        "decomposition_ready",
+        "superseded"
+      ],
+      "decomposition_ready": [
+        "authorized",
+        "future",
+        "superseded"
+      ],
+      "authorized": [
+        "executing",
+        "decomposition_ready",
+        "superseded"
+      ],
+      "executing": [
+        "evidence_pending",
+        "authorized",
+        "superseded"
+      ],
+      "evidence_pending": [
+        "accepted",
+        "authorized",
+        "superseded"
+      ],
+      "accepted": [
+        "superseded"
+      ],
+      "superseded": []
+    },
+    "transition_authority": {
+      "future->decomposition_ready": "Program Architect or delegated planning authority, with prerequisites evidenced",
+      "decomposition_ready->authorized": "Owner or explicitly delegated implementation authority",
+      "authorized->executing": "Bound implementation runtime/agent after branch/work package preflight",
+      "executing->evidence_pending": "Implementation authority after declared work stops mutating and required evidence is collected",
+      "evidence_pending->accepted": "Acceptance authority only; implementation agent cannot self-accept",
+      "*->superseded": "Program planning authority may supersede mechanisms while preserving protected properties; changing protected owner intent requires owner authority"
+    }
+  },
+  "release_lifecycle": {
+    "states": [
+      "dev",
+      "candidate",
+      "stable"
+    ],
+    "rules": [
+      "dev is mutable and explicit",
+      "candidate is immutable, exact, explicitly invoked, and not stable",
+      "stable is immutable, exact, qualified, inspectable, and the default operator runtime",
+      "candidate promotion selects the already-qualified artifact; promotion never rebuilds from mutable source",
+      "rollback moves the stable selector to a previously qualified immutable release and preserves failed-release evidence",
+      "planning acceptance and release promotion are separate decisions"
+    ]
+  },
+  "capability_eras": [
+    {
+      "id": "ERA-1",
+      "title": "Trusted Runtime and Qualified Methods",
+      "horizon": "ACTIVE",
+      "intent": "Make runtime identity trustworthy, then close the existing M6 governed-method catalog against exact candidates."
+    },
+    {
+      "id": "ERA-2",
+      "title": "Compiled Governed Delivery",
+      "horizon": "NEXT",
+      "intent": "Compile bounded work contracts and execute one task end-to-end through evidence, review, and human acceptance."
+    },
+    {
+      "id": "ERA-3",
+      "title": "Durable Parallel Daily Operation",
+      "horizon": "LATER",
+      "intent": "Add recovery, justified parallelism, portable upgrades, evaluation, and sustained real-project use."
+    },
+    {
+      "id": "ERA-4",
+      "title": "Conditional Scale and Self-Hosting",
+      "horizon": "STRATEGIC",
+      "intent": "Pursue cross-repository, team, extension, and self-hosting capabilities only when preceding operation provides evidence that they are justified."
+    }
+  ],
+  "release_trains": [
+    {
+      "id": "RT-1",
+      "title": "Trusted Runtime Identity",
+      "era": "ERA-1",
+      "horizon": "ACTIVE",
+      "intent": "Create stable/candidate/dev isolation and exact release identity."
+    },
+    {
+      "id": "RT-2",
+      "title": "Qualified Engineering Methods",
+      "era": "ERA-1",
+      "horizon": "NEXT",
+      "intent": "Live-qualify and dogfood the existing governed skill catalog against exact candidate runtime."
+    },
+    {
+      "id": "RT-3",
+      "title": "Compiled Single-Task Delivery",
+      "era": "ERA-2",
+      "horizon": "NEXT",
+      "intent": "Compile TaskSpecs and run one governed task through human acceptance."
+    },
+    {
+      "id": "RT-4",
+      "title": "Recoverable Parallel Delivery",
+      "era": "ERA-3",
+      "horizon": "LATER",
+      "intent": "Prove restart/recovery first, then safe worktree parallelism."
+    },
+    {
+      "id": "RT-5",
+      "title": "Sustained Operator Runtime",
+      "era": "ERA-3",
+      "horizon": "LATER",
+      "intent": "Harden release evolution and prove sustained daily dogfood; evaluate learning without authority escalation."
+    },
+    {
+      "id": "RT-6",
+      "title": "Conditional Expansion",
+      "era": "ERA-4",
+      "horizon": "STRATEGIC",
+      "intent": "Promote scale/extensibility/self-hosting only when explicit evidence triggers are met."
+    }
+  ],
+  "nodes": [
+    {
+      "identity": {
+        "id": "MS-R1",
+        "title": "Immutable release selection and runtime isolation",
+        "type": "major_milestone",
+        "horizon": "ACTIVE",
+        "lifecycle_state": "decomposition_ready",
+        "capability_era": "ERA-1",
+        "release_train": "RT-1"
+      },
+      "purpose": {
+        "intent": "Separate operator runtime authority from mutable development state and make stable/candidate/dev identities exact and inspectable.",
+        "required_properties": [
+          "default ocode resolves only to an immutable stable release",
+          "candidate is an immutable exact artifact and must be explicitly selected",
+          "dev is mutable, explicit, and never an implicit default",
+          "promotion selects an already-qualified candidate without rebuilding it",
+          "rollback selects a previously qualified immutable release and preserves failed-release evidence",
+          "release identity includes source commit and artifact digest"
+        ],
+        "non_goals": [
+          "redesign agent governance",
+          "change provider routing semantics",
+          "build a general package manager",
+          "automatically promote after tests"
+        ]
+      },
+      "authority": {
+        "planning_authority": "program/roadmap.json + owner intent",
+        "decomposition_authority": "Program Architect or delegated Planner within canonical contracts",
+        "implementation_authority": "Explicit owner/delegated authorization bound to a materialized work package",
+        "acceptance_authority": "Owner or explicitly delegated acceptance authority; verifier/reviewer evidence is advisory",
+        "release_authority": "Owner unless explicitly delegated by recorded owner decision",
+        "forbidden_authority": [
+          "implementation agents may not self-authorize future work",
+          "tests may not promote a candidate",
+          "worktrees may not redefine stable",
+          "planning changes may not silently redefine owner intent"
+        ]
+      },
+      "dependencies": {
+        "hard_prerequisites": [],
+        "soft_dependencies": [],
+        "consumed_contracts": [
+          "packages/harness-runtime/lib/deploy.mjs",
+          "installer/install.mjs",
+          "packages/harness-runtime/bin/harness.mjs",
+          "VERSION"
+        ],
+        "unresolved_shared_decisions": [],
+        "integration_dependencies": []
+      },
+      "evidence": {
+        "known_evidence": [
+          "current deployment stages from a mutable source checkout and immediately promotes after structural validation",
+          "default launchers target ~/.local/share/ocode-harness",
+          "rollback currently restores timestamped backups rather than selecting release manifests"
+        ],
+        "evidence_references": [
+          "EVID-007",
+          "EVID-008",
+          "EVID-009"
+        ],
+        "unproven_properties": [
+          "no repository-known stable artifact has exact source/digest/promotion identity",
+          "no durable candidate selector exists",
+          "current promotion does not prove qualification-before-promotion"
+        ],
+        "required_acceptance_evidence": [
+          "program release manifest exists for candidate with exact source commit and artifact digest",
+          "stable/candidate/dev selectors are exercised in isolated HOME",
+          "default ocode remains on stable while candidate and dev are independently invoked",
+          "promotion changes stable by selector only and does not rebuild source",
+          "rollback selects prior stable while retaining failed candidate/release evidence",
+          "real unrelated repository dogfood executes candidate without altering stable"
+        ]
+      },
+      "planning": {
+        "decomposition_trigger": "already satisfied: current deployment surfaces and authority gap are known; execute only after explicit implementation authorization",
+        "research_refresh_trigger": "refresh OpenCode/runtime compatibility only if release materialization changes runtime dependency versions",
+        "replanning_trigger": "replan if immutable selector semantics cannot be implemented without broad changes outside deploy/installer/launcher/version surfaces",
+        "supersession_conditions": [
+          "owner changes the protected stable/candidate/dev authority model"
+        ],
+        "stop_conditions": [
+          "stop if a required owner decision is unresolved",
+          "stop if a hard prerequisite is not evidenced",
+          "stop if implementation would require widening constitutional authority not already granted",
+          "stop if implementation starts changing M6 skill behavior or M7 planning contracts"
+        ]
+      },
+      "release": {
+        "release_checkpoint": true,
+        "usable_capability_created": "Operator can use a known immutable stable Ocode while explicitly dogfooding an exact candidate or mutable dev runtime.",
+        "candidate_requirements": [
+          "artifact materialized once from exact source commit",
+          "release manifest validated",
+          "artifact digest verified",
+          "isolated install/launcher tests pass"
+        ],
+        "promotion_requirements": [
+          "candidate qualification evidence complete",
+          "real-project dogfood complete",
+          "regression evidence complete",
+          "explicit release authority approval",
+          "candidate digest reverified immediately before pointer change"
+        ],
+        "compatibility_implications": [
+          "preserve existing ocode command as stable default",
+          "provide explicit candidate/dev invocation without changing normal project workflow"
+        ],
+        "rollback_implications": [
+          "retain prior stable manifest/artifact",
+          "rollback changes selector, not Git history",
+          "failed candidate evidence remains immutable"
+        ]
+      },
+      "execution": {
+        "parallelism_classification": "serialized",
+        "work_packages": [
+          "program/work-packages/R1-release-runtime-isolation.md"
+        ],
+        "validation_commands": [
+          "npm run program:validate",
+          "node test/test-harness-version.mjs",
+          "node test/test-harness-update.mjs",
+          "node test/test-harness-rollback.mjs",
+          "node test/test-installer.mjs",
+          "npm test"
+        ],
+        "completion_output_contract": [
+          "exact changed paths and rationale",
+          "validation commands with exit status",
+          "candidate manifest and digest",
+          "dogfood evidence reference",
+          "unproven properties",
+          "owner promotion decision recorded separately"
+        ]
+      }
+    },
+    {
+      "identity": {
+        "id": "MS-R2",
+        "title": "Live-qualify and close the governed skill catalog",
+        "type": "major_milestone",
+        "horizon": "NEXT",
+        "lifecycle_state": "future",
+        "capability_era": "ERA-1",
+        "release_train": "RT-2"
+      },
+      "purpose": {
+        "intent": "Convert the six deterministic M6 skill definitions from implemented/tested artifacts into live-qualified, dogfood-proven methods before planner consumption.",
+        "required_properties": [
+          "each production skill is admitted through the M4 governance engine",
+          "live execution is tied to exact skill fingerprint and exact candidate runtime",
+          "successful execution is checkpointed before report interpretation",
+          "failed and superseded qualification evidence remains provenance",
+          "qualification never grants release promotion authority"
+        ],
+        "non_goals": [
+          "add more skills because catalog size looks small",
+          "authorize skills by role-name allowlists",
+          "treat deterministic fixtures as live proof"
+        ]
+      },
+      "authority": {
+        "planning_authority": "program/roadmap.json + owner intent",
+        "decomposition_authority": "Program Architect or delegated Planner within canonical contracts",
+        "implementation_authority": "Explicit owner/delegated authorization bound to a materialized work package",
+        "acceptance_authority": "Owner or explicitly delegated acceptance authority; verifier/reviewer evidence is advisory",
+        "release_authority": "Owner unless explicitly delegated by recorded owner decision",
+        "forbidden_authority": [
+          "implementation agents may not self-authorize future work",
+          "tests may not promote a candidate",
+          "worktrees may not redefine stable",
+          "planning changes may not silently redefine owner intent"
+        ]
+      },
+      "dependencies": {
+        "hard_prerequisites": [
+          "MS-R1"
+        ],
+        "soft_dependencies": [],
+        "consumed_contracts": [
+          "docs/architecture/m6-skill-system.md",
+          "docs/architecture/m6-contracts-v1.md",
+          "packages/harness-runtime/lib/skill-qualification.mjs",
+          "packages/harness-runtime/lib/admission.mjs"
+        ],
+        "unresolved_shared_decisions": [],
+        "integration_dependencies": []
+      },
+      "evidence": {
+        "known_evidence": [
+          "six production skill protocols and deterministic M6.5 catalog proof exist",
+          "all six protocols require live qualification"
+        ],
+        "evidence_references": [
+          "EVID-005",
+          "EVID-006"
+        ],
+        "unproven_properties": [
+          "repository-retained successful live qualification for the six-skill catalog",
+          "unrelated-real-project dogfood for catalog methods"
+        ],
+        "required_acceptance_evidence": [
+          "successful live qualification record for each exact skill fingerprint",
+          "negative-path evidence retained",
+          "candidate runtime identity included in qualification evidence",
+          "one unrelated real-project dogfood scenario per mutation class/read-only class",
+          "independent review confirms no authority widening"
+        ]
+      },
+      "planning": {
+        "decomposition_trigger": "MS-R1 accepted and candidate selector available; re-inspect current M6 qualification evidence before materializing packages",
+        "research_refresh_trigger": "refresh upstream OpenCode skill behavior if supported OpenCode version changes from the known-good compatibility set",
+        "replanning_trigger": "replan catalog membership if live qualification repeatedly fails for method semantics rather than infrastructure",
+        "supersession_conditions": [
+          "owner changes the required M6 method properties or removes the governed-skill concept"
+        ],
+        "stop_conditions": [
+          "stop if a required owner decision is unresolved",
+          "stop if a hard prerequisite is not evidenced",
+          "stop if implementation would require widening constitutional authority not already granted"
+        ]
+      },
+      "release": {
+        "release_checkpoint": true,
+        "usable_capability_created": "Operator can invoke a bounded, exact, live-qualified Ocode engineering-method catalog with retained qualification provenance.",
+        "candidate_requirements": [
+          "all required live qualification records bind exact skill fingerprints and exact runtime candidate",
+          "catalog regression suite passes"
+        ],
+        "promotion_requirements": [
+          "independent review of qualification evidence",
+          "real-project dogfood complete",
+          "owner promotion decision"
+        ],
+        "compatibility_implications": [
+          "preserve M4 admission as sole authority engine",
+          "preserve existing skill protocol version or supply explicit migration"
+        ],
+        "rollback_implications": [
+          "prior stable skill catalog remains selectable through release rollback"
+        ]
+      },
+      "execution": {
+        "parallelism_classification": "integration-gated",
+        "work_packages": [],
+        "validation_commands": [],
+        "completion_output_contract": []
+      }
+    },
+    {
+      "identity": {
+        "id": "MS-R3",
+        "title": "Compile bounded plans into explicit TaskSpecs",
+        "type": "major_milestone",
+        "horizon": "NEXT",
+        "lifecycle_state": "future",
+        "capability_era": "ERA-2",
+        "release_train": "RT-3"
+      },
+      "purpose": {
+        "intent": "Turn planning output into deterministic, inspectable work contracts without giving the planner execution or acceptance authority.",
+        "required_properties": [
+          "TaskSpecs state objective, scope, non-goals, requirements, dependencies, authority request, validation and evidence",
+          "Wayfinder blocks compilation when planning is premature",
+          "requirements translate into the existing M4 admission engine",
+          "compiled plans have stable identity/provenance and explicit unresolved decisions",
+          "planner cannot grant mutation, commit, push, acceptance, or release authority"
+        ],
+        "non_goals": [
+          "automatic strategic prioritization",
+          "provider-specific planner contracts",
+          "execute tasks as part of compilation"
+        ]
+      },
+      "authority": {
+        "planning_authority": "program/roadmap.json + owner intent",
+        "decomposition_authority": "Program Architect or delegated Planner within canonical contracts",
+        "implementation_authority": "Explicit owner/delegated authorization bound to a materialized work package",
+        "acceptance_authority": "Owner or explicitly delegated acceptance authority; verifier/reviewer evidence is advisory",
+        "release_authority": "Owner unless explicitly delegated by recorded owner decision",
+        "forbidden_authority": [
+          "implementation agents may not self-authorize future work",
+          "tests may not promote a candidate",
+          "worktrees may not redefine stable",
+          "planning changes may not silently redefine owner intent"
+        ]
+      },
+      "dependencies": {
+        "hard_prerequisites": [
+          "MS-R2"
+        ],
+        "soft_dependencies": [],
+        "consumed_contracts": [
+          "docs/architecture/governance-contracts.md",
+          "docs/architecture/wayfinding.md",
+          "agents/manifest.json"
+        ],
+        "unresolved_shared_decisions": [],
+        "integration_dependencies": []
+      },
+      "evidence": {
+        "known_evidence": [
+          "M4 admission and M5 planning-readiness boundaries are implemented"
+        ],
+        "evidence_references": [
+          "EVID-003",
+          "EVID-004"
+        ],
+        "unproven_properties": [
+          "canonical TaskSpec contract",
+          "dependency-aware compiler behavior",
+          "planner-to-admission translation on real project work"
+        ],
+        "required_acceptance_evidence": [
+          "TaskSpec schema and deterministic identity tests",
+          "unknown/owner-decision inputs fail closed or route to Wayfinder",
+          "compiled TaskSpec can be independently inspected and admitted without planner privilege",
+          "real-project plan compilation produces bounded tasks with no execution"
+        ]
+      },
+      "planning": {
+        "decomposition_trigger": "MS-R2 accepted; review M7 historical intent and derive the minimum TaskSpec needed by single-task execution",
+        "research_refresh_trigger": "refresh only if OpenCode task/delegation public contracts are proposed as a dependency",
+        "replanning_trigger": "replan if a smaller contract than a compiler can preserve deterministic decomposition and admission",
+        "supersession_conditions": [
+          "owner changes the requirement for compiled deterministic task contracts"
+        ],
+        "stop_conditions": [
+          "stop if a required owner decision is unresolved",
+          "stop if a hard prerequisite is not evidenced",
+          "stop if implementation would require widening constitutional authority not already granted"
+        ]
+      },
+      "release": {
+        "release_checkpoint": false,
+        "usable_capability_created": "",
+        "candidate_requirements": [],
+        "promotion_requirements": [],
+        "compatibility_implications": [],
+        "rollback_implications": []
+      },
+      "execution": {
+        "parallelism_classification": "parallel-safe-after-contract-freeze",
+        "work_packages": [],
+        "validation_commands": [],
+        "completion_output_contract": []
+      }
+    },
+    {
+      "identity": {
+        "id": "MS-R4",
+        "title": "Execute one compiled task through governed acceptance gates",
+        "type": "major_milestone",
+        "horizon": "NEXT",
+        "lifecycle_state": "future",
+        "capability_era": "ERA-2",
+        "release_train": "RT-3"
+      },
+      "purpose": {
+        "intent": "Prove a deterministic single-task path from admitted TaskSpec through bounded execution, verification, independent review, and human acceptance.",
+        "required_properties": [
+          "execution consumes an exact TaskSpec and admitted subject",
+          "mutation occurs only within granted authority",
+          "verification and independent review remain distinct",
+          "acceptance is explicit and not inferred from passing tests",
+          "run state and evidence survive interruption without inventing completion",
+          "retries are bounded and idempotent where mutation is replayable"
+        ],
+        "non_goals": [
+          "parallel worktrees",
+          "automatic merge/push",
+          "self-acceptance by implementation agent"
+        ]
+      },
+      "authority": {
+        "planning_authority": "program/roadmap.json + owner intent",
+        "decomposition_authority": "Program Architect or delegated Planner within canonical contracts",
+        "implementation_authority": "Explicit owner/delegated authorization bound to a materialized work package",
+        "acceptance_authority": "Owner or explicitly delegated acceptance authority; verifier/reviewer evidence is advisory",
+        "release_authority": "Owner unless explicitly delegated by recorded owner decision",
+        "forbidden_authority": [
+          "implementation agents may not self-authorize future work",
+          "tests may not promote a candidate",
+          "worktrees may not redefine stable",
+          "planning changes may not silently redefine owner intent"
+        ]
+      },
+      "dependencies": {
+        "hard_prerequisites": [
+          "MS-R3"
+        ],
+        "soft_dependencies": [],
+        "consumed_contracts": [
+          "packages/harness-runtime/lib/lifecycle.mjs",
+          "packages/harness-runtime/lib/ledger.mjs",
+          "packages/harness-runtime/lib/evidence.mjs",
+          "packages/harness-runtime/lib/verify.mjs",
+          "packages/harness-runtime/lib/closeout.mjs"
+        ],
+        "unresolved_shared_decisions": [],
+        "integration_dependencies": []
+      },
+      "evidence": {
+        "known_evidence": [
+          "runtime already has lifecycle, ledger, evidence, verification and closeout primitives"
+        ],
+        "evidence_references": [
+          "EVID-002",
+          "EVID-013"
+        ],
+        "unproven_properties": [
+          "compiled TaskSpec-driven end-to-end execution",
+          "crash-safe task restart semantics",
+          "human acceptance binding to exact evidence set"
+        ],
+        "required_acceptance_evidence": [
+          "one real issue executes from TaskSpec through verifier and independent reviewer",
+          "human acceptance is recorded separately from verification/review",
+          "kill-and-resume test never duplicates accepted mutation",
+          "failure leaves resumable or terminal state with evidence"
+        ]
+      },
+      "planning": {
+        "decomposition_trigger": "MS-R3 accepted and TaskSpec contract frozen",
+        "research_refresh_trigger": "refresh runtime SDK/CLI execution behavior if execution seam or OpenCode version changes",
+        "replanning_trigger": "replan if existing lifecycle/ledger primitives cannot represent task execution without breaking historical run records",
+        "supersession_conditions": [
+          "owner removes deterministic TaskSpec execution as a core product property"
+        ],
+        "stop_conditions": [
+          "stop if a required owner decision is unresolved",
+          "stop if a hard prerequisite is not evidenced",
+          "stop if implementation would require widening constitutional authority not already granted"
+        ]
+      },
+      "release": {
+        "release_checkpoint": true,
+        "usable_capability_created": "Operator can submit one bounded TaskSpec and receive evidence-backed implementation, verification, review, and an explicit human acceptance decision.",
+        "candidate_requirements": [
+          "single-task acceptance suite passes",
+          "recovery scenario passes",
+          "real-project dogfood completes with exact release identity"
+        ],
+        "promotion_requirements": [
+          "independent review",
+          "owner acceptance of operator workflow",
+          "rollback evidence available"
+        ],
+        "compatibility_implications": [
+          "compatibility boundary and unsupported behavior recorded in release manifest"
+        ],
+        "rollback_implications": [
+          "prior stable remains retained and selectable; failed-release evidence is preserved"
+        ]
+      },
+      "execution": {
+        "parallelism_classification": "serialized",
+        "work_packages": [],
+        "validation_commands": [],
+        "completion_output_contract": []
+      }
+    },
+    {
+      "identity": {
+        "id": "MS-R5",
+        "title": "Make execution restartable and operationally observable",
+        "type": "major_milestone",
+        "horizon": "LATER",
+        "lifecycle_state": "future",
+        "capability_era": "ERA-3",
+        "release_train": "RT-4"
+      },
+      "purpose": {
+        "intent": "Make interrupted or stale work diagnosable and recoverable without weakening evidence or authority boundaries.",
+        "required_properties": [
+          "state has explicit durable ownership and freshness semantics",
+          "restart reconstructs from persisted evidence rather than model memory",
+          "stale/conflicting state is detected and surfaced",
+          "retry/idempotency rules are explicit per mutation boundary",
+          "operator can explain why a run is blocked, failed, resumable, or accepted",
+          "observability records decisions/evidence without becoming a new authority source"
+        ],
+        "non_goals": [
+          "general telemetry platform",
+          "opaque autonomous retry loops",
+          "centralized distributed scheduler before single-machine need exists"
+        ]
+      },
+      "authority": {
+        "planning_authority": "program/roadmap.json + owner intent",
+        "decomposition_authority": "Program Architect or delegated Planner within canonical contracts",
+        "implementation_authority": "Explicit owner/delegated authorization bound to a materialized work package",
+        "acceptance_authority": "Owner or explicitly delegated acceptance authority; verifier/reviewer evidence is advisory",
+        "release_authority": "Owner unless explicitly delegated by recorded owner decision",
+        "forbidden_authority": [
+          "implementation agents may not self-authorize future work",
+          "tests may not promote a candidate",
+          "worktrees may not redefine stable",
+          "planning changes may not silently redefine owner intent"
+        ]
+      },
+      "dependencies": {
+        "hard_prerequisites": [
+          "MS-R4"
+        ],
+        "soft_dependencies": [],
+        "consumed_contracts": [
+          "packages/harness-runtime/lib/ledger.mjs",
+          "packages/harness-runtime/lib/lifecycle.mjs",
+          "packages/harness-runtime/lib/wayfinding.mjs"
+        ],
+        "unresolved_shared_decisions": [],
+        "integration_dependencies": []
+      },
+      "evidence": {
+        "known_evidence": [
+          "ledger and evidence primitives exist; Wayfinder already models dependency-scoped freshness"
+        ],
+        "evidence_references": [
+          "EVID-004",
+          "EVID-013"
+        ],
+        "unproven_properties": [
+          "restart from persisted task state",
+          "idempotent replay rules across mutation classes",
+          "operator-facing stale-state diagnosis"
+        ],
+        "required_acceptance_evidence": [
+          "fault-injection scenarios cover process death before/after mutation and before/after evidence checkpoint",
+          "resume never fabricates prior success",
+          "stale dependencies block or revalidate deterministically",
+          "operator explanation cites exact state/evidence"
+        ]
+      },
+      "planning": {
+        "decomposition_trigger": "MS-R4 accepted and at least one real interruption/failure class has been observed or intentionally fault-injected",
+        "research_refresh_trigger": "refresh persistence mechanism options only when existing JSONL/local-file primitives prove insufficient",
+        "replanning_trigger": "replan if concurrency or scale evidence invalidates single-process persistence assumptions",
+        "supersession_conditions": [
+          "owner changes restart/recovery from required mature property"
+        ],
+        "stop_conditions": [
+          "stop if a required owner decision is unresolved",
+          "stop if a hard prerequisite is not evidenced",
+          "stop if implementation would require widening constitutional authority not already granted"
+        ]
+      },
+      "release": {
+        "release_checkpoint": true,
+        "usable_capability_created": "Operator can stop, inspect, and safely resume or terminate bounded Ocode work without reconstructing session history.",
+        "candidate_requirements": [
+          "exact immutable artifact identity recorded",
+          "declared milestone acceptance evidence complete",
+          "regression evidence bound to the candidate"
+        ],
+        "promotion_requirements": [
+          "candidate remains byte-identical to qualification target",
+          "required dogfood complete",
+          "explicit release-authority decision recorded"
+        ],
+        "compatibility_implications": [
+          "compatibility boundary and unsupported behavior recorded in release manifest"
+        ],
+        "rollback_implications": [
+          "prior stable remains retained and selectable; failed-release evidence is preserved"
+        ]
+      },
+      "execution": {
+        "parallelism_classification": "integration-gated",
+        "work_packages": [],
+        "validation_commands": [],
+        "completion_output_contract": []
+      }
+    },
+    {
+      "identity": {
+        "id": "MS-R6",
+        "title": "Add safe worktree parallelism with integration gates",
+        "type": "major_milestone",
+        "horizon": "LATER",
+        "lifecycle_state": "future",
+        "capability_era": "ERA-3",
+        "release_train": "RT-4"
+      },
+      "purpose": {
+        "intent": "Allow independent tasks to run concurrently only when shared authority-bearing state and integration ordering make that safe.",
+        "required_properties": [
+          "worktrees remain development-plane isolation only",
+          "parallelism is derived from declared dependencies and mutation surfaces",
+          "shared authority-bearing contracts default to serialization",
+          "integration order and merge authority are explicit",
+          "failure in one worktree cannot redefine stable or silently contaminate another"
+        ],
+        "non_goals": [
+          "parallelize every task",
+          "use worktree existence as release identity",
+          "automatic conflict resolution across authority-bearing contracts"
+        ]
+      },
+      "authority": {
+        "planning_authority": "program/roadmap.json + owner intent",
+        "decomposition_authority": "Program Architect or delegated Planner within canonical contracts",
+        "implementation_authority": "Explicit owner/delegated authorization bound to a materialized work package",
+        "acceptance_authority": "Owner or explicitly delegated acceptance authority; verifier/reviewer evidence is advisory",
+        "release_authority": "Owner unless explicitly delegated by recorded owner decision",
+        "forbidden_authority": [
+          "implementation agents may not self-authorize future work",
+          "tests may not promote a candidate",
+          "worktrees may not redefine stable",
+          "planning changes may not silently redefine owner intent"
+        ]
+      },
+      "dependencies": {
+        "hard_prerequisites": [
+          "MS-R4",
+          "MS-R5"
+        ],
+        "soft_dependencies": [],
+        "consumed_contracts": [
+          "MS-R3 TaskSpec contract",
+          "release selector contract established by MS-R1"
+        ],
+        "unresolved_shared_decisions": [],
+        "integration_dependencies": []
+      },
+      "evidence": {
+        "known_evidence": [],
+        "evidence_references": [],
+        "unproven_properties": [
+          "dependency-aware concurrency classification",
+          "safe integration of two real parallel tasks",
+          "shared-contract serialization enforcement"
+        ],
+        "required_acceptance_evidence": [
+          "two genuinely independent real tasks complete in parallel and integrate with full provenance",
+          "contrived shared-contract pair is deterministically serialized or integration-gated",
+          "stable selector remains unchanged throughout worktree creation/destruction",
+          "failed worktree leaves inspectable evidence and no cross-worktree authority leak"
+        ]
+      },
+      "planning": {
+        "decomposition_trigger": "single-task execution and recovery are accepted; collect at least two recurring tasks whose parallelism would materially reduce operator wait",
+        "research_refresh_trigger": "refresh Git worktree behavior/merge tooling only if current Git semantics or platform constraints change",
+        "replanning_trigger": "replan if measured coordination cost exceeds parallelism benefit",
+        "supersession_conditions": [
+          "owner removes safe parallel delivery as a product goal"
+        ],
+        "stop_conditions": [
+          "stop if a required owner decision is unresolved",
+          "stop if a hard prerequisite is not evidenced",
+          "stop if implementation would require widening constitutional authority not already granted"
+        ]
+      },
+      "release": {
+        "release_checkpoint": true,
+        "usable_capability_created": "Operator can run demonstrably independent Ocode tasks concurrently while conflicting work is serialized or explicitly integration-gated.",
+        "candidate_requirements": [
+          "exact immutable artifact identity recorded",
+          "declared milestone acceptance evidence complete",
+          "regression evidence bound to the candidate"
+        ],
+        "promotion_requirements": [
+          "candidate remains byte-identical to qualification target",
+          "required dogfood complete",
+          "explicit release-authority decision recorded"
+        ],
+        "compatibility_implications": [
+          "compatibility boundary and unsupported behavior recorded in release manifest"
+        ],
+        "rollback_implications": [
+          "prior stable remains retained and selectable; failed-release evidence is preserved"
+        ]
+      },
+      "execution": {
+        "parallelism_classification": "serialized",
+        "work_packages": [],
+        "validation_commands": [],
+        "completion_output_contract": []
+      }
+    },
+    {
+      "identity": {
+        "id": "MS-R7",
+        "title": "Harden packaging, upgrade, migration, compatibility, and rollback",
+        "type": "major_milestone",
+        "horizon": "LATER",
+        "lifecycle_state": "future",
+        "capability_era": "ERA-3",
+        "release_train": "RT-5"
+      },
+      "purpose": {
+        "intent": "Make exact releases portable across supported machines and evolvable without losing operator state or rollback safety.",
+        "required_properties": [
+          "install is reproducible from exact release artifact plus machine-private configuration",
+          "upgrade declares compatibility and migration requirements before mutation",
+          "migration is bounded, reversible where required, and evidence-producing",
+          "rollback selects compatible prior stable without reversing development history",
+          "provider/runtime compatibility is explicit and requalified when dependency boundaries move"
+        ],
+        "non_goals": [
+          "support every OS/provider/version",
+          "create a general package ecosystem",
+          "silently migrate unknown user-owned configuration"
+        ]
+      },
+      "authority": {
+        "planning_authority": "program/roadmap.json + owner intent",
+        "decomposition_authority": "Program Architect or delegated Planner within canonical contracts",
+        "implementation_authority": "Explicit owner/delegated authorization bound to a materialized work package",
+        "acceptance_authority": "Owner or explicitly delegated acceptance authority; verifier/reviewer evidence is advisory",
+        "release_authority": "Owner unless explicitly delegated by recorded owner decision",
+        "forbidden_authority": [
+          "implementation agents may not self-authorize future work",
+          "tests may not promote a candidate",
+          "worktrees may not redefine stable",
+          "planning changes may not silently redefine owner intent"
+        ]
+      },
+      "dependencies": {
+        "hard_prerequisites": [
+          "MS-R1",
+          "MS-R5"
+        ],
+        "soft_dependencies": [],
+        "consumed_contracts": [
+          "program/schemas/release-manifest.schema.json",
+          "docs/architecture/opencode-integration-contract.md"
+        ],
+        "unresolved_shared_decisions": [],
+        "integration_dependencies": []
+      },
+      "evidence": {
+        "known_evidence": [
+          "current installer/update/rollback surfaces exist and use isolated installation root"
+        ],
+        "evidence_references": [
+          "EVID-007",
+          "EVID-008",
+          "EVID-009",
+          "EVID-010"
+        ],
+        "unproven_properties": [
+          "portable immutable artifact reconstruction across supported machines",
+          "versioned migration contract",
+          "rollback compatibility across schema changes"
+        ],
+        "required_acceptance_evidence": [
+          "clean-machine install from immutable release artifact",
+          "upgrade from previous stable with compatibility preflight",
+          "migration failure leaves prior stable recoverable",
+          "rollback after upgrade restores functional prior release and preserves migration evidence",
+          "supported OpenCode/provider matrix has explicit qualification evidence"
+        ]
+      },
+      "planning": {
+        "decomposition_trigger": "MS-R5 accepted and at least two stable releases or one state/schema migration create a real upgrade boundary",
+        "research_refresh_trigger": "refresh packaging mechanism when cross-machine evidence shows current immutable-directory mechanism is insufficient",
+        "replanning_trigger": "replan when operating-system distribution or dependency constraints require a different materialization mechanism",
+        "supersession_conditions": [
+          "owner changes portability/rollback guarantees"
+        ],
+        "stop_conditions": [
+          "stop if a required owner decision is unresolved",
+          "stop if a hard prerequisite is not evidenced",
+          "stop if implementation would require widening constitutional authority not already granted"
+        ]
+      },
+      "release": {
+        "release_checkpoint": true,
+        "usable_capability_created": "Operator can install, upgrade, migrate, and rollback exact Ocode releases with compatibility preflight and retained evidence.",
+        "candidate_requirements": [
+          "exact immutable artifact identity recorded",
+          "declared milestone acceptance evidence complete",
+          "regression evidence bound to the candidate"
+        ],
+        "promotion_requirements": [
+          "candidate remains byte-identical to qualification target",
+          "required dogfood complete",
+          "explicit release-authority decision recorded"
+        ],
+        "compatibility_implications": [
+          "compatibility boundary and unsupported behavior recorded in release manifest"
+        ],
+        "rollback_implications": [
+          "prior stable remains retained and selectable; failed-release evidence is preserved"
+        ]
+      },
+      "execution": {
+        "parallelism_classification": "integration-gated",
+        "work_packages": [],
+        "validation_commands": [],
+        "completion_output_contract": []
+      }
+    },
+    {
+      "identity": {
+        "id": "MS-R8",
+        "title": "Evaluate and learn without granting the system self-authority",
+        "type": "major_milestone",
+        "horizon": "LATER",
+        "lifecycle_state": "future",
+        "capability_era": "ERA-3",
+        "release_train": "RT-5"
+      },
+      "purpose": {
+        "intent": "Use accumulated evidence to improve planning, routing, methods, and defaults while keeping learned proposals separate from owner authority.",
+        "required_properties": [
+          "evaluation inputs cite provenance and release/task identity",
+          "quality/cost/latency signals remain evidence, not authorization",
+          "learned changes are proposals with explicit acceptance boundaries",
+          "regressions can be attributed to changed policy/method/release",
+          "no model or evaluator can silently alter constitutional authority or program intent"
+        ],
+        "non_goals": [
+          "unbounded self-modification",
+          "optimize only token cost",
+          "treat historical success as permanent qualification"
+        ]
+      },
+      "authority": {
+        "planning_authority": "program/roadmap.json + owner intent",
+        "decomposition_authority": "Program Architect or delegated Planner within canonical contracts",
+        "implementation_authority": "Explicit owner/delegated authorization bound to a materialized work package",
+        "acceptance_authority": "Owner or explicitly delegated acceptance authority; verifier/reviewer evidence is advisory",
+        "release_authority": "Owner unless explicitly delegated by recorded owner decision",
+        "forbidden_authority": [
+          "implementation agents may not self-authorize future work",
+          "tests may not promote a candidate",
+          "worktrees may not redefine stable",
+          "planning changes may not silently redefine owner intent"
+        ]
+      },
+      "dependencies": {
+        "hard_prerequisites": [
+          "MS-R4",
+          "MS-R5"
+        ],
+        "soft_dependencies": [],
+        "consumed_contracts": [
+          "program/evidence-ledger.json",
+          "packages/harness-runtime/lib/evidence.mjs"
+        ],
+        "unresolved_shared_decisions": [],
+        "integration_dependencies": []
+      },
+      "evidence": {
+        "known_evidence": [],
+        "evidence_references": [],
+        "unproven_properties": [
+          "useful longitudinal evaluation dataset",
+          "method/routing changes demonstrably improve accepted work",
+          "governed proposal-to-adoption loop"
+        ],
+        "required_acceptance_evidence": [
+          "evaluation report links each conclusion to retained evidence",
+          "at least one proposed improvement is independently tested against baseline",
+          "owner/delegated acceptance is explicit for adopted policy changes",
+          "rollback can identify and reverse the changed release/policy"
+        ]
+      },
+      "planning": {
+        "decomposition_trigger": "enough accepted real work exists to compare at least two meaningful alternatives without synthetic-only metrics",
+        "research_refresh_trigger": "refresh evaluation methodology when model/provider behavior or task distribution materially changes",
+        "replanning_trigger": "replan if metrics become proxies that do not correlate with owner acceptance or defect outcomes",
+        "supersession_conditions": [
+          "owner removes evidence-driven learning as a mature property"
+        ],
+        "stop_conditions": [
+          "stop if a required owner decision is unresolved",
+          "stop if a hard prerequisite is not evidenced",
+          "stop if implementation would require widening constitutional authority not already granted"
+        ]
+      },
+      "release": {
+        "release_checkpoint": false,
+        "usable_capability_created": "",
+        "candidate_requirements": [],
+        "promotion_requirements": [],
+        "compatibility_implications": [],
+        "rollback_implications": []
+      },
+      "execution": {
+        "parallelism_classification": "parallel-safe",
+        "work_packages": [],
+        "validation_commands": [],
+        "completion_output_contract": []
+      }
+    },
+    {
+      "identity": {
+        "id": "MS-R9",
+        "title": "Prove sustained daily operation on real projects",
+        "type": "major_milestone",
+        "horizon": "LATER",
+        "lifecycle_state": "future",
+        "capability_era": "ERA-3",
+        "release_train": "RT-5"
+      },
+      "purpose": {
+        "intent": "Demonstrate that the assembled system remains trustworthy through repeated real work, restarts, upgrades, failures, and human decisions.",
+        "required_properties": [
+          "repeated work uses stable releases by default",
+          "candidate dogfood is explicit and attributable",
+          "accepted work preserves evidence/provenance across sessions",
+          "operator can recover from common failures without repository archaeology",
+          "maintenance burden and manual exception rate are measured and bounded"
+        ],
+        "non_goals": [
+          "declare maturity from synthetic tests",
+          "require arbitrary calendar duration without evidence goals",
+          "hide manual recovery steps"
+        ]
+      },
+      "authority": {
+        "planning_authority": "program/roadmap.json + owner intent",
+        "decomposition_authority": "Program Architect or delegated Planner within canonical contracts",
+        "implementation_authority": "Explicit owner/delegated authorization bound to a materialized work package",
+        "acceptance_authority": "Owner or explicitly delegated acceptance authority; verifier/reviewer evidence is advisory",
+        "release_authority": "Owner unless explicitly delegated by recorded owner decision",
+        "forbidden_authority": [
+          "implementation agents may not self-authorize future work",
+          "tests may not promote a candidate",
+          "worktrees may not redefine stable",
+          "planning changes may not silently redefine owner intent"
+        ]
+      },
+      "dependencies": {
+        "hard_prerequisites": [
+          "MS-R6",
+          "MS-R7"
+        ],
+        "soft_dependencies": [
+          "MS-R8"
+        ],
+        "consumed_contracts": [
+          "program/releases/state.json",
+          "program/schemas/release-manifest.schema.json"
+        ],
+        "unresolved_shared_decisions": [],
+        "integration_dependencies": []
+      },
+      "evidence": {
+        "known_evidence": [],
+        "evidence_references": [],
+        "unproven_properties": [
+          "sustained real-project operation across release changes",
+          "bounded operator burden",
+          "failure recovery under normal daily use"
+        ],
+        "required_acceptance_evidence": [
+          "multi-cycle real-project dogfood campaign spans implementation, review, interruption, candidate evaluation, promotion and rollback/recovery",
+          "all accepted work remains attributable to exact release and evidence",
+          "material failures and manual overrides are recorded with corrective action",
+          "owner explicitly accepts the system as the normal daily runtime"
+        ]
+      },
+      "planning": {
+        "decomposition_trigger": "parallelism and release operations are accepted; define a dogfood campaign from actual recurring project work",
+        "research_refresh_trigger": "refresh operator-experience assumptions when observed usage deviates from designed workflow",
+        "replanning_trigger": "replan any subsystem whose operational burden or failure rate remains materially high",
+        "supersession_conditions": [
+          "owner changes the mature single-project daily-operation target"
+        ],
+        "stop_conditions": [
+          "stop if a required owner decision is unresolved",
+          "stop if a hard prerequisite is not evidenced",
+          "stop if implementation would require widening constitutional authority not already granted"
+        ]
+      },
+      "release": {
+        "release_checkpoint": true,
+        "usable_capability_created": "Ocode is the owner's normal, evidence-backed engineering runtime for sustained real project work, with candidate evaluation and recovery as routine operations.",
+        "candidate_requirements": [
+          "exact immutable artifact identity recorded",
+          "declared milestone acceptance evidence complete",
+          "regression evidence bound to the candidate"
+        ],
+        "promotion_requirements": [
+          "candidate remains byte-identical to qualification target",
+          "required dogfood complete",
+          "explicit release-authority decision recorded"
+        ],
+        "compatibility_implications": [
+          "compatibility boundary and unsupported behavior recorded in release manifest"
+        ],
+        "rollback_implications": [
+          "prior stable remains retained and selectable; failed-release evidence is preserved"
+        ]
+      },
+      "execution": {
+        "parallelism_classification": "integration-gated",
+        "work_packages": [],
+        "validation_commands": [],
+        "completion_output_contract": []
+      }
+    },
+    {
+      "identity": {
+        "id": "MS-S1",
+        "title": "Conditional multi-project and multi-repository coordination",
+        "type": "major_milestone",
+        "horizon": "STRATEGIC",
+        "lifecycle_state": "future",
+        "capability_era": "ERA-4",
+        "release_train": "RT-6"
+      },
+      "purpose": {
+        "intent": "Coordinate work across repositories only if sustained operation proves that cross-repository dependency handling is a recurring need.",
+        "required_properties": [
+          "each repository retains explicit authority and release identity",
+          "cross-repository dependencies are declared rather than inferred from ambient workspace state",
+          "failure or stale state in one project cannot silently authorize mutation in another"
+        ],
+        "non_goals": [
+          "central monorepo conversion by default",
+          "cross-repo mutation without explicit per-repo authority"
+        ]
+      },
+      "authority": {
+        "planning_authority": "program/roadmap.json + owner intent",
+        "decomposition_authority": "Program Architect or delegated Planner within canonical contracts",
+        "implementation_authority": "Explicit owner/delegated authorization bound to a materialized work package",
+        "acceptance_authority": "Owner or explicitly delegated acceptance authority; verifier/reviewer evidence is advisory",
+        "release_authority": "Owner unless explicitly delegated by recorded owner decision",
+        "forbidden_authority": [
+          "implementation agents may not self-authorize future work",
+          "tests may not promote a candidate",
+          "worktrees may not redefine stable",
+          "planning changes may not silently redefine owner intent"
+        ]
+      },
+      "dependencies": {
+        "hard_prerequisites": [
+          "MS-R9"
+        ],
+        "soft_dependencies": [],
+        "consumed_contracts": [],
+        "unresolved_shared_decisions": [],
+        "integration_dependencies": []
+      },
+      "evidence": {
+        "known_evidence": [],
+        "evidence_references": [],
+        "unproven_properties": [
+          "recurring cross-repository need",
+          "minimal coordination contract"
+        ],
+        "required_acceptance_evidence": [
+          "evidence of recurring cross-repository workflows",
+          "owner approves scope",
+          "prototype proves dependency and authority isolation before productization"
+        ]
+      },
+      "planning": {
+        "decomposition_trigger": "sustained dogfood produces repeated cross-repository blockers that cannot be solved cheaply with current per-project operation",
+        "research_refresh_trigger": "rediscover repository orchestration options when trigger occurs",
+        "replanning_trigger": "drop or defer if operational evidence does not justify added coupling",
+        "supersession_conditions": [
+          "owner makes cross-repository operation a required core property"
+        ],
+        "stop_conditions": [
+          "stop if a required owner decision is unresolved",
+          "stop if a hard prerequisite is not evidenced",
+          "stop if implementation would require widening constitutional authority not already granted"
+        ]
+      },
+      "release": {
+        "release_checkpoint": false,
+        "usable_capability_created": "",
+        "candidate_requirements": [],
+        "promotion_requirements": [],
+        "compatibility_implications": [],
+        "rollback_implications": []
+      },
+      "execution": {
+        "parallelism_classification": "owner-decision-blocked",
+        "work_packages": [],
+        "validation_commands": [],
+        "completion_output_contract": []
+      }
+    },
+    {
+      "identity": {
+        "id": "MS-S2",
+        "title": "Conditional team and organizational scale",
+        "type": "major_milestone",
+        "horizon": "STRATEGIC",
+        "lifecycle_state": "future",
+        "capability_era": "ERA-4",
+        "release_train": "RT-6"
+      },
+      "purpose": {
+        "intent": "Introduce multi-user policy, delegation, and shared evidence only when a real team boundary exists and can be modeled without weakening human authority.",
+        "required_properties": [
+          "delegated authorities are explicit, scoped, revocable, and auditable",
+          "shared state has ownership and conflict semantics",
+          "individual agent capability never implies organizational authority"
+        ],
+        "non_goals": [
+          "invent enterprise RBAC before users exist",
+          "centralize secrets or identity without a demonstrated need"
+        ]
+      },
+      "authority": {
+        "planning_authority": "program/roadmap.json + owner intent",
+        "decomposition_authority": "Program Architect or delegated Planner within canonical contracts",
+        "implementation_authority": "Explicit owner/delegated authorization bound to a materialized work package",
+        "acceptance_authority": "Owner or explicitly delegated acceptance authority; verifier/reviewer evidence is advisory",
+        "release_authority": "Owner unless explicitly delegated by recorded owner decision",
+        "forbidden_authority": [
+          "implementation agents may not self-authorize future work",
+          "tests may not promote a candidate",
+          "worktrees may not redefine stable",
+          "planning changes may not silently redefine owner intent"
+        ]
+      },
+      "dependencies": {
+        "hard_prerequisites": [
+          "MS-R9"
+        ],
+        "soft_dependencies": [],
+        "consumed_contracts": [],
+        "unresolved_shared_decisions": [],
+        "integration_dependencies": []
+      },
+      "evidence": {
+        "known_evidence": [],
+        "evidence_references": [],
+        "unproven_properties": [
+          "team-scale user need",
+          "identity/delegation model",
+          "shared-state concurrency requirements"
+        ],
+        "required_acceptance_evidence": [
+          "real multi-user use case documented",
+          "security/authority model reviewed",
+          "owner explicitly authorizes decomposition"
+        ]
+      },
+      "planning": {
+        "decomposition_trigger": "more than one human owner/operator must coordinate authoritative work through Ocode in practice",
+        "research_refresh_trigger": "rediscover identity, policy and deployment constraints at that time",
+        "replanning_trigger": "defer if team need disappears or external platform already solves the problem adequately",
+        "supersession_conditions": [
+          "owner makes team scale part of core completion"
+        ],
+        "stop_conditions": [
+          "stop if a required owner decision is unresolved",
+          "stop if a hard prerequisite is not evidenced",
+          "stop if implementation would require widening constitutional authority not already granted"
+        ]
+      },
+      "release": {
+        "release_checkpoint": false,
+        "usable_capability_created": "",
+        "candidate_requirements": [],
+        "promotion_requirements": [],
+        "compatibility_implications": [],
+        "rollback_implications": []
+      },
+      "execution": {
+        "parallelism_classification": "owner-decision-blocked",
+        "work_packages": [],
+        "validation_commands": [],
+        "completion_output_contract": []
+      }
+    },
+    {
+      "identity": {
+        "id": "MS-S3",
+        "title": "Conditional extension architecture",
+        "type": "major_milestone",
+        "horizon": "STRATEGIC",
+        "lifecycle_state": "future",
+        "capability_era": "ERA-4",
+        "release_train": "RT-6"
+      },
+      "purpose": {
+        "intent": "Expose stable extension boundaries only after multiple independently developed capabilities demonstrate repeated integration pressure.",
+        "required_properties": [
+          "extensions declare capability, authority requirements, compatibility, provenance and qualification",
+          "extensions cannot bypass core admission/release authority",
+          "versioned contracts isolate core from optional mechanism churn"
+        ],
+        "non_goals": [
+          "plugin framework for hypothetical users",
+          "arbitrary code execution as an extension API"
+        ]
+      },
+      "authority": {
+        "planning_authority": "program/roadmap.json + owner intent",
+        "decomposition_authority": "Program Architect or delegated Planner within canonical contracts",
+        "implementation_authority": "Explicit owner/delegated authorization bound to a materialized work package",
+        "acceptance_authority": "Owner or explicitly delegated acceptance authority; verifier/reviewer evidence is advisory",
+        "release_authority": "Owner unless explicitly delegated by recorded owner decision",
+        "forbidden_authority": [
+          "implementation agents may not self-authorize future work",
+          "tests may not promote a candidate",
+          "worktrees may not redefine stable",
+          "planning changes may not silently redefine owner intent"
+        ]
+      },
+      "dependencies": {
+        "hard_prerequisites": [
+          "MS-R9"
+        ],
+        "soft_dependencies": [],
+        "consumed_contracts": [],
+        "unresolved_shared_decisions": [],
+        "integration_dependencies": []
+      },
+      "evidence": {
+        "known_evidence": [],
+        "evidence_references": [],
+        "unproven_properties": [
+          "at least two recurring external extension needs",
+          "stable minimal extension contract"
+        ],
+        "required_acceptance_evidence": [
+          "two concrete extension cases share a minimal boundary",
+          "security/admission review proves no authority bypass",
+          "compatibility strategy exists"
+        ]
+      },
+      "planning": {
+        "decomposition_trigger": "at least two independent non-core capabilities require the same integration seam and ad hoc integration cost is recurring",
+        "research_refresh_trigger": "rediscover extension mechanisms and OpenCode/plugin surfaces when the trigger occurs",
+        "replanning_trigger": "prefer direct integration if only one concrete extension need exists",
+        "supersession_conditions": [
+          "owner makes third-party extensibility a required product property"
+        ],
+        "stop_conditions": [
+          "stop if a required owner decision is unresolved",
+          "stop if a hard prerequisite is not evidenced",
+          "stop if implementation would require widening constitutional authority not already granted"
+        ]
+      },
+      "release": {
+        "release_checkpoint": false,
+        "usable_capability_created": "",
+        "candidate_requirements": [],
+        "promotion_requirements": [],
+        "compatibility_implications": [],
+        "rollback_implications": []
+      },
+      "execution": {
+        "parallelism_classification": "owner-decision-blocked",
+        "work_packages": [],
+        "validation_commands": [],
+        "completion_output_contract": []
+      }
+    },
+    {
+      "identity": {
+        "id": "MS-S4",
+        "title": "Governed self-hosting of Ocode development",
+        "type": "major_milestone",
+        "horizon": "STRATEGIC",
+        "lifecycle_state": "future",
+        "capability_era": "ERA-4",
+        "release_train": "RT-6"
+      },
+      "purpose": {
+        "intent": "Use stable Ocode to develop Ocode itself without allowing the running development state to become its own runtime or acceptance authority.",
+        "required_properties": [
+          "self-hosted work runs on a prior stable release or explicitly selected candidate",
+          "the checkout under mutation is never the implicit executing runtime",
+          "independent verification/review and human release promotion remain external authority boundaries",
+          "failed self-hosting work cannot corrupt last-known-good stable"
+        ],
+        "non_goals": [
+          "recursive self-modifying runtime",
+          "automatic promotion because Ocode passed its own tests"
+        ]
+      },
+      "authority": {
+        "planning_authority": "program/roadmap.json + owner intent",
+        "decomposition_authority": "Program Architect or delegated Planner within canonical contracts",
+        "implementation_authority": "Explicit owner/delegated authorization bound to a materialized work package",
+        "acceptance_authority": "Owner or explicitly delegated acceptance authority; verifier/reviewer evidence is advisory",
+        "release_authority": "Owner unless explicitly delegated by recorded owner decision",
+        "forbidden_authority": [
+          "implementation agents may not self-authorize future work",
+          "tests may not promote a candidate",
+          "worktrees may not redefine stable",
+          "planning changes may not silently redefine owner intent"
+        ]
+      },
+      "dependencies": {
+        "hard_prerequisites": [
+          "MS-R9"
+        ],
+        "soft_dependencies": [],
+        "consumed_contracts": [
+          "program/releases/state.json"
+        ],
+        "unresolved_shared_decisions": [],
+        "integration_dependencies": []
+      },
+      "evidence": {
+        "known_evidence": [],
+        "evidence_references": [],
+        "unproven_properties": [
+          "safe self-hosting over multiple real milestones",
+          "independent review remains effective when system modifies itself"
+        ],
+        "required_acceptance_evidence": [
+          "multiple Ocode milestones are implemented using an immutable prior stable runtime",
+          "runtime identity is recorded for every self-hosted run",
+          "one failed candidate proves stable remains usable",
+          "owner explicitly accepts self-hosting as normal development mode"
+        ]
+      },
+      "planning": {
+        "decomposition_trigger": "sustained daily operation is accepted and a stable release can safely work on an unrelated checkout; then run bounded Ocode-on-Ocode pilot",
+        "research_refresh_trigger": "refresh recursive-development failure modes after each major runtime architecture change",
+        "replanning_trigger": "replan if self-hosting introduces unacceptable coupling or reviewer independence loss",
+        "supersession_conditions": [
+          "owner rejects self-hosting as a mature direction"
+        ],
+        "stop_conditions": [
+          "stop if a required owner decision is unresolved",
+          "stop if a hard prerequisite is not evidenced",
+          "stop if implementation would require widening constitutional authority not already granted"
+        ]
+      },
+      "release": {
+        "release_checkpoint": true,
+        "usable_capability_created": "Ocode can safely build and evaluate its next version while the current stable release remains independent, inspectable, and recoverable.",
+        "candidate_requirements": [
+          "exact immutable artifact identity recorded",
+          "declared milestone acceptance evidence complete",
+          "regression evidence bound to the candidate"
+        ],
+        "promotion_requirements": [
+          "candidate remains byte-identical to qualification target",
+          "required dogfood complete",
+          "explicit release-authority decision recorded"
+        ],
+        "compatibility_implications": [
+          "compatibility boundary and unsupported behavior recorded in release manifest"
+        ],
+        "rollback_implications": [
+          "prior stable remains retained and selectable; failed-release evidence is preserved"
+        ]
+      },
+      "execution": {
+        "parallelism_classification": "integration-gated",
+        "work_packages": [],
+        "validation_commands": [],
+        "completion_output_contract": []
+      }
+    }
+  ],
+  "milestone_close_cycle": [
+    "inspect evidence independently",
+    "update current state",
+    "identify newly proven properties",
+    "identify remaining unproven properties",
+    "identify invalidated assumptions",
+    "evaluate release readiness",
+    "inspect dependencies",
+    "refresh research where required",
+    "move eligible nodes into nearer horizons",
+    "decompose only eligible work",
+    "preserve superseded planning",
+    "expose the next authorized work set"
+  ]
+}

@@ -69,6 +69,15 @@ opencode debug agent coder --pure
 
 The effective `coder` output should show `bash` catch-all `ask` and the explicit destructive/VCS denials. In a disposable project, start normal interactive Ocode with the coder agent, ask it to run a harmless unfamiliar diagnostic such as `uname`, and approve or reject the native OpenCode prompt. Do not use `--auto` and do not use this as final runtime qualification.
 
+Until a semantic-agent effect-request tool is integrated, the operator-facing transitional workflow bridge is `ocode effect <bounded command>`. It is a real terminal approval flow owned by Ocode, not prose emitted by a model:
+
+```sh
+node /path/to/ocode-harness/packages/harness-runtime/bin/ocode.mjs effect uname -a
+node /path/to/ocode-harness/packages/harness-runtime/bin/ocode.mjs effect git add test.txt
+```
+
+It displays `Allow once? [y/N]`, executes only after `y`, prints the structured result, and appends `.opencode/approval-ledger.jsonl`. `n` returns a deterministic rejection without execution. This bridge is deliberately a checkpoint path; it does not claim native OpenCode subagent prompting works.
+
 ## Installation and rollback
 
 This repository checkpoint does not alter a real installation. To use it, run the repository's existing isolated installer workflow after review; do not install from an unreviewed dirty worktree. `harness version`, `harness update`, and `harness rollback` remain the repository-native operator mechanisms. To return to an earlier installed release, use the backup reported by the existing installer and run `harness rollback`; do not manually edit global OpenCode configuration.

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { createInterface } from 'node:readline/promises';
+import { existsSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -23,6 +24,7 @@ import {
   validateProfileCompleteness,
 } from '../lib/opencode-integration.mjs';
 import { validateProfileAvailability } from '../lib/execution.mjs';
+import { executeApprovalFirstEffect } from '../lib/approval-first-effect-execution.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 
@@ -71,6 +73,34 @@ function loadContext(profileOverride) {
     manifest,
   });
   return { harnessRoot, machineConfig, profileName, manifest, contracts, ...loaded };
+}
+
+/** Fail before session/orientation when the pinned SDK contract is not present. */
+function assertRuntimeCompatibility(harnessRoot) {
+  const path = resolve(harnessRoot, 'runtime-compatibility.json');
+  let compatibility;
+  try {
+    compatibility = JSON.parse(readFileSync(path, 'utf8'));
+  } catch {
+    throw new Error(`OCODE_RUNTIME_COMPATIBILITY_INVALID: cannot read ${path}`);
+  }
+  const required = compatibility?.opencode?.required_version;
+  const supported = compatibility?.platform?.supported;
+  const minimumNode = compatibility?.node?.minimum_major;
+  if (typeof required !== 'string' || !Array.isArray(supported) || !Number.isInteger(minimumNode)) {
+    throw new Error('OCODE_RUNTIME_COMPATIBILITY_INVALID: required OpenCode, platform, or Node declaration is missing');
+  }
+  if (!supported.includes(`${process.platform} ${process.arch}`)) {
+    throw new Error(`OCODE_RUNTIME_PLATFORM_UNSUPPORTED: ${process.platform} ${process.arch}; supported: ${supported.join(', ')}`);
+  }
+  if (Number(process.versions.node.split('.')[0]) < minimumNode) {
+    throw new Error(`OCODE_RUNTIME_NODE_UNSUPPORTED: requires Node >=${minimumNode}; found ${process.versions.node}`);
+  }
+  const version = spawnSync('opencode', ['--version'], { encoding: 'utf8' });
+  const found = version.error ? null : version.stdout.trim();
+  if (version.status !== 0 || found !== required) {
+    throw new Error(`OCODE_RUNTIME_OPENCODE_VERSION_MISMATCH: requires ${required}; found ${found || 'unavailable'}. Install the pinned version, then rerun ocode.`);
+  }
 }
 
 function loadGovernanceContext() {
@@ -306,6 +336,29 @@ function printBindingError(error) {
   console.error(`fallback: ${details.fallback || 'deny'}`);
 }
 
+async function runInteractiveEffect(remaining) {
+  const command = remaining.slice(1).join(' ').trim();
+  if (!command) throw new Error('Usage: ocode effect <bounded command>');
+  if (!process.stdin.isTTY || !process.stdout.isTTY) throw new Error('APPROVAL_REQUIRED: ocode effect requires an interactive terminal');
+  const projectDir = process.cwd();
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  try {
+    const result = await executeApprovalFirstEffect({
+      command,
+      projectDir,
+      requester: 'orchestrator',
+      evidencePath: resolve(projectDir, '.opencode', 'approval-ledger.jsonl'),
+      resolver: async (request) => {
+        console.log(`\nApproval required (${request.classification.kind}): ${request.requested_operation}`);
+        const answer = (await rl.question('Allow once? [y/N] ')).trim().toLowerCase();
+        return answer === 'y' || answer === 'yes' ? 'ALLOW_ONCE' : 'REJECT';
+      },
+    });
+    console.log(JSON.stringify(result, null, 2));
+    if (result.status === 'DENIED' || result.status === 'REJECTED' || result.status === 'EXECUTION_FAILED') process.exitCode = 1;
+  } finally { rl.close(); }
+}
+
 async function main() {
   const { override, remaining } = extractProfileOverride(process.argv.slice(2));
   if (remaining[0] === 'explain' && remaining[1] === '--run') {
@@ -317,6 +370,11 @@ async function main() {
   if (remaining[0] === 'govern') {
     const decision = govern(loadGovernanceContext(), remaining.slice(1));
     if (decision?.decision === 'DENY') process.exitCode = 1;
+    return;
+  }
+
+  if (remaining[0] === 'effect') {
+    await runInteractiveEffect(remaining);
     return;
   }
 
@@ -337,6 +395,7 @@ async function main() {
     throw new Error('Usage: ocode profile | ocode profile explain <role> | ocode profile diff <left> <right>');
   }
 
+  assertRuntimeCompatibility(context.harnessRoot);
   validateProfileCompleteness(context.profile, context.manifest);
   validateProfileAvailability(context.profile, {
     cwd: process.cwd(),

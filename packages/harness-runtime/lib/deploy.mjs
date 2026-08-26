@@ -197,6 +197,21 @@ export function mergeOpenCodeConfig(existingConfig, sourceConfigData, machineCon
   return merged;
 }
 
+/** Remove only the legacy Ocode-owned custom approval tool after migration to native ASK. */
+export function removeLegacyRequestEffectTools(opencodeConfigPath = CONFIG.opencodeConfig) {
+  const toolsDir = join(dirname(opencodeConfigPath), 'tools');
+  const removed = [];
+  for (const name of ['request_effect.js', 'request_effect.mjs']) {
+    const path = join(toolsDir, name);
+    if (!existsSync(path)) continue;
+    const source = readFileSync(path, 'utf8');
+    if (!source.includes('OCODE_HARNESS_ROOT') || !source.includes('approval-first-effect-tool')) continue;
+    rmSync(path, { force: true });
+    removed.push(path);
+  }
+  return removed;
+}
+
 /**
  * Stage candidate from source to staging directory
  * Copies all components: orientation, harness-runtime, doctrine, agents, VERSION, opencode-config
@@ -233,8 +248,6 @@ export function stageCandidate(sourceRoot, stagingDir, version) {
 
   // Copy opencode-config
   copyDir(join(sourceRoot, 'opencode-config'), join(stagingDir, 'opencode-config'));
-  // Copy the Ocode-owned semantic effect tool used by normal OpenCode sessions.
-  copyDir(join(sourceRoot, 'opencode-tools'), join(stagingDir, 'opencode-tools'));
 
   // Write VERSION
   writeVersion(stagingDir, version);
@@ -300,7 +313,6 @@ export function validateCandidate(stagingDir) {
   // Check harness-runtime bin
   const harnessBin = join(harnessRuntimeDir, 'bin', 'harness.mjs');
   checks.push({ name: 'harness-runtime bin/harness.mjs', ok: existsSync(harnessBin) });
-  checks.push({ name: 'Ocode request_effect tool', ok: existsSync(join(stagingDir, 'opencode-tools', 'request_effect.js')) });
   checks.push({ name: 'harness-runtime bin/ocode.mjs', ok: existsSync(join(harnessRuntimeDir, 'bin', 'ocode.mjs')) });
 
   // Check doctrine

@@ -148,12 +148,22 @@ for (const agentFile of expectedAgents) {
 }
 
 const coderPolicy = readFileSync(join(agentsDir, 'coder.md'), 'utf8');
-for (const required of ['"*": ask', '"git push": deny', '"git add": deny', '"git commit": deny', '"rm -rf *": deny']) {
+const orchestratorPolicy = readFileSync(join(agentsDir, 'orchestrator.md'), 'utf8');
+for (const required of ['"*": ask', 'EFFECT REQUEST', '"git add": deny', '"git push": deny', '"rm -rf *": deny']) {
   if (!coderPolicy.includes(required)) {
-    console.error(`✗ coder Approval-First checkpoint policy missing: ${required}`);
+    console.error(`✗ coder primary-routing policy missing: ${required}`);
     invalidAgents.push({ file: 'coder.md', field: required });
   } else {
-    console.log(`✓ coder Approval-First checkpoint policy preserves ${required}`);
+    console.log(`✓ coder primary-routing policy preserves ${required}`);
+  }
+}
+
+for (const required of ['"*": ask', '"git push": deny', '"git reset --hard": deny', '"git clean": deny', '"rm -rf *": deny', 'native Bash tool']) {
+  if (!orchestratorPolicy.includes(required)) {
+    console.error(`✗ orchestrator native-ASK policy missing: ${required}`);
+    invalidAgents.push({ file: 'orchestrator.md', field: required });
+  } else {
+    console.log(`✓ orchestrator native-ASK policy preserves ${required}`);
   }
 }
 

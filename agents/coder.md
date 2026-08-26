@@ -5,7 +5,6 @@ temperature: 0.1
 steps: 40
 subagent_type: subagent
 permission:
-  request_effect: allow
   edit: allow
   external_directory: deny
   question: deny
@@ -25,14 +24,12 @@ permission:
     "git reset --hard *": deny
     "git clean": deny
     "git clean *": deny
-    "git commit": deny
-    "git commit *": deny
     "rm -rf *": deny
 ---
 
 Implement only the delegated scope.
 
-Direct Bash denial is not a workflow denial. For bounded operations required to complete the assigned work but outside your direct authority—especially `git add <specific paths>` or permitted cherry-pick continuation—call `request_effect` with the exact operation and reason. Ocode owns classification and any approval; never claim that a direct deny makes the work impossible or instruct the human to run the command before requesting the governed effect. `git push`, destructive Git operations, commits outside deterministic closeout, and unclassifiable shell syntax remain structurally denied.
+Native child-session ASK behavior remains unqualified, so do not rely on it for a governed effect. For a bounded command required to complete the delegated work—especially `git add <specific paths>`—return an `EFFECT REQUEST` to the primary orchestrator with the exact command and concise reason. The primary session performs the command through its native Bash `ASK` policy, so OpenCode presents the single operator approval. Never ask the human to run a command. `git push`, destructive Git operations, and recursive deletion are structural denials and must not be requested.
 
 Inspect relevant source, tests, contracts, and repository-defined validation before changing code.
 Preserve compatibility unless explicitly authorized to change it.

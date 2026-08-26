@@ -16,13 +16,13 @@ import {
   installLaunchers,
   installAgents,
   patchOpenCodeConfig,
+  removeLegacyRequestEffectTools,
   configureGitExcludes,
   validatePostPromotion,
   readVersion,
   findSourceRepo,
   CONFIG,
 } from '../packages/harness-runtime/lib/deploy.mjs';
-import { installApprovalFirstTool } from '../packages/harness-runtime/lib/approval-first-tool-deploy.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -95,7 +95,7 @@ async function main() {
     installAgents(CONFIG.harnessRoot);
     patchOpenCodeConfig(CONFIG.harnessRoot);
     configureGitExcludes();
-    installApprovalFirstTool(CONFIG.harnessRoot, CONFIG.opencodeConfig);
+    removeLegacyRequestEffectTools(CONFIG.opencodeConfig);
 
     const postValid = validatePostPromotion(CONFIG.harnessRoot);
     if (!postValid) {

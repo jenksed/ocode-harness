@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 import { spawnSync } from 'node:child_process';
-import { createInterface } from 'node:readline/promises';
 import { existsSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, resolve } from 'node:path';
@@ -24,7 +23,6 @@ import {
   validateProfileCompleteness,
 } from '../lib/opencode-integration.mjs';
 import { validateProfileAvailability } from '../lib/execution.mjs';
-import { executeApprovalFirstEffect } from '../lib/approval-first-effect-execution.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 
@@ -336,29 +334,6 @@ function printBindingError(error) {
   console.error(`fallback: ${details.fallback || 'deny'}`);
 }
 
-async function runInteractiveEffect(remaining) {
-  const command = remaining.slice(1).join(' ').trim();
-  if (!command) throw new Error('Usage: ocode effect <bounded command>');
-  if (!process.stdin.isTTY || !process.stdout.isTTY) throw new Error('APPROVAL_REQUIRED: ocode effect requires an interactive terminal');
-  const projectDir = process.cwd();
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
-  try {
-    const result = await executeApprovalFirstEffect({
-      command,
-      projectDir,
-      requester: 'orchestrator',
-      evidencePath: resolve(projectDir, '.opencode', 'approval-ledger.jsonl'),
-      resolver: async (request) => {
-        console.log(`\nApproval required (${request.classification.kind}): ${request.requested_operation}`);
-        const answer = (await rl.question('Allow once? [y/N] ')).trim().toLowerCase();
-        return answer === 'y' || answer === 'yes' ? 'ALLOW_ONCE' : 'REJECT';
-      },
-    });
-    console.log(JSON.stringify(result, null, 2));
-    if (result.status === 'DENIED' || result.status === 'REJECTED' || result.status === 'EXECUTION_FAILED') process.exitCode = 1;
-  } finally { rl.close(); }
-}
-
 async function main() {
   const { override, remaining } = extractProfileOverride(process.argv.slice(2));
   if (remaining[0] === 'explain' && remaining[1] === '--run') {
@@ -370,11 +345,6 @@ async function main() {
   if (remaining[0] === 'govern') {
     const decision = govern(loadGovernanceContext(), remaining.slice(1));
     if (decision?.decision === 'DENY') process.exitCode = 1;
-    return;
-  }
-
-  if (remaining[0] === 'effect') {
-    await runInteractiveEffect(remaining);
     return;
   }
 

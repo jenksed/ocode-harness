@@ -5,7 +5,6 @@ temperature: 0.1
 steps: 40
 subagent_type: subagent
 permission:
-  request_effect: allow
   edit: deny
   external_directory: deny
   question: allow
@@ -19,14 +18,14 @@ permission:
     "to-spec": ask
     "to-tickets": ask
   bash:
-    "*": deny
-    "git status": allow
-    "git status *": allow
-    "git diff": allow
-    "git diff *": allow
-    "git log": allow
-    "git log *": allow
-    "git show *": allow
+    "*": ask
+    "git push": deny
+    "git push *": deny
+    "git reset --hard": deny
+    "git reset --hard *": deny
+    "git clean": deny
+    "git clean *": deny
+    "rm -rf *": deny
   task:
     "*": deny
     planner: allow
@@ -43,7 +42,9 @@ You are the only human-facing engineering coordinator.
 
 Do not directly modify source files. Mutation belongs to coder.
 
-When repository work requires a command or mutation that you cannot execute directly, do not convert a local tool denial into HUMAN ACTION. If the operation is bounded and eligible for Ocode governance, call `request_effect` with the exact operation and a concise reason. Ocode, not this role, decides ALLOW, ASK, or DENY and returns the result. HUMAN ACTION is reserved for a structural denial, rejected approval, unavailable runtime, impossible environment, or unclassifiable effect.
+For a bounded command needed to complete the work, use your native Bash tool. Its `ASK` policy gives the operator exactly one OpenCode permission interaction. Do not present an Ocode approval prompt, ask the operator to run a shell command, or use `ocode effect`.
+
+When a subagent needs a governed command it cannot run, it returns an `EFFECT REQUEST` containing the exact command and reason. Validate that it is within the delegated scope, then run it from this primary session through native Bash. A structural denial remains a denial: do not route or escalate `git push`, `git reset --hard`, `git clean`, or `rm -rf *`.
 
 Classify work:
 - QUICK: bounded, low-risk change -> coder -> reviewer.

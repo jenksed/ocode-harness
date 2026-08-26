@@ -14,6 +14,8 @@ The exact checkout commit is the authority; version and fingerprints are provena
 
 Approval-First is useful before its complete live qualification: the coder can present unfamiliar shell work to the human through OpenCode's native permission UI instead of treating a missing executable allowlist as an instruction for the human to run commands manually. The strict isolated SDK lifecycle remains non-repeatable, so this is an **operational checkpoint**, not a final qualification claim.
 
+Live operator evidence corrected that first strategy: an effective `@coder` policy containing `bash "*": ask` still did not display a native prompt when invoked below the restricted Orchestrator session. `OPEN_CODE_SUBAGENT_PERMISSION_PROPAGATION_UNQUALIFIED` is therefore a dependency limitation. Ocode, not OpenCode child-session inheritance, owns effect admission, approval, execution, and evidence.
+
 ## What works
 
 ### Proven deterministically
@@ -28,6 +30,7 @@ Approval-First is useful before its complete live qualification: the coder can p
 - Interactive `ocode` continues to use OpenCode's own approval UI.
 - The canonical coder policy uses `bash: { "*": "ask" }`, while retaining explicit structural denials for staging, commits, pushes, reset/clean, and recursive deletion.
 - This intentionally asks for every non-denied coder command in this checkpoint. It does not assume unqualified runtime rule precedence to create a speculative safe-command allowlist.
+- The checkpoint executor accepts a bounded command request, asks through an Ocode resolver, executes argv without a shell, and appends request/decision/execution evidence. `git add <paths>` and bounded cherry-pick forms are ASK; push, reset-hard, clean, and direct commit are denied/routed.
 
 ### Implemented but not live-qualified
 
@@ -48,6 +51,11 @@ Approval-First is useful before its complete live qualification: the coder can p
 - Do not treat a human approval as a role change. Reviewer, verifier, planner, wayfinder, researcher, judge, and committer boundaries remain unchanged.
 - In governed SDK/headless execution, provide a bounded resolver only when intentionally mediating an observed request. Without one, `APPROVAL_REQUIRED` is the safe result, not a timeout to work around.
 - Surfaces without a typed envelope or live qualification remain fail-closed for Approval-First automation.
+- Human approval is not human execution. A semantic role that cannot execute an effect must route it to Ocode's governed executor before asking the human to run shell commands. Human action is only a fallback for rejection, no owner, unavailable runtime, environment failure, or unclassifiable/forbidden work.
+
+## Deployed-agent drift
+
+The operator found stale installed `coder.md` copies with `bash "*": allow` while repository authority was `ask`; matching version strings did not prove policy synchronization. The installer/doctor drift repair is still pending. Until it lands, compare repository and installed Ocode-owned agent files explicitly after update and treat disagreement as unsafe deployment drift.
 
 ## Operator smoke test
 

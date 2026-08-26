@@ -18,4 +18,6 @@ This is the ordered implementation contract after the operational checkpoint. `U
 | AF-12 | PLANNED — operator diagnostics | AF-4, AF-9 | Explain state, ownership, lease, evidence, stale qualification, and headless behavior. | CLI/doctor tests. Depends AF-9. | Documentation may parallelize. |
 | AF-13 | PLANNED — independent end-to-end qualification | AF-1–AF-12 | Prove interactive and headless approval matrix without bypasses; review historical evidence. | Fresh isolated live evidence and full affected suite. Depends all prior work. | None. |
 
+The checkpoint executor is transitional, not the final typed-effect architecture. Add a deployment-drift work item to AF-12: version equality must not mask differences among repository canonical agents, installed Ocode-owned agents, and effective projected policy. Native OpenCode subagent permission propagation is not an authority dependency and must not be used as AF-13 proof.
+
 The checkpoint coder policy is intentionally limited: it is an interactive command ASK surface, not evidence that command effect classification or broad role migration is complete.

@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { executeApprovalFirstEffect } from '../packages/harness-runtime/lib/approval-first-effect-execution.mjs';
+const project = mkdtempSync(join(tmpdir(), 'approval-effect-')); const ledger = join(project, '.opencode', 'approval-ledger.jsonl');
+const allowed = await executeApprovalFirstEffect({ command: 'uname -a', projectDir: project, evidencePath: ledger, resolver: async () => 'ALLOW_ONCE' });
+assert.equal(allowed.status, 'EXECUTED'); assert.match(allowed.execution.stdout, /./);
+const rejected = await executeApprovalFirstEffect({ command: 'uname -a', projectDir: project, evidencePath: ledger, resolver: async () => 'REJECT' });
+assert.equal(rejected.status, 'REJECTED');
+writeFileSync(join(project, 'test.txt'), 'x');
+const staged = await executeApprovalFirstEffect({ command: 'git add test.txt', projectDir: project, evidencePath: ledger, resolver: async () => 'ALLOW_ONCE', spawn: (file, args) => file === 'git' ? { status: 0, stdout: '', stderr: '' } : null });
+assert.equal(staged.status, 'EXECUTED'); assert.equal(staged.classification.kind, 'vcs_index');
+assert.equal((await executeApprovalFirstEffect({ command: 'git push origin main', projectDir: project, evidencePath: ledger })).status, 'DENIED');
+assert.equal((await executeApprovalFirstEffect({ command: 'git reset --hard', projectDir: project, evidencePath: ledger })).status, 'DENIED');
+assert.equal((await executeApprovalFirstEffect({ command: 'uname -a | cat', projectDir: project, evidencePath: ledger })).status, 'DENIED');
+console.log('APPROVAL_FIRST_EFFECT_EXECUTION_PROVEN');

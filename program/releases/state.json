@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "authority": "program/releases/state.json",
+  "baseline_sha": "e08c5a1f21e18dcc16676d1928919972f7ce8339",
+  "stable": null,
+  "candidate": null,
+  "dev": {
+    "source_branch": "main",
+    "source_commit": "e08c5a1f21e18dcc16676d1928919972f7ce8339",
+    "mutable": true,
+    "authoritative_for_real_projects": false,
+    "note": "This identifies the repository baseline inspected by the program proposal, not an operator runtime."
+  },
+  "legacy_installation": {
+    "version_source": "VERSION=v0.1.0",
+    "state": "UNMANAGED_BY_RELEASE_MANIFEST",
+    "stable_status": "UNPROVEN",
+    "reason": "Repository source shows installer/update/rollback behavior but contains no exact installed artifact digest, source-commit-bound release manifest, qualification manifest, or owner promotion record."
+  },
+  "invariants": [
+    "absence of a recorded stable release must not be repaired by silently treating mutable main as stable",
+    "ocode default may point to stable only after an exact immutable artifact has been qualified and explicitly promoted",
+    "candidate and dev require explicit selectors",
+    "worktrees never define stable",
+    "promotion selects an existing candidate artifact and never rebuilds it",
+    "rollback selects retained prior stable and preserves failed-release evidence"
+  ]
+}

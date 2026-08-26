@@ -16,15 +16,15 @@ export const ACTIVITY_EVENT_TYPES = Object.freeze([
 ]);
 
 export const AGENT_DISPLAY_METADATA = Object.freeze({
-  orchestrator: Object.freeze({ role_id: 'orchestrator', display_name: 'Orchestrator', short_label: 'Orchestrator', glyph: 'O' }),
-  planner: Object.freeze({ role_id: 'planner', display_name: 'Planner', short_label: 'Plan', glyph: 'P' }),
-  coder: Object.freeze({ role_id: 'coder', display_name: 'Coder', short_label: 'Code', glyph: 'C' }),
-  researcher: Object.freeze({ role_id: 'researcher', display_name: 'Researcher', short_label: 'Research', glyph: 'R' }),
-  verifier: Object.freeze({ role_id: 'verifier', display_name: 'Verifier', short_label: 'Verify', glyph: 'V' }),
-  reviewer: Object.freeze({ role_id: 'reviewer', display_name: 'Reviewer', short_label: 'Review', glyph: 'R' }),
-  judge: Object.freeze({ role_id: 'judge', display_name: 'Judge', short_label: 'Judge', glyph: 'J' }),
-  committer: Object.freeze({ role_id: 'committer', display_name: 'Committer', short_label: 'Commit', glyph: 'C' }),
-  wayfinder: Object.freeze({ role_id: 'wayfinder', display_name: 'Wayfinder', short_label: 'Wayfind', glyph: 'W' }),
+  orchestrator: Object.freeze({ role_id: 'orchestrator', display_name: 'Orchestrator', short_label: 'Orchestrator', glyph: '◇' }),
+  planner: Object.freeze({ role_id: 'planner', display_name: 'Planner', short_label: 'Plan', glyph: '△' }),
+  coder: Object.freeze({ role_id: 'coder', display_name: 'Coder', short_label: 'Code', glyph: '◆' }),
+  researcher: Object.freeze({ role_id: 'researcher', display_name: 'Researcher', short_label: 'Research', glyph: '◌' }),
+  verifier: Object.freeze({ role_id: 'verifier', display_name: 'Verifier', short_label: 'Verify', glyph: '◎' }),
+  reviewer: Object.freeze({ role_id: 'reviewer', display_name: 'Reviewer', short_label: 'Review', glyph: '◈' }),
+  judge: Object.freeze({ role_id: 'judge', display_name: 'Judge', short_label: 'Judge', glyph: '◉' }),
+  committer: Object.freeze({ role_id: 'committer', display_name: 'Committer', short_label: 'Commit', glyph: '■' }),
+  wayfinder: Object.freeze({ role_id: 'wayfinder', display_name: 'Wayfinder', short_label: 'Wayfind', glyph: '◍' }),
 });
 
 const ISO8601_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/;

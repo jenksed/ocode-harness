@@ -62,14 +62,24 @@ try {
   appendActivityEvent(activityStorePath(projectRoot), createActivityEvent({
     event_type: 'WORKFLOW_STARTED', workflow_id: 'cli-observable-workflow', agent_role: 'orchestrator', agent_instance_id: 'cli-orchestrator', status: 'STARTED', summary: 'Fixture runtime workflow',
   }));
+  appendActivityEvent(activityStorePath(projectRoot), createActivityEvent({
+    event_type: 'AGENT_STARTED', workflow_id: 'cli-observable-workflow', agent_role: 'orchestrator', agent_instance_id: 'cli-orchestrator', status: 'STARTED', summary: 'Fixture runtime agent',
+  }));
   const activity = invoke(['activity', '--workflow', 'cli-observable-workflow']);
   assert.equal(activity.status, 0, activity.stderr);
-  assert.match(activity.stdout, /"WORKFLOW_STARTED"/);
-  assert.match(activity.stdout, /"active_agents"/);
+  assert.match(activity.stdout, /OCODE WORK/);
+  assert.match(activity.stdout, /Orchestrator/);
   const rawActivity = invoke(['activity', '--raw', '--workflow', 'cli-observable-workflow']);
   assert.equal(rawActivity.status, 0, rawActivity.stderr);
-  assert.equal(rawActivity.stdout.trim().split('\n').length, 1);
+  assert.equal(rawActivity.stdout.trim().split('\n').length, 2);
   assert.match(rawActivity.stdout, /"workflow_id":"cli-observable-workflow"/);
-  console.log('✓ activity CLI exposes JSON summaries and raw runtime records without profile/model setup');
-  console.log(JSON.stringify({ status: 'GOVERN_CLI_TESTS_PROVEN', operator_surfaces: ['explain', 'check', 'audit', 'explain --run', 'activity'] }));
+  const traceActivity = invoke(['activity', '--trace', '--workflow', 'cli-observable-workflow']);
+  assert.equal(traceActivity.status, 0, traceActivity.stderr);
+  assert.match(traceActivity.stdout, /workflow=cli-observable-workflow/);
+  const agents = invoke(['agents']);
+  assert.equal(agents.status, 0, agents.stderr);
+  assert.match(agents.stdout, /ROLE\s+STATUS\s+CURRENT/);
+  assert.match(agents.stdout, /Orchestrator\s+active/);
+  console.log('✓ activity CLI exposes human, trace, and raw runtime records; agents reports configured versus active roles');
+  console.log(JSON.stringify({ status: 'GOVERN_CLI_TESTS_PROVEN', operator_surfaces: ['explain', 'check', 'audit', 'explain --run', 'activity', 'agents'] }));
 } finally { rmSync(projectRoot, { recursive: true, force: true }); }

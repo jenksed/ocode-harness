@@ -23,7 +23,14 @@ import {
   validateProfileCompleteness,
 } from '../lib/opencode-integration.mjs';
 import { validateProfileAvailability } from '../lib/execution.mjs';
-import { activityStorePath, queryActivity } from '../lib/activity.mjs';
+import {
+  activityStorePath,
+  createActivityExecutionContext,
+  finishActivityExecution,
+  queryActivity,
+  startActivityExecution,
+} from '../lib/activity.mjs';
+import { renderActivityView, renderAgentsView, renderAnnouncement } from '../lib/work-view.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 
@@ -196,26 +203,53 @@ function explainRun(runID) {
 
 function printActivity(args) {
   let raw = false;
+  let follow = false;
+  let visibility = 'default';
   let workflowID = null;
   let limit = 100;
   for (let index = 0; index < args.length; index += 1) {
     const value = args[index];
     if (value === '--raw') raw = true;
+    else if (value === '--follow') follow = true;
+    else if (value === '--verbose') visibility = 'verbose';
+    else if (value === '--trace') visibility = 'trace';
     else if (value === '--workflow') {
       workflowID = args[++index];
       if (!workflowID || workflowID.startsWith('-')) throw new Error('ocode activity --workflow requires a workflow ID');
     } else if (value === '--limit') {
       limit = Number(args[++index]);
       if (!Number.isInteger(limit) || limit < 1) throw new Error('ocode activity --limit requires a positive integer');
-    } else throw new Error('Usage: ocode activity [--raw] [--workflow <id>] [--limit <count>]');
+    } else throw new Error('Usage: ocode activity [--raw] [--follow] [--verbose|--trace] [--workflow <id>] [--limit <count>]');
   }
   const projectRoot = findProjectRoot(process.cwd());
-  const result = queryActivity(activityStorePath(projectRoot), { workflow_id: workflowID, limit });
-  if (raw) {
-    for (const event of result.events) console.log(JSON.stringify(event));
-    return;
-  }
-  console.log(JSON.stringify(result, null, 2));
+  const storePath = activityStorePath(projectRoot);
+  const render = () => {
+    const result = queryActivity(storePath, { workflow_id: workflowID, limit });
+    if (raw) for (const event of result.events) console.log(JSON.stringify(event));
+    else console.log(renderActivityView(result, { visibility }));
+    return result;
+  };
+  const initial = render();
+  if (!follow) return;
+  let seen = new Set(initial.events.map((event) => event.event_id));
+  const timer = setInterval(() => {
+    const next = queryActivity(storePath, { workflow_id: workflowID, limit: 1_000 });
+    for (const event of next.events) {
+      if (seen.has(event.event_id)) continue;
+      seen.add(event.event_id);
+      console.log(raw ? JSON.stringify(event) : renderAnnouncement(event, visibility));
+    }
+  }, 500);
+  const stop = () => { clearInterval(timer); process.exit(0); };
+  process.once('SIGINT', stop);
+  process.once('SIGTERM', stop);
+}
+
+function printAgents() {
+  const projectRoot = findProjectRoot(process.cwd());
+  const { manifest } = loadGovernanceContext();
+  const activity = queryActivity(activityStorePath(projectRoot));
+  console.log(renderAgentsView(manifest, activity));
 }
 
 function emptyAuthority() {
@@ -373,6 +407,11 @@ async function main() {
     return;
   }
 
+  if (remaining[0] === 'agents' && remaining.length === 1) {
+    printAgents();
+    return;
+  }
+
   if (remaining[0] === 'govern') {
     const decision = govern(loadGovernanceContext(), remaining.slice(1));
     if (decision?.decision === 'DENY') process.exitCode = 1;
@@ -406,16 +445,27 @@ async function main() {
   const overlayConfig = JSON.parse(serializeOpenCodeRuntimeOverlay(context.profile, process.env.OPENCODE_CONFIG_CONTENT));
   const overlay = JSON.stringify(overlayConfig);
   console.log(`=== EXECUTION PROFILE: ${context.profile.name} (${short(fingerprintBindingProfile(context.profile))}) ===\n`);
-  const result = spawnSync('opencode', remaining, {
-    cwd: projectRoot,
-    env: {
-      ...process.env,
-      OPENCODE_ENABLE_EXA: '1',
-      OCODE_HARNESS_ROOT: context.harnessRoot,
-      OPENCODE_CONFIG_CONTENT: overlay,
-    },
-    stdio: 'inherit',
-  });
+  const interactiveActivity = createActivityExecutionContext({ activity_store_path: activityStorePath(projectRoot) }, { projectDir: projectRoot, role: 'orchestrator' });
+  startActivityExecution(interactiveActivity);
+  console.log('WORK — ◇ Orchestrator · active\n');
+  let result;
+  try {
+    result = spawnSync('opencode', remaining, {
+      cwd: projectRoot,
+      env: {
+        ...process.env,
+        OPENCODE_ENABLE_EXA: '1',
+        OCODE_HARNESS_ROOT: context.harnessRoot,
+        OPENCODE_CONFIG_CONTENT: overlay,
+      },
+      stdio: 'inherit',
+    });
+  } finally {
+    finishActivityExecution(interactiveActivity, {
+      success: Boolean(result && !result.error && !result.signal && result.status === 0),
+      failure_classification: result?.error?.message ?? result?.signal ?? (result?.status === 0 ? null : 'OPENCODE_EXIT_FAILURE'),
+    });
+  }
   if (result.error) throw result.error;
   if (result.signal) throw new Error(`OpenCode terminated by ${result.signal}`);
   process.exitCode = result.status ?? 1;

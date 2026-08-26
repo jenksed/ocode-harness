@@ -1,83 +1,59 @@
-# ocode-harness v0.1
+# ocode-harness
 
-A portable, deterministic harness for orchestrating AI-powered coding agents with a human-facing engineering coordinator and 8 specialized subagents.
+Ocode is a repository-owned engineering harness for governed agent execution, evidence-backed validation, explicit authority boundaries, runtime/provider binding, Wayfinding, and governed engineering methods.
 
-## Overview
+## Start here
 
-ocode-harness provides a structured workflow for engineering work, ensuring evidence-backed results through a multi-agent system:
+For current program authority, current-state evidence, release identity, and authorized-next-work rules, read [`program/README.md`](program/README.md) first.
 
-- **Orchestrator**: Human-facing engineering coordinator
-- **Planner**: Plans non-trivial implementation work
-- **Coder**: Implements bounded repository changes
-- **Researcher**: Researches current external documentation and APIs
-- **Verifier**: Independently executes repository validation
-- **Reviewer**: Independent read-only review of changes
-- **Judge**: Scarce independent second opinion for technical disagreement
-- **Committer**: Prepares semantic closeout data; deterministic runtime owns Git mutation
+Canonical active planning state is machine-readable in [`program/roadmap.json`](program/roadmap.json). The root [`ROADMAP.md`](ROADMAP.md) is an explicit pointer to that authority; the prior M0–M10 roadmap is retained only as historical provenance.
 
-## Features
+Do not infer current implementation or release maturity from old milestone labels, this README, a version string, commit messages, or passing tests alone. The program evidence ledger distinguishes implemented, tested, integration-proven, dogfood-proven, release-qualified, and owner-promoted states.
 
-- ✅ **Deterministic Workflow**: Evidence-backed results through multiple agents
-- ✅ **Portable Installation**: Single-command installer with backup/rollback
-- ✅ **Security First**: No secrets in repository, environment variable-based configuration
-- ✅ **Comprehensive Testing**: Isolated tests, agent validation, secret detection
-- ✅ **Health Checks**: Doctor command for comprehensive installation verification
-- ✅ **Git Integration**: Automatic orientation generation and git excludes
-- ✅ **Backup Management**: Timestamped backups with rollback capability
+## Current repository shape
 
-## Installation
+The governed semantic role inventory is `agents/manifest.json`. It currently defines nine roles:
 
-### Prerequisites
+- orchestrator
+- planner
+- coder
+- wayfinder
+- researcher
+- verifier
+- reviewer
+- judge
+- committer
 
-- Node.js v18 or higher
-- opencode (latest version)
-- git v2.20 or higher
+Capability is not authority. The canonical capability/permission/authority language is [`docs/architecture/governance-contracts.md`](docs/architecture/governance-contracts.md).
 
-### Quick Install
+Provider/model policy is separate from semantic role identity and lives under `profiles/`. OpenCode integration and configuration ownership are described by [`docs/architecture/opencode-integration-contract.md`](docs/architecture/opencode-integration-contract.md).
 
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/ocode-harness.git
-cd ocode-harness
+The repository currently contains six governed production skill protocols under `skills/`:
 
-# Run the installer
-node installer/install.mjs
-```
+- `tdd`
+- `systematic-debugging`
+- `codebase-investigation`
+- `blast-radius-analysis`
+- `architecture-change-design`
+- `adversarial-review`
 
-### Add to PATH (If Needed)
+Their deterministic catalog exists, but live qualification, dogfood, release qualification, and promotion must be read from retained evidence rather than inferred from catalog existence. See [`program/evidence-ledger.json`](program/evidence-ledger.json).
 
-**Zsh (macOS/Linux):**
-```bash
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
-source ~/.zshrc
-```
+## Main surfaces
 
-**Bash (Linux):**
-```bash
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
-```
+- `packages/orientation/` — repository/project orientation
+- `packages/harness-runtime/` — governance, admission, execution, evidence, lifecycle, deployment, Wayfinding, and skill runtime
+- `agents/` — semantic role definitions and structured authority inventory
+- `profiles/` — provider/model binding policy
+- `skills/` — governed engineering method protocols and qualification evidence
+- `installer/` — source bootstrap/install path
+- `scripts/` — doctor, acceptance, qualification, and program validation commands
+- `test/` — isolated/deterministic validation
+- `program/` — current long-range program authority and release/planning state
 
-### Verify Installation
+## Operator commands
 
-```bash
-code-harness doctor
-```
-
-## Usage
-
-### Generate Project Orientation
-
-```bash
-cd your-project-directory
-orient .
-```
-
-This creates:
-- `.opencode/orientation.json` - Machine-readable orientation
-- `.opencode/orientation.md` - Human-readable orientation
-
-### Start the Harness
+Normal runtime entry remains:
 
 ```bash
 ocode
@@ -85,9 +61,7 @@ ocode --profile free
 ocode --profile hybrid
 ```
 
-This runs orientation, resolves the machine default or per-launch override, validates every governed binding, and starts OpenCode with the Design C runtime overlay. Overrides never persist.
-
-Inspect execution policy without inference:
+Useful deterministic inspection surfaces include:
 
 ```bash
 ocode profile
@@ -99,232 +73,35 @@ ocode govern check coder --requires implementation.change,repository.edit --edit
 ocode govern audit
 ```
 
-Canonical agents are provider-neutral. `agents/manifest.json` owns the structured role inventory; `profiles/*.json` owns model policy. Binding failures deny execution and there is no silent cross-provider fallback.
+## Validation
 
-`ocode govern` is a local, deterministic view of the production governance engine. `explain` renders the canonical contract, authority, configured-permission projection, and baseline admission. `check` simulates only explicit capabilities and the established mutation flags; it never creates a TaskSpec or grants authority. `audit` is manifest-derived and read-only. Configured permission is evidence, not observed effective runtime permission.
-
-### Run Tests
+Run program-structure validation independently:
 
 ```bash
-# Run all tests
+npm run program:validate
+npm run test:program
+```
+
+Run the repository regression suite:
+
+```bash
 npm test
-
-# Run specific tests
-node test/test-doctor.mjs
-node test/test-agents.mjs
-node test/test-orientation.mjs
-node test/test-secrets.mjs
-node test/test-installer.mjs
 ```
 
-## Configuration
+Milestone/provider acceptance commands are declared in `package.json`. A test command existing in the repository does not prove that it has passed for the current checkout or release candidate.
 
-### Environment Variables
+## Release/runtime warning
 
-Set the following environment variables:
+The baseline source version is `v0.1.0`, and current installer/update/rollback code provides staged installation and backup behavior. That does **not** establish an exact immutable stable release identity.
 
-```bash
-export FREELLMAPI_API_KEY="your-api-key-here"
-export FREELLMAPI_BASE_URL="http://127.0.0.1:3001/v1"
-```
+The canonical repository-known release state is [`program/releases/state.json`](program/releases/state.json). On this planning branch it deliberately records no managed `stable` or `candidate` because no release manifest currently binds an installed artifact to exact source commit, artifact digest, qualification evidence, and explicit owner promotion.
 
-### Backup & Rollback
+The first ACTIVE program milestone is release/runtime isolation. Its executable package is [`program/work-packages/R1-release-runtime-isolation.md`](program/work-packages/R1-release-runtime-isolation.md).
 
-```bash
-# Create a backup
-code-harness backup create
+## Configuration and secrets
 
-# List backups
-code-harness backup list
+Machine-private provider credentials and authentication remain outside repository artifacts. Existing OpenCode configuration ownership rules remain in force; program planning does not authorize moving credentials into release artifacts or bypassing externally managed policy.
 
-# Restore a backup
-code-harness backup restore 0
+## Documentation note
 
-# Delete a backup
-code-harness backup delete 1
-```
-
-## Documentation
-
-- [Architecture](docs/architecture.md) - System design and component relationships
-- [Governance contracts](docs/architecture/governance-contracts.md) - M4A capability, authority, permission, identity, governance, and admission language
-- [Installation](docs/installation.md) - Detailed installation and troubleshooting guide
-- [Profiles](docs/profiles.md) - Configuration profiles and customization
-- [Doctor](docs/doctor.md) - Health checks and troubleshooting
-- [Security](docs/security.md) - Security model and best practices
-
-## Testing
-
-### Test Suite
-
-The test suite includes:
-
-- **test-installer.mjs**: Tests installer against isolated temp HOME
-- **test-doctor.mjs**: Tests doctor command health checks
-- **test-agents.mjs**: Validates 8 agents exist with correct contracts
-- **test-orientation.mjs**: Runs orientation's existing tests
-- **test-secrets.mjs**: Verifies no credentials in committed files
-
-### Running Tests
-
-```bash
-# Run all tests
-npm test
-
-# Run specific test
-node test/test-doctor.mjs
-```
-
-## Project Structure
-
-```
-ocode-harness/
-├── agents/                          # 8 agent definitions
-│   ├── orchestrator.md
-│   ├── planner.md
-│   ├── coder.md
-│   ├── verifier.md
-│   ├── reviewer.md
-│   ├── researcher.md
-│   ├── judge.md
-│   └── committer.md
-├── packages/
-│   └── orientation/                 # Orientation package
-│       ├── lib/
-│       │   ├── orientation.mjs
-│       │   ├── probe.mjs
-│       │   └── render.mjs
-│       ├── bin/
-│       │   └── orient.mjs
-│       ├── test/
-│       │   └── orient.test.mjs
-│       ├── package.json
-│       └── README.md
-├── bin/
-│   ├── orient                       # orient wrapper
-│   └── ocode                        # ocode wrapper
-├── installer/
-│   └── install.mjs                  # Deterministic installer
-├── profiles/                        # Ocode role-binding schema and M3 policy location
-│   ├── README.md
-│   └── schema.json
-├── skills/                          # (empty for v0.1)
-├── test/                            # Automated tests
-│   ├── test-installer.mjs
-│   ├── test-doctor.mjs
-│   ├── test-agents.mjs
-│   ├── test-orientation.mjs
-│   └── test-secrets.mjs
-├── scripts/                         # Utility scripts
-│   ├── doctor.mjs                   # doctor command
-│   └── backup.mjs                   # backup/rollback utilities
-├── docs/                            # Documentation
-│   ├── architecture.md
-│   ├── architecture/opencode-integration-contract.md
-│   ├── installation.md
-│   ├── profiles.md
-│   ├── doctor.md
-│   └── security.md
-├── README.md
-├── package.json
-└── VERSION
-```
-
-## Workflow
-
-### QUICK Work (Localized, Low-Risk)
-
-1. Orchestrator classifies as QUICK
-2. Orchestrator → Coder
-3. Coder implements change
-4. Orchestrator → Reviewer
-5. Reviewer accepts/rejects
-6. (Optional) Orchestrator → Committer
-7. Orchestrator returns result
-
-### STANDARD Work (Normal Feature Work)
-
-1. Orchestrator classifies as STANDARD
-2. (Optional) Orchestrator → Planner
-3. Orchestrator → Coder
-4. Orchestrator → Verifier (produces validationEvidence)
-5. Orchestrator → Reviewer
-6. (Optional) Orchestrator → Committer
-7. Orchestrator returns result
-
-### DEEP Work (Architecture, External Dependencies)
-
-1. Orchestrator classifies as DEEP
-2. (Optional) Orchestrator → Researcher
-3. (Optional) Orchestrator → Planner
-4. Orchestrator → Coder
-5. Orchestrator → Verifier (produces validationEvidence)
-6. Orchestrator → Reviewer
-7. (Optional) Orchestrator → Committer
-8. (Optional) Orchestrator → Judge
-9. Orchestrator returns result
-
-## Validation Evidence
-
-For STANDARD and DEEP workflows, the verifier produces **validation evidence** — an object containing:
-- `status`: `'PASS'` or `'FAIL'`
-- `commands`: Array of validation command objects with `command`, `exit_code`, `output`, `duration_ms`
-
-The closeout gates require `validationEvidence.status === 'PASS'` for STANDARD/DEEP workflows. QUICK workflows do not require validation evidence. This replaces the legacy `verifierResult === 'PASS'` gate with a deterministic, evidence-based approach.
-
-## Security
-
-### Secrets Management
-
-- All secrets use environment variables
-- Never commit secrets to the repository
-- Use `{env:VARIABLE_NAME}` pattern for API keys
-- Use `${env:VAR:default}` pattern for base URLs
-
-### Permission System
-
-Each agent has a defined permission set that controls what actions it can perform. The orchestrator denies generic Task invocations and only allows harness subagents.
-
-Each manifest-governed role also has a versioned semantic capability declaration. Capabilities describe what work a role is equipped to perform; they do not grant constitutional authority. OpenCode permission remains a separate runtime constraint. See [Governance contracts](docs/architecture/governance-contracts.md).
-
-### Git Excludes
-
-Orientation artifacts are excluded from version control to prevent them from being committed.
-
-## Version 0.1 Scope
-
-This initial release includes:
-
-- ✅ 8 agent definitions with complete permissions
-- ✅ Orientation package with full probe/render functionality
-- ✅ Deterministic installer with backup/rollback
-- ✅ Doctor command for health checks
-- ✅ Backup management utilities
-- ✅ Comprehensive test suite
-- ✅ Security-focused architecture
-- ✅ Portable, isolated testing
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Write tests for your changes
-4. Run the test suite
-5. Submit a pull request
-
-## License
-
-MIT
-
-## Support
-
-For issues and questions, please open an issue on GitHub.
-
-## Roadmap
-
-- [ ] Skills system integration
-- [ ] Multi-project orientation support
-- [ ] Performance optimizations
-- [ ] Additional agent types
-- [ ] Web interface
-- [ ] CI/CD integration
+Some older architecture/installation milestone documents remain useful historical or scoped architecture evidence but contain stale v0.1 descriptions. When documents conflict, use the authority ordering in `program/README.md`, inspect the current source/tests, and record unresolved contradictions rather than guessing.

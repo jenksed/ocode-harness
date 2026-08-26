@@ -1,35 +1,16 @@
 #!/bin/sh
 set -eu
 
-REQUESTED="$PWD"
-
-echo "=== PROJECT ORIENTATION ==="
-orient "$REQUESTED"
-
-dir="$REQUESTED"
-PROJECT_ROOT=""
-while true; do
-  if [ -f "$dir/.opencode/orientation.json" ] && [ -f "$dir/.opencode/orientation.md" ]; then
-    PROJECT_ROOT="$dir"
-    break
-  fi
-  [ "$dir" = "/" ] && break
-  dir="$(dirname "$dir")"
-done
-
-if [ -z "$PROJECT_ROOT" ]; then
-  echo "ERROR: orientation completed but no orientation artifact was found." >&2
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+if [ -f "$SCRIPT_DIR/../share/ocode-harness/harness-runtime/bin/ocode.mjs" ]; then
+  OCODE_RUNTIME="$SCRIPT_DIR/../share/ocode-harness/harness-runtime/bin/ocode.mjs"
+elif [ -f "$SCRIPT_DIR/../packages/harness-runtime/bin/ocode.mjs" ]; then
+  OCODE_RUNTIME="$SCRIPT_DIR/../packages/harness-runtime/bin/ocode.mjs"
+else
+  echo "ERROR: Ocode runtime wrapper not found; refusing raw OpenCode fallback." >&2
   exit 1
 fi
-
-echo "=== ORIENTATION READY ==="
-echo "project root: $PROJECT_ROOT"
-echo "context:      $PROJECT_ROOT/.opencode/orientation.md"
-echo
-
-cd "$PROJECT_ROOT"
-if [ $# -gt 0 ]; then
-  exec env OPENCODE_ENABLE_EXA=1 opencode "$@"
-else
-  exec env OPENCODE_ENABLE_EXA=1 opencode
+if [ "$#" -eq 1 ] && [ "$1" = "--version" ]; then
+  exec opencode "$@"
 fi
+exec node "$OCODE_RUNTIME" "$@"

@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import plugin from '../opencode-plugins/approval-first-effect.mjs';
+const project = mkdtempSync(join(tmpdir(), 'approval-plugin-'));
+const exposed = await plugin({ directory: project, agent: { name: 'coder' }, sessionID: 's1' });
+assert.ok(exposed.tool.request_effect);
+assert.deepEqual(exposed.tool.request_effect.input.required, ['operation']);
+assert.equal(exposed.tool.request_effect.input.additionalProperties, false);
+const result = await exposed.tool.request_effect.execute({ operation: 'git push' });
+assert.equal(result.status, 'DENIED');
+const rejected = await exposed.tool.request_effect.execute({ operation: 'uname -a' });
+assert.equal(rejected.status, 'REJECTED');
+console.log('APPROVAL_FIRST_PLUGIN_BRIDGE_PROVEN');

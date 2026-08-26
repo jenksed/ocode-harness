@@ -39,7 +39,9 @@ each row's source in its view model and does not parse assistant prose.
 `--verbose`, `--trace`, `--raw`, `--workflow`, and safe polling `--follow`.
 `ocode agents` distinguishes configured roles from active/recent runtime roles.
 
-The ordinary `ocode` launcher records its primary orchestrator process start and
-terminal state. OpenCode's interactive subagent, approval, and tool event stream
-is not yet available through that TUI launch seam; SDK-governed execution retains
-the richer live capture from Stage 1. No secondary approval UI is introduced.
+The ordinary `ocode .` launcher now owns a local OpenCode server, attaches the
+normal native TUI to it, and subscribes to the server event transport before the
+primary session exists. Child-session `parentID`, structured subtask agent IDs,
+native permission transport, tool state, and idle/error events project into the
+same ActivityEvent store. No secondary approval UI is introduced; `ocode
+activity --follow` is the terminal-safe live companion view.

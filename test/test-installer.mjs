@@ -248,6 +248,7 @@ try {
     'lib/closeout.mjs',
     'lib/verify.mjs',
     'lib/activity.mjs',
+    'lib/interactive-activity.mjs',
     'lib/work-view.mjs',
     'lib/governance.mjs',
     'lib/permission-projection.mjs',

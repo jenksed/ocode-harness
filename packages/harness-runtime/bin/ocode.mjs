@@ -30,6 +30,7 @@ import {
   queryActivity,
   startActivityExecution,
 } from '../lib/activity.mjs';
+import { runInteractiveOpenCode } from '../lib/interactive-activity.mjs';
 import { renderActivityView, renderAgentsView, renderAnnouncement } from '../lib/work-view.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -446,20 +447,30 @@ async function main() {
   const overlay = JSON.stringify(overlayConfig);
   console.log(`=== EXECUTION PROFILE: ${context.profile.name} (${short(fingerprintBindingProfile(context.profile))}) ===\n`);
   const interactiveActivity = createActivityExecutionContext({ activity_store_path: activityStorePath(projectRoot) }, { projectDir: projectRoot, role: 'orchestrator' });
-  startActivityExecution(interactiveActivity);
   console.log('WORK — ◇ Orchestrator · active\n');
   let result;
   try {
-    result = spawnSync('opencode', remaining, {
-      cwd: projectRoot,
-      env: {
-        ...process.env,
-        OPENCODE_ENABLE_EXA: '1',
-        OCODE_HARNESS_ROOT: context.harnessRoot,
-        OPENCODE_CONFIG_CONTENT: overlay,
-      },
-      stdio: 'inherit',
-    });
+    const environment = {
+      ...process.env,
+      OPENCODE_ENABLE_EXA: '1',
+      OCODE_HARNESS_ROOT: context.harnessRoot,
+      OPENCODE_CONFIG_CONTENT: overlay,
+    };
+    // Test-only escape hatch for the launcher compatibility fixture. Normal
+    // `ocode .` always owns a server and observes its native event stream.
+    if (process.env.OCODE_DISABLE_INTERACTIVE_ACTIVITY_BRIDGE === '1') {
+      startActivityExecution(interactiveActivity);
+      result = spawnSync('opencode', remaining, { cwd: projectRoot, env: environment, stdio: 'inherit' });
+    } else {
+      result = await runInteractiveOpenCode({
+        projectDir: projectRoot,
+        args: remaining,
+        env: environment,
+        config: overlayConfig,
+        activity: interactiveActivity,
+        onObserverError: () => {},
+      });
+    }
   } finally {
     finishActivityExecution(interactiveActivity, {
       success: Boolean(result && !result.error && !result.signal && result.status === 0),

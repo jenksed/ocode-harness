@@ -265,10 +265,13 @@ export function createRuntimeActivityProjector(context) {
   }), { max_events: context.max_events ?? DEFAULT_ACTIVITY_RETENTION });
   return (event) => {
     const properties = permissionProperties(event);
-    if (event?.type === 'permission.updated' && properties?.id && properties?.type) {
+    // OpenCode 1.18.21's server transport emits permission.asked while the
+    // generated SDK contract calls the same payload permission.updated. Both
+    // are native permission transport events; neither path inspects TUI text.
+    if ((event?.type === 'permission.updated' || event?.type === 'permission.asked') && properties?.id && properties?.type) {
       const request = { id: properties.id, call_id: properties.callID ?? null, operation_class: properties.type, session_id: properties.sessionID ?? context.session_id ?? null };
       requests.set(request.id, request);
-      const metadata = { runtime_source: 'permission.updated', operation_class: request.operation_class, operation_identity: request.id, permission_id: request.id, tool_call_id: request.call_id, requesting_role: context.agent_role ?? null, execution_owner: context.execution_owner ?? context.agent_role ?? null };
+      const metadata = { runtime_source: event.type, operation_class: request.operation_class, operation_identity: request.id, permission_id: request.id, tool_call_id: request.call_id, requesting_role: context.agent_role ?? null, execution_owner: context.execution_owner ?? context.agent_role ?? null };
       emit('EFFECT_REQUESTED', { status: 'REQUESTED', session_id: request.session_id, effect_request_id: request.id, summary: `Native permission requested for ${request.operation_class}`, metadata });
       emit('EFFECT_CLASSIFIED', { status: 'CLASSIFIED', session_id: request.session_id, effect_request_id: request.id, summary: `Native permission classified as ${request.operation_class}`, metadata });
       emit('APPROVAL_REQUIRED', { status: 'REQUIRED', session_id: request.session_id, effect_request_id: request.id, summary: 'Native approval required', metadata });
@@ -307,6 +310,7 @@ export function createActivityExecutionContext(options, { projectDir, role }) {
     owns_workflow: options.workflow_id === undefined && options.workflowId === undefined,
     agent_role: role,
     agent_instance_id: options.agent_instance_id ?? options.agentInstanceId ?? randomUUID(),
+    session_id: options.session_id ?? options.sessionId ?? null,
     parent_agent_role,
     parent_session_id: options.parent_session_id ?? options.parentSessionId ?? null,
     delegation_id,
@@ -317,7 +321,7 @@ export function createActivityExecutionContext(options, { projectDir, role }) {
   };
 }
 
-export function announceActivity(context, event_type, { status, summary, session_id = null, metadata = {} } = {}) {
+export function announceActivity(context, event_type, { status, summary, session_id = context?.session_id ?? null, metadata = {} } = {}) {
   if (!context) return null;
   return appendActivityEvent(context.store_path, createActivityEvent({
     event_type, workflow_id: context.workflow_id, session_id, agent_role: context.agent_role, agent_instance_id: context.agent_instance_id,
@@ -339,7 +343,7 @@ export function startActivityExecution(context) {
   if (context.agent_role === 'judge') announceActivity(context, 'JUDGMENT_STARTED', { status: 'STARTED', summary: 'Judge invocation started by runtime' });
 }
 
-export function finishActivityExecution(context, { success, session_id = null, failure_classification = null } = {}) {
+export function finishActivityExecution(context, { success, session_id = context?.session_id ?? null, failure_classification = null } = {}) {
   if (!context) return;
   const metadata = failure_classification ? { failure_classification } : {};
   const terminal = success ? 'AGENT_COMPLETED' : 'AGENT_FAILED';

@@ -54,6 +54,33 @@ executions; it can therefore render the whole graph without reading model text.
   acceptance/rejection event is intentionally absent until a runtime-owned
   reviewer-verdict seam exists; model-authored verdict text must not create one.
 
+## Interactive OpenCode transport
+
+For ordinary `ocode .`, `lib/interactive-activity.mjs` owns a local pinned
+OpenCode 1.18.21 server and launches the normal OpenCode terminal client with
+`opencode attach <server-url> --dir <project>`. Before the client is attached,
+the bridge subscribes to the server's directory-scoped event transport.
+
+The bridge consumes only native server records: `session.created`/
+`session.updated` (including `parentID`), `message.part.updated` subtask and
+tool parts, session idle/error status, and native permission asked/replied
+records. The interactive runtime spelling is `permission.asked`; the generated
+SDK's compatible schema spells that payload `permission.updated`, and both are
+handled as the same native event family.
+
+An Ocode role is accepted only when the structured subtask `agent` identity is
+one of the configured canonical role IDs. Unknown agent IDs remain unknown and
+are not relabelled from prompts, titles, output, or assistant text. A child
+session is linked only by its runtime `parentID` and the immediately-correlated
+subtask record; ambiguous unpaired parallel records are left unlabelled rather
+than guessed. This preserves correctness over a prettier but fabricated graph.
+
+The launcher does not write live announcements into OpenCode's active terminal
+after attachment. OpenCode retains sole ownership of stdin, cursor layout, and
+native approval dialogs. The same live ledger is safely available from another
+terminal through `ocode activity --follow`; `ocode activity` and `ocode agents`
+render that event-backed projection after or alongside the session.
+
 Native OpenCode remains the only approval owner and interaction surface. Activity
 events observe its permission transport; they do not introduce an approval
 ledger, reply API, or secondary prompt. Effect metadata retains requesting role,
@@ -83,9 +110,10 @@ ocode activity --raw
 ocode activity --workflow <workflow-id>
 ```
 
-## Deliberate stage boundary
+## Remaining boundary
 
-This stage supplies event authority, durable bounded storage, and a debug JSON
-surface. It does not supply a polished TUI, live panels, verbosity preferences,
-or a runtime-owned structured reviewer verdict. The next operator UX stage must
-consume these queries and must not scrape assistant prose.
+This work does not add a second terminal UI, an approval prompt, or a
+runtime-owned structured reviewer verdict. OpenCode's native interface remains
+the conversation and approval owner. A later enhancement may use a supported
+in-TUI plugin/status seam, if one is qualified, but must consume this same event
+ledger and must not scrape assistant prose.

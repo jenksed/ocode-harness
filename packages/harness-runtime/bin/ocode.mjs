@@ -403,8 +403,6 @@ async function main() {
   });
   const projectRoot = orientProject();
   const overlayConfig = JSON.parse(serializeOpenCodeRuntimeOverlay(context.profile, process.env.OPENCODE_CONFIG_CONTENT));
-  const effectPlugin = resolve(context.harnessRoot, 'opencode-plugins/approval-first-effect.mjs');
-  if (existsSync(effectPlugin)) overlayConfig.plugin = [...new Set([...(overlayConfig.plugin || []), effectPlugin])];
   const overlay = JSON.stringify(overlayConfig);
   console.log(`=== EXECUTION PROFILE: ${context.profile.name} (${short(fingerprintBindingProfile(context.profile))}) ===\n`);
   const result = spawnSync('opencode', remaining, {
@@ -412,6 +410,7 @@ async function main() {
     env: {
       ...process.env,
       OPENCODE_ENABLE_EXA: '1',
+      OCODE_HARNESS_ROOT: context.harnessRoot,
       OPENCODE_CONFIG_CONTENT: overlay,
     },
     stdio: 'inherit',

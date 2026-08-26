@@ -233,6 +233,8 @@ export function stageCandidate(sourceRoot, stagingDir, version) {
 
   // Copy opencode-config
   copyDir(join(sourceRoot, 'opencode-config'), join(stagingDir, 'opencode-config'));
+  // Copy the Ocode-owned semantic effect tool used by normal OpenCode sessions.
+  copyDir(join(sourceRoot, 'opencode-tools'), join(stagingDir, 'opencode-tools'));
 
   // Write VERSION
   writeVersion(stagingDir, version);
@@ -298,6 +300,7 @@ export function validateCandidate(stagingDir) {
   // Check harness-runtime bin
   const harnessBin = join(harnessRuntimeDir, 'bin', 'harness.mjs');
   checks.push({ name: 'harness-runtime bin/harness.mjs', ok: existsSync(harnessBin) });
+  checks.push({ name: 'Ocode request_effect tool', ok: existsSync(join(stagingDir, 'opencode-tools', 'request_effect.mjs')) });
   checks.push({ name: 'harness-runtime bin/ocode.mjs', ok: existsSync(join(harnessRuntimeDir, 'bin', 'ocode.mjs')) });
 
   // Check doctrine

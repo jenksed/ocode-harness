@@ -1,15 +1,27 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import plugin from '../opencode-plugins/approval-first-effect.mjs';
+import { createApprovalFirstEffectTool } from '../packages/harness-runtime/lib/approval-first-effect-tool.mjs';
 const project = mkdtempSync(join(tmpdir(), 'approval-plugin-'));
-const exposed = await plugin({ directory: project, agent: { name: 'coder' }, sessionID: 's1' });
-assert.ok(exposed.tool.request_effect);
-assert.deepEqual(exposed.tool.request_effect.input.required, ['operation']);
-assert.equal(exposed.tool.request_effect.input.additionalProperties, false);
-const result = await exposed.tool.request_effect.execute({ operation: 'git push' });
+const schema = {
+  string() {
+    return { min: () => ({ optional: () => ({}) }), optional: () => ({}) };
+  },
+};
+const tool = Object.assign((definition) => definition, { schema });
+const exposed = createApprovalFirstEffectTool(tool, { directory: project, agent: { name: 'coder' }, sessionID: 's1' });
+assert.ok(exposed);
+assert.ok(exposed.args.operation);
+assert.ok(exposed.args.reason);
+const result = JSON.parse((await exposed.execute({ operation: 'git push' }, {})).output);
 assert.equal(result.status, 'DENIED');
-const rejected = await exposed.tool.request_effect.execute({ operation: 'uname -a' });
+const rejected = JSON.parse((await exposed.execute({ operation: 'uname -a' }, {})).output);
 assert.equal(rejected.status, 'REJECTED');
+const orchestrator = readFileSync(new URL('../agents/orchestrator.md', import.meta.url), 'utf8');
+const coder = readFileSync(new URL('../agents/coder.md', import.meta.url), 'utf8');
+assert.match(orchestrator, /call `request_effect`/);
+assert.match(coder, /call `request_effect`/);
+assert.match(orchestrator, /"\*": deny/);
+assert.match(coder, /"git add": deny/);
 console.log('APPROVAL_FIRST_PLUGIN_BRIDGE_PROVEN');

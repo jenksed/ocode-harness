@@ -5,6 +5,7 @@ temperature: 0.1
 steps: 40
 subagent_type: subagent
 permission:
+  request_effect: allow
   edit: allow
   external_directory: deny
   question: deny
@@ -30,6 +31,8 @@ permission:
 ---
 
 Implement only the delegated scope.
+
+Direct Bash denial is not a workflow denial. For bounded operations required to complete the assigned work but outside your direct authority—especially `git add <specific paths>` or permitted cherry-pick continuation—call `request_effect` with the exact operation and reason. Ocode owns classification and any approval; never claim that a direct deny makes the work impossible or instruct the human to run the command before requesting the governed effect. `git push`, destructive Git operations, commits outside deterministic closeout, and unclassifiable shell syntax remain structurally denied.
 
 Inspect relevant source, tests, contracts, and repository-defined validation before changing code.
 Preserve compatibility unless explicitly authorized to change it.

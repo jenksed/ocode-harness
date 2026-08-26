@@ -125,8 +125,9 @@ try {
       activity_store_path: activityStorePath(bridgeRunProject), workflow_id: 'interactive-attach-workflow', agent_instance_id: 'attach-root',
     }, { projectDir: bridgeRunProject, role: 'orchestrator' });
     const emitted = [];
+    let serverOptions;
     const sdk = {
-      async createOpencodeServer() { return { url: 'http://127.0.0.1:9876', close() {} }; },
+      async createOpencodeServer(options) { serverOptions = options; return { url: 'http://127.0.0.1:9876', close() {} }; },
       createOpencodeClient() {
         return { event: { subscribe: async () => ({ stream: (async function* stream() { yield { payload: session('attached-root') }; })() }) } };
       },
@@ -134,6 +135,7 @@ try {
     const result = await runInteractiveOpenCode({
       projectDir: bridgeRunProject,
       args: ['.'],
+      port: 9876,
       env: process.env,
       config: {},
       activity: runActivity,
@@ -146,6 +148,7 @@ try {
       },
     });
     assert.equal(result.status, 0);
+    assert.equal(serverOptions.port, 9876);
     assert.deepEqual(emitted[0].args, ['attach', 'http://127.0.0.1:9876', '--dir', bridgeRunProject]);
     assert.equal(queryActivity(activityStorePath(bridgeRunProject)).events.some((record) => record.session_id === 'attached-root'), true);
     console.log('✓ Normal launcher bridge subscribes before attaching the TUI to the owned OpenCode server');

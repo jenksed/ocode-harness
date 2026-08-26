@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { createServer } from 'node:net';
 import { createOpencodeClient, createOpencodeServer } from '@opencode-ai/sdk';
 import {
   AGENT_DISPLAY_METADATA,
@@ -217,6 +218,21 @@ function waitForChild(child) {
   });
 }
 
+// OpenCode 1.18.21 treats --port=0 as its default 4096. Select an explicit
+// loopback ephemeral port so an ordinary Ocode session does not contend with a
+// separately running OpenCode server.
+function reserveLoopbackPort() {
+  return new Promise((resolve, reject) => {
+    const server = createServer();
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address();
+      const port = typeof address === 'object' && address ? address.port : null;
+      server.close((error) => error ? reject(error) : port ? resolve(port) : reject(new Error('OPENCODE_INTERACTIVE_PORT_UNAVAILABLE')));
+    });
+  });
+}
+
 /**
  * Start the normal TUI against a local OpenCode server while a separate SDK
  * subscriber observes the same runtime transport. The parent never writes to
@@ -230,8 +246,9 @@ export async function runInteractiveOpenCode(options) {
   let streamTask = null;
   const capture = createInteractiveActivityCapture({ projectDir: options.projectDir, activity: options.activity });
   try {
+    const port = options.port ?? await reserveLoopbackPort();
     server = await applyServerEnvironment(options.env, () => sdk.createOpencodeServer({
-      hostname: '127.0.0.1', port: 0, timeout: 15_000, config: options.config,
+      hostname: '127.0.0.1', port, timeout: 15_000, config: options.config,
     }));
     const client = sdk.createOpencodeClient({ baseUrl: server.url, directory: options.projectDir });
     const subscription = await client.event.subscribe({ query: { directory: options.projectDir }, signal: abort.signal });

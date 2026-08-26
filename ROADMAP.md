@@ -123,19 +123,13 @@ M6.1: READY — it may implement only the focused contract/runtime-projection/qu
 
 M6.1 Deterministic Skill Substrate: PROVEN — generic deterministic protocol validation, exact source fingerprinting, M4 admission translation, capsules/evidence reconciliation, qualification lifecycle, runtime projection drift checks, and bounded structured correction are implemented without a production skill. [M6.2 entry contract](docs/architecture/m6.2-entry-contract.md) is ready; M6 remains ACTIVE.
 
-### Approval-First Execution — OPERATIONAL CHECKPOINT
+M6 worktree preservation: the unrelated in-progress M6 changes were saved before the Approval-First simplification as `stash@{0}` (`b236ca237a536a16e4469037968030f2c9a06479`), named `m6 worktree preserved before native-approval simplification`. Recover only when returning to that work with `git stash apply stash@{0}`; do not merge it into the Approval-First branch.
 
-Purpose: enable bounded interactive command approval without collapsing static role authority, while retaining a fail-closed path for unqualified runtime behavior.
+### Native OpenCode Approval — ACTIVE
 
-Phase 2: PARTIALLY IMPLEMENTED — permission projection schema v2 distinguishes `ALLOW`, `ASK`, `DENY`, `UNKNOWN`, and `NOT_PROJECTED`; coder command catch-all is operationally configured as `ASK`. The OpenCode runtime remains `UNQUALIFIED` because strict isolated SDK lifecycle qualification is non-repeatable.
+Purpose: use OpenCode's normal interactive tool-permission UI exactly once for every primary-session approvable operation.
 
-Phase 3: PARTIALLY IMPLEMENTED — deterministic SDK request mediation supports `ALLOW_ONCE`, `REJECT`, and explicit `APPROVAL_REQUIRED` with no resolver. Live request/reply/continuation proof is pending.
-
-Phase 4: NOT STARTED — typed envelopes, classification, ownership, approval leases, and evidence require the Phase 2/3 live gate.
-
-Phase 5: LIMITED CHECKPOINT ONLY — coder interactive command prompting is available; broad role/surface migration and launcher bypass hardening remain pending.
-
-The authoritative operational handoff is [Approval-First Operational Checkpoint](docs/program/approval-first-operational-checkpoint.md); exact subsequent work is [Approval-First remaining work](docs/program/approval-first-remaining-work.md). This does not revise historical M4 or M6 acceptance claims.
+The primary orchestrator uses `bash "*": ask` with structural denials for `git push`, `git reset --hard`, `git clean`, and `rm -rf *`. `request_effect`, `ocode effect`, Ocode terminal approval prompts, custom execution, custom approval ledgers, and SDK permission mediation have been removed. Constrained subagents return an exact `EFFECT REQUEST`; the primary executes it through native OpenCode ASK. The child-session propagation limitation on OpenCode 1.18.21 remains non-authoritative. See [native approval architecture](docs/architecture/approval-first-execution.md).
 
 ### M7 Planner Compiler — PLANNED
 
@@ -143,7 +137,7 @@ Purpose: compile high-level work into deterministic task plans and contracts.
 
 Depends on: M4, M6.
 
-Approval-first execution architecture contract: [approval-first execution](docs/architecture/approval-first-execution.md) is planning/contract-only work that does not alter M4's proven acceptance claims. M7 may not treat plan authorization as runtime operation approval. Its implementation entry gate additionally requires the pinned OpenCode permission characterization and closed approval/effect schemas defined there; M8 additionally requires the interactive/headless approval acceptance matrix.
+Native approval architecture: [native OpenCode approval](docs/architecture/approval-first-execution.md) keeps interactive permission presentation and execution in OpenCode. M7 may not treat plan authorization as runtime operation approval.
 
 ### M8 Deterministic Task Runner — PLANNED
 

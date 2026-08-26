@@ -31,6 +31,7 @@ Live operator evidence corrected that first strategy: an effective `@coder` poli
 - The canonical coder policy uses `bash: { "*": "ask" }`, while retaining explicit structural denials for staging, commits, pushes, reset/clean, and recursive deletion.
 - This intentionally asks for every non-denied coder command in this checkpoint. It does not assume unqualified runtime rule precedence to create a speculative safe-command allowlist.
 - The checkpoint executor accepts a bounded command request, asks through an Ocode resolver, executes argv without a shell, and appends request/decision/execution evidence. `git add <paths>` and bounded cherry-pick forms are ASK; push, reset-hard, clean, and direct commit are denied/routed.
+- Normal Ocode overlays register the repository-owned `request_effect` plugin, so semantic sessions have an Ocode-owned effect-request tool. This tool is implemented and contract-tested; final live semantic-session qualification remains pending.
 
 ### Implemented but not live-qualified
 
@@ -69,7 +70,7 @@ opencode debug agent coder --pure
 
 The effective `coder` output should show `bash` catch-all `ask` and the explicit destructive/VCS denials. In a disposable project, start normal interactive Ocode with the coder agent, ask it to run a harmless unfamiliar diagnostic such as `uname`, and approve or reject the native OpenCode prompt. Do not use `--auto` and do not use this as final runtime qualification.
 
-Until a semantic-agent effect-request tool is integrated, the operator-facing transitional workflow bridge is `ocode effect <bounded command>`. It is a real terminal approval flow owned by Ocode, not prose emitted by a model:
+The operator-facing transitional workflow bridge remains `ocode effect <bounded command>`, and normal overlays now expose the same authority through `request_effect`. Both are real terminal approval flows owned by Ocode, not prose emitted by a model:
 
 ```sh
 node /path/to/ocode-harness/packages/harness-runtime/bin/ocode.mjs effect uname -a

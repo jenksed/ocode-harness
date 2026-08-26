@@ -39,6 +39,14 @@ The installed `@opencode-ai/sdk` `createOpencodeServer` helper starts `opencode 
 
 The root cause inside the installed executable is **unknown** (low confidence). The local executable is a packaged binary and its server source was not available in the installed package; the observed stderr contains no causal detail. No conclusion is made about configuration loading, provider initialization, project initialization, authentication, or bind/listen beyond: listening was not observed. The provider/mock seam cannot be exercised until this pre-session server fault is resolved.
 
+## Production-seam differential (observed)
+
+Normal governed SDK execution calls `createOpencodeServer()` and then `createOpencodeClient()`; it does not call the qualifier's synchronous `spawnSync('opencode', ['serve', ...])` helper. Normal interactive `ocode` delegates directly to the OpenCode CLI and does not own a server. Current M6 qualification code has a separate, test-only `qualificationServer` branch that directly spawns `opencode serve`; it is not the normal governed SDK startup path.
+
+Under the same temporary HOME/XDG/config/project materialization, a direct asynchronous SDK probe using the normal `config` argument started a managed server, subscribed to events, created a session, and aborted that session without provider credentials. The corresponding direct asynchronous CLI probe also observed the listening banner. The retained generic qualifier's synchronous child-process probe still reports `ServeError`. This establishes that its failure is not sufficient evidence that the production SDK seam is unsupported; it does not yet establish a repeatable qualification harness result either.
+
+The direct probe also showed that injecting `OPENCODE_SERVER_PASSWORD` without a matching SDK-client auth projection permits startup but makes session API calls fail. That password was a qualification-fixture addition, not a production SDK requirement. It must not be copied into a later SDK fixture unless the client authentication transport is separately characterized.
+
 ## Inferred
 
 - `once`, `always`, and `reject` are valid reply inputs for the pinned SDK route because the generated SDK declares that closed union.

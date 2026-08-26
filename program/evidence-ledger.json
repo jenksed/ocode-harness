@@ -1,0 +1,217 @@
+{
+  "schema_version": 1,
+  "baseline_sha": "e08c5a1f21e18dcc16676d1928919972f7ce8339",
+  "maturity_states": {
+    "implemented": "source behavior/artifact exists",
+    "tested": "deterministic or automated test exercises declared behavior",
+    "integration_proven": "required components have executed together across the actual integration seam",
+    "dogfood_proven": "capability has been exercised on unrelated or authentic real project work",
+    "release_qualified": "exact immutable release candidate has required qualification evidence",
+    "owner_promoted": "explicit release authority selected that exact qualified candidate as stable"
+  },
+  "rule": "Higher maturity is never inferred from a lower state. Documentation and commit messages are provenance, not behavior proof.",
+  "entries": [
+    {
+      "id": "EVID-001",
+      "subject": "repository version identity",
+      "classification": "observed_repository_fact",
+      "claim": "VERSION contains v0.1.0 and package.json contains 0.1.0; no release manifest binds that version to an immutable installed artifact.",
+      "sources": ["VERSION", "package.json"],
+      "contradictions": [],
+      "maturity": {"implemented": "yes", "tested": "unknown", "integration_proven": "unknown", "dogfood_proven": "unknown", "release_qualified": "no_evidence", "owner_promoted": "no_evidence"}
+    },
+    {
+      "id": "EVID-002",
+      "subject": "agent authority model",
+      "classification": "observed_repository_fact",
+      "claim": "agents/manifest.json defines nine roles. Only coder has may_edit=true; no role has may_stage/may_commit/may_push. Committer prepares semantic closeout rather than owning Git mutation.",
+      "sources": ["agents/manifest.json", "docs/architecture/governance-contracts.md"],
+      "contradictions": ["README.md still describes eight specialized subagents"],
+      "maturity": {"implemented": "yes", "tested": "yes_by_repository_test_surfaces", "integration_proven": "historically_claimed_M4", "dogfood_proven": "historically_claimed", "release_qualified": "unknown", "owner_promoted": "unknown"}
+    },
+    {
+      "id": "EVID-003",
+      "subject": "governance authority boundary",
+      "classification": "observed_architecture_contract",
+      "claim": "M4 contracts explicitly separate capability, constitutional authority, runtime permission, identity evidence, governance validity, and admission. Future skills/TaskSpecs are required to translate into the same admission engine.",
+      "sources": ["docs/architecture/governance-contracts.md", "packages/harness-runtime/lib/admission.mjs", "packages/harness-runtime/lib/permission-projection.mjs"],
+      "contradictions": ["agents/manifest.json retains legacy compatible_skills metadata that must not become a parallel authorization mechanism"],
+      "maturity": {"implemented": "yes", "tested": "yes", "integration_proven": "historically_claimed_M4", "dogfood_proven": "unknown", "release_qualified": "unknown", "owner_promoted": "unknown"}
+    },
+    {
+      "id": "EVID-004",
+      "subject": "Wayfinder boundary",
+      "classification": "observed_architecture_contract",
+      "claim": "Wayfinder is a read-only uncertainty assessor, not a planner; retained architecture text reports bounded FreeLLMAPI qualification with subject/binding match and ledger provenance.",
+      "sources": ["docs/architecture/wayfinding.md", "packages/harness-runtime/lib/wayfinding.mjs", "packages/harness-runtime/lib/wayfinding-runtime.mjs"],
+      "contradictions": [],
+      "maturity": {"implemented": "yes", "tested": "yes", "integration_proven": "historically_claimed_with_retained_live_evidence", "dogfood_proven": "unknown", "release_qualified": "unknown", "owner_promoted": "unknown"}
+    },
+    {
+      "id": "EVID-005",
+      "subject": "M6 production skill catalog",
+      "classification": "verified_repository_fact",
+      "claim": "Six production skill protocol directories exist and M6.5 deterministic proof asserts exact catalog membership, unique fingerprints, M4 admission, projection drift checks, and deterministic qualification fixtures.",
+      "sources": ["skills/", "test/catalog-proof-helper.mjs", "test/test-m6.5-skills.mjs", "scripts/acceptance-m6.5.mjs"],
+      "contradictions": ["ROADMAP.md stops at M6.1 while repository contains M6.2-M6.5 work", "README.md says skills/ is empty"],
+      "maturity": {"implemented": "yes", "tested": "yes_deterministic", "integration_proven": "partial", "dogfood_proven": "no_evidence", "release_qualified": "no", "owner_promoted": "no_evidence"}
+    },
+    {
+      "id": "EVID-006",
+      "subject": "M6 live qualification",
+      "classification": "verified_repository_fact",
+      "claim": "All six production protocols require live qualification. Five skill qualification directories contain only .gitkeep; TDD retains failed/transient/execution attempts but no repository-visible successful live qualification artifact.",
+      "sources": ["test/catalog-proof-helper.mjs", "skills/*/qualifications/", "skills/tdd/qualifications/evidence/"],
+      "contradictions": [],
+      "maturity": {"implemented": "qualification_engine_exists", "tested": "yes", "integration_proven": "partial_tdd_attempts", "dogfood_proven": "no_evidence", "release_qualified": "no", "owner_promoted": "no"}
+    },
+    {
+      "id": "EVID-007",
+      "subject": "current install/runtime materialization",
+      "classification": "verified_behavior_from_source",
+      "claim": "stageCandidate copies artifacts from a discovered mutable source checkout into a timestamped staging directory and writes VERSION, but does not record source commit, artifact digest, or release manifest.",
+      "sources": ["packages/harness-runtime/lib/deploy.mjs", "installer/install.mjs"],
+      "contradictions": [],
+      "maturity": {"implemented": "yes", "tested": "repository_tests_exist", "integration_proven": "historically_claimed_M1", "dogfood_proven": "unknown", "release_qualified": "not_as_exact_release", "owner_promoted": "unknown"}
+    },
+    {
+      "id": "EVID-008",
+      "subject": "current promotion semantics",
+      "classification": "verified_behavior_from_source",
+      "claim": "installer and harness update validate a staged copy then immediately replace ~/.local/share/ocode-harness, reinstall launchers/agents/config, and post-validate. Candidate evaluation and promotion authority are not separate persisted states.",
+      "sources": ["installer/install.mjs", "packages/harness-runtime/bin/harness.mjs", "packages/harness-runtime/lib/deploy.mjs"],
+      "contradictions": ["deploy.mjs comments describe stable/dev separation, but exact stable/candidate/dev release identities are not represented"],
+      "maturity": {"implemented": "yes_legacy_mechanism", "tested": "repository_tests_exist", "integration_proven": "historically_claimed", "dogfood_proven": "unknown", "release_qualified": "no_exact_identity", "owner_promoted": "not_recorded"}
+    },
+    {
+      "id": "EVID-009",
+      "subject": "current rollback semantics",
+      "classification": "verified_behavior_from_source",
+      "claim": "rollback restores the newest timestamped backup directory and deletes the consumed backup; it does not select a prior immutable release manifest and therefore does not itself preserve complete failed-release/release-lineage evidence.",
+      "sources": ["packages/harness-runtime/lib/deploy.mjs", "packages/harness-runtime/bin/harness.mjs"],
+      "contradictions": [],
+      "maturity": {"implemented": "yes_legacy_mechanism", "tested": "repository_tests_exist", "integration_proven": "historically_claimed", "dogfood_proven": "unknown", "release_qualified": "not_applicable", "owner_promoted": "not_applicable"}
+    },
+    {
+      "id": "EVID-010",
+      "subject": "CI coverage",
+      "classification": "observed_repository_fact",
+      "claim": "No .github directory was present at the baseline tree, so no GitHub Actions CI is repository-visible. Validation authority is currently expressed through local scripts/tests unless external CI exists outside the repository.",
+      "sources": ["baseline recursive tree", ".github lookup returned not found"],
+      "contradictions": [],
+      "maturity": {"implemented": "no_repository_visible_ci", "tested": "not_applicable", "integration_proven": "not_applicable", "dogfood_proven": "not_applicable", "release_qualified": "not_applicable", "owner_promoted": "not_applicable"}
+    },
+    {
+      "id": "EVID-011",
+      "subject": "top-level documentation freshness",
+      "classification": "contradiction",
+      "claim": "README.md and older architecture/installation text describe an eight-agent v0.1 system and empty skills while current source has nine roles and six production skill protocols.",
+      "sources": ["README.md", "docs/architecture.md", "docs/installation.md", "agents/manifest.json", "skills/"],
+      "contradictions": ["top-level descriptive docs are stale relative to source"],
+      "maturity": {"implemented": "not_applicable", "tested": "not_applicable", "integration_proven": "not_applicable", "dogfood_proven": "not_applicable", "release_qualified": "not_applicable", "owner_promoted": "not_applicable"}
+    },
+    {
+      "id": "EVID-012",
+      "subject": "legacy roadmap freshness",
+      "classification": "contradiction",
+      "claim": "ROADMAP.md declares M6 ACTIVE but stops its concrete status at M6.1 and ends by saying M6-M10 remain planned; current source includes M6.2 qualification machinery and M6.3-M6.5 catalog work.",
+      "sources": ["ROADMAP.md", "package.json", "scripts/acceptance-m6.2.mjs", "scripts/acceptance-m6.3.mjs", "scripts/acceptance-m6.4.mjs", "scripts/acceptance-m6.5.mjs"],
+      "contradictions": ["legacy roadmap cannot be active authority without revision"],
+      "maturity": {"implemented": "not_applicable", "tested": "not_applicable", "integration_proven": "not_applicable", "dogfood_proven": "not_applicable", "release_qualified": "not_applicable", "owner_promoted": "not_applicable"}
+    },
+    {
+      "id": "EVID-013",
+      "subject": "local deterministic validation surface",
+      "classification": "observed_repository_fact",
+      "claim": "package.json defines broad local tests and acceptance commands covering install/update/rollback, governance, execution, evidence, Wayfinder, qualification, and M6 catalog work. This planning session did not execute the full repository suite because the connected GitHub environment exposes repository contents but no checkout/runtime.",
+      "sources": ["package.json", "test/", "scripts/"],
+      "contradictions": [],
+      "maturity": {"implemented": "yes", "tested": "test_sources_exist_not_executed_in_this_session", "integration_proven": "historical_acceptance_claims_only", "dogfood_proven": "unknown", "release_qualified": "unknown", "owner_promoted": "unknown"}
+    },
+    {
+      "id": "EVID-014",
+      "subject": "OpenCode integration seam",
+      "classification": "historical_observed_contract",
+      "claim": "Repository architecture records OpenCode 1.18.21 as known-good and reports real FreeLLMAPI/OpenAI execution through explicit agent JSON runs plus sanitized export; provider/model binding is runtime overlay policy and credentials remain external.",
+      "sources": ["docs/architecture/opencode-integration-contract.md"],
+      "contradictions": [],
+      "maturity": {"implemented": "yes", "tested": "repository_acceptance_surface_exists", "integration_proven": "historically_observed", "dogfood_proven": "unknown", "release_qualified": "unknown", "owner_promoted": "unknown"}
+    }
+  ],
+  "current_state": {
+    "active_program_authority": {
+      "status": "PROPOSED_ON_REVIEW_BRANCH",
+      "authority": "program/README.md -> program/roadmap.json if accepted by owner",
+      "baseline": "This branch proposal is not authority on main until owner accepts/merges it."
+    },
+    "superseded_program_authority": {
+      "ROADMAP.md": "Preserved under program/history and replaced at root with an explicit supersession pointer on this review branch."
+    },
+    "current_architecture_authority": [
+      "docs/architecture/governance-contracts.md",
+      "docs/architecture/opencode-integration-contract.md",
+      "docs/architecture/wayfinding.md",
+      "docs/architecture/m6-skill-system.md",
+      "docs/architecture/m6-contracts-v1.md",
+      "agents/manifest.json"
+    ],
+    "module_responsibilities": {
+      "packages/orientation": "repository/project probing and orientation artifacts",
+      "packages/harness-runtime": "identity, lifecycle, ledger, evidence, verification, governance/admission, execution, deployment, wayfinding, governed skills",
+      "agents": "semantic role definitions and structured role authority manifest",
+      "profiles": "provider/model binding policy separate from semantic roles",
+      "skills": "Ocode-owned governed engineering methods and qualification provenance",
+      "installer": "source bootstrap into installed runtime",
+      "scripts": "doctor, acceptance, qualification and maintenance command surfaces",
+      "test": "deterministic/isolated validation surfaces"
+    },
+    "authority_boundaries": {
+      "mutation": "coder may edit; agents do not own stage/commit/push according to agents/manifest.json; deterministic runtime owns governed Git closeout mechanisms",
+      "verification": "verifier/test execution supplies evidence, not acceptance authority",
+      "review": "reviewer evaluates independently; review does not itself promote releases",
+      "acceptance": "runtime closeout and historical milestone docs contain acceptance gates, but owner-level program/release acceptance is not currently represented as a release manifest state",
+      "release": "current installer/update code can replace installed runtime after validation; explicit separate release-promotion authority is missing and is the MS-R1 gap"
+    },
+    "capability_state": {
+      "implemented_and_tested": ["orientation", "run ledger/lifecycle/evidence", "verification/closeout", "governance admission/permission projection", "OpenCode execution/profile integration", "Wayfinder", "six-skill deterministic catalog", "installer/update/rollback/version surfaces"],
+      "integration_proven_historical": ["M2 OpenCode FreeLLMAPI/OpenAI seam per retained architecture report", "M5 bounded Wayfinder qualification per retained architecture report"],
+      "dogfood_proven": "UNKNOWN for current catalog/release topology; repository does not provide a canonical dogfood ledger at program level",
+      "release_qualified": "NO repository-wide immutable release manifest proves this state",
+      "owner_promoted": "NO repository-wide promotion record proves this state"
+    },
+    "paths": {
+      "current_install_path": "~/.local/share/ocode-harness",
+      "current_runtime_launcher_path": "~/.local/bin/ocode -> installed harness-runtime/bin/ocode.mjs after installation",
+      "current_version_identity": "VERSION=v0.1.0 plus package version 0.1.0; insufficient as exact release identity",
+      "qualification_path": "packages/harness-runtime/lib/skill-qualification.mjs + skill qualification evidence directories",
+      "evidence_path": "project .opencode/run-ledger.jsonl for runs plus repository-retained milestone/qualification evidence"
+    },
+    "persistence_and_recovery": {
+      "implemented": "run ledger plus installation backups/rollback primitives",
+      "unproven": "TaskSpec-level restart/recovery, stale/conflicting execution state recovery, idempotent replay across mutation classes, immutable release rollback lineage"
+    },
+    "learning_and_provenance": {
+      "provenance": "ledger/evidence/fingerprints and retained failure evidence exist in multiple subsystems",
+      "learning": "no accepted longitudinal learning/evaluation loop; historical M10 concept remains future"
+    },
+    "coverage": {
+      "tests": "broad local Node test suite and milestone acceptance scripts are declared in package.json",
+      "ci": "no repository-visible .github Actions directory at baseline",
+      "current_session_execution": "full npm test and live provider acceptance were not executable through the connected GitHub repository API"
+    },
+    "architecture_debt": [
+      "release identity/promotion currently version-and-directory based rather than immutable manifest based",
+      "top-level README/architecture/installation documentation is stale relative to nine-role and M6 source reality",
+      "legacy compatible_skills metadata remains in agent manifest and must not become parallel authorization",
+      "current run lifecycle vocabulary is not suitable as program-planning lifecycle and must remain separate"
+    ],
+    "temporary_or_version_specific_adapters": [
+      "OpenCode 1.18.21 bounded subagent execution uses an ephemeral mode: primary overlay for the explicitly invoked role"
+    ],
+    "unresolved_decisions": [
+      "whether an existing v0.1.0 installation should be forensically imported into the managed release registry",
+      "whether multi-project/team/extension capabilities ever become required rather than conditional strategic directions"
+    ],
+    "contradictions": ["EVID-011", "EVID-012"]
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "decisions": [
+    {
+      "id": "OD-001",
+      "title": "Initial release promotion authority",
+      "status": "ACTIVE_DEFAULT",
+      "decision": "Owner is the sole stable-promotion authority until an explicit recorded owner decision delegates it.",
+      "rationale": "Fail-closed default; capability, tests, qualification and planning do not imply release authority.",
+      "blocks": []
+    },
+    {
+      "id": "OD-002",
+      "title": "Whether to import the current v0.1.0 installation as stable",
+      "status": "OPEN_NON_BLOCKING",
+      "question": "Should an existing machine installation be forensically imported into the new release registry if exact bytes/source/qualification can be reconstructed, or should the first new qualified candidate become the first managed stable?",
+      "recommended_default": "Do not retroactively declare the current installation stable without exact artifact identity and qualification evidence.",
+      "blocks": []
+    },
+    {
+      "id": "OD-003",
+      "title": "Strategic scale requirements",
+      "status": "DEFERRED_NON_BLOCKING",
+      "question": "Should multi-repository operation, team scale, or third-party extension architecture eventually become required mature properties?",
+      "recommended_default": "Keep them conditional STRATEGIC directions until sustained single-project operation produces evidence of need.",
+      "blocks": []
+    },
+    {
+      "id": "OD-004",
+      "title": "Protected program intent changes",
+      "status": "POLICY",
+      "decision": "Agents may propose changes to protected properties or owner intent, but only owner authority may accept those changes. Program planning authority may supersede mechanisms when the protected property is preserved.",
+      "blocks": []
+    }
+  ]
+}

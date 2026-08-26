@@ -45,6 +45,8 @@ Normal governed SDK execution calls `createOpencodeServer()` and then `createOpe
 
 Under the same temporary HOME/XDG/config/project materialization, a direct asynchronous SDK probe using the normal `config` argument started a managed server, subscribed to events, created a session, and aborted that session without provider credentials. The corresponding direct asynchronous CLI probe also observed the listening banner. The retained generic qualifier's synchronous child-process probe still reports `ServeError`. This establishes that its failure is not sufficient evidence that the production SDK seam is unsupported; it does not yet establish a repeatable qualification harness result either.
 
+The canonical runner has since been changed to invoke the SDK-managed seam under a controlled, allowlisted environment rather than the synchronous CLI seam. On this host that stricter runner is non-repeatable: an individual lifecycle observation can succeed, while fresh attempts also receive the SDK's generic `ServeError` before startup. This is not a revision of the direct-probe observation: the unaccounted-for differential remains unresolved, so the required lifecycle capabilities remain `UNKNOWN`.
+
 The direct probe also showed that injecting `OPENCODE_SERVER_PASSWORD` without a matching SDK-client auth projection permits startup but makes session API calls fail. That password was a qualification-fixture addition, not a production SDK requirement. It must not be copied into a later SDK fixture unless the client authentication transport is separately characterized.
 
 ## Inferred

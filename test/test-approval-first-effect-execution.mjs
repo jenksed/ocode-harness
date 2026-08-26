@@ -6,6 +6,7 @@ import { executeApprovalFirstEffect } from '../packages/harness-runtime/lib/appr
 const project = mkdtempSync(join(tmpdir(), 'approval-effect-')); const ledger = join(project, '.opencode', 'approval-ledger.jsonl');
 const allowed = await executeApprovalFirstEffect({ command: 'uname -a', projectDir: project, evidencePath: ledger, resolver: async () => 'ALLOW_ONCE' });
 assert.equal(allowed.status, 'EXECUTED'); assert.match(allowed.execution.stdout, /./);
+assert.match(allowed.request_id, /^[0-9a-f-]{36}$/); assert.equal(allowed.session_id, null);
 const rejected = await executeApprovalFirstEffect({ command: 'uname -a', projectDir: project, evidencePath: ledger, resolver: async () => 'REJECT' });
 assert.equal(rejected.status, 'REJECTED');
 writeFileSync(join(project, 'test.txt'), 'x');

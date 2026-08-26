@@ -1,4 +1,5 @@
 import { appendFileSync, existsSync, mkdirSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import { dirname, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
@@ -26,10 +27,10 @@ function evidence(path, record) {
  * OpenCode subagent permission inheritance: semantic requester and executor
  * remain separate facts, and only a bounded argv command is executed.
  */
-export async function executeApprovalFirstEffect({ command, projectDir, requester = 'orchestrator', resolver, evidencePath = '.opencode/approval-ledger.jsonl', spawn = spawnSync }) {
+export async function executeApprovalFirstEffect({ command, projectDir, requester = 'orchestrator', sessionId = null, requestId = randomUUID(), reason = null, resolver, evidencePath = '.opencode/approval-ledger.jsonl', spawn = spawnSync }) {
   const classification = classifyCheckpointEffect(command);
   const execution_owner = classification.kind?.startsWith('vcs_') || classification.kind === 'command' ? 'ocode_governed_executor' : null;
-  const base = { requested_operation: command, requesting_subject: requester, execution_owner, classification };
+  const base = { request_id: requestId, session_id: sessionId, requested_operation: command, reason, requesting_subject: requester, execution_owner, classification };
   evidence(evidencePath, { event: 'REQUEST_OBSERVED', ...base });
   if (classification.state === 'UNCLASSIFIABLE' || classification.state === 'DENY') {
     evidence(evidencePath, { event: 'DECISION', decision: 'DENY', ...base });

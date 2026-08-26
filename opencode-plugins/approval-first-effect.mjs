@@ -22,6 +22,7 @@ export default async function approvalFirstEffectPlugin(context = {}) {
           try {
             return await executeApprovalFirstEffect({
               command: operation, projectDir, requester,
+              sessionId, reason: input?.reason ?? null,
               evidencePath: `${projectDir}/.opencode/approval-ledger.jsonl`,
               resolver: async (request) => {
                 if (!rl) return 'REJECT';

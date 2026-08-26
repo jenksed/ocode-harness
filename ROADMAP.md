@@ -129,6 +129,8 @@ Purpose: compile high-level work into deterministic task plans and contracts.
 
 Depends on: M4, M6.
 
+Approval-first execution architecture contract: [approval-first execution](docs/architecture/approval-first-execution.md) is planning/contract-only work that does not alter M4's proven acceptance claims. M7 may not treat plan authorization as runtime operation approval. Its implementation entry gate additionally requires the pinned OpenCode permission characterization and closed approval/effect schemas defined there; M8 additionally requires the interactive/headless approval acceptance matrix.
+
 ### M8 Deterministic Task Runner — PLANNED
 
 Purpose: execute compiled plans through lifecycle, ledger, evidence, validation, review, and closeout gates.

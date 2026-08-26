@@ -123,6 +123,20 @@ M6.1: READY — it may implement only the focused contract/runtime-projection/qu
 
 M6.1 Deterministic Skill Substrate: PROVEN — generic deterministic protocol validation, exact source fingerprinting, M4 admission translation, capsules/evidence reconciliation, qualification lifecycle, runtime projection drift checks, and bounded structured correction are implemented without a production skill. [M6.2 entry contract](docs/architecture/m6.2-entry-contract.md) is ready; M6 remains ACTIVE.
 
+### Approval-First Execution — OPERATIONAL CHECKPOINT
+
+Purpose: enable bounded interactive command approval without collapsing static role authority, while retaining a fail-closed path for unqualified runtime behavior.
+
+Phase 2: PARTIALLY IMPLEMENTED — permission projection schema v2 distinguishes `ALLOW`, `ASK`, `DENY`, `UNKNOWN`, and `NOT_PROJECTED`; coder command catch-all is operationally configured as `ASK`. The OpenCode runtime remains `UNQUALIFIED` because strict isolated SDK lifecycle qualification is non-repeatable.
+
+Phase 3: PARTIALLY IMPLEMENTED — deterministic SDK request mediation supports `ALLOW_ONCE`, `REJECT`, and explicit `APPROVAL_REQUIRED` with no resolver. Live request/reply/continuation proof is pending.
+
+Phase 4: NOT STARTED — typed envelopes, classification, ownership, approval leases, and evidence require the Phase 2/3 live gate.
+
+Phase 5: LIMITED CHECKPOINT ONLY — coder interactive command prompting is available; broad role/surface migration and launcher bypass hardening remain pending.
+
+The authoritative operational handoff is [Approval-First Operational Checkpoint](docs/program/approval-first-operational-checkpoint.md); exact subsequent work is [Approval-First remaining work](docs/program/approval-first-remaining-work.md). This does not revise historical M4 or M6 acceptance claims.
+
 ### M7 Planner Compiler — PLANNED
 
 Purpose: compile high-level work into deterministic task plans and contracts.

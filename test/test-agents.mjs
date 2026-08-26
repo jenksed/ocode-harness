@@ -147,6 +147,16 @@ for (const agentFile of expectedAgents) {
   }
 }
 
+const coderPolicy = readFileSync(join(agentsDir, 'coder.md'), 'utf8');
+for (const required of ['"*": ask', '"git push": deny', '"git add": deny', '"git commit": deny', '"rm -rf *": deny']) {
+  if (!coderPolicy.includes(required)) {
+    console.error(`✗ coder Approval-First checkpoint policy missing: ${required}`);
+    invalidAgents.push({ file: 'coder.md', field: required });
+  } else {
+    console.log(`✓ coder Approval-First checkpoint policy preserves ${required}`);
+  }
+}
+
 // Summary
 console.log('\n=== Summary ===\n');
 

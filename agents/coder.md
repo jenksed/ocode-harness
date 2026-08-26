@@ -15,7 +15,7 @@ permission:
     "diagnosing-bugs": allow
     "prototype": allow
   bash:
-    "*": allow
+    "*": ask
     "git push": deny
     "git push *": deny
     "git add": deny

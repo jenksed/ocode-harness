@@ -300,7 +300,7 @@ export function validateCandidate(stagingDir) {
   // Check harness-runtime bin
   const harnessBin = join(harnessRuntimeDir, 'bin', 'harness.mjs');
   checks.push({ name: 'harness-runtime bin/harness.mjs', ok: existsSync(harnessBin) });
-  checks.push({ name: 'Ocode request_effect tool', ok: existsSync(join(stagingDir, 'opencode-tools', 'request_effect.mjs')) });
+  checks.push({ name: 'Ocode request_effect tool', ok: existsSync(join(stagingDir, 'opencode-tools', 'request_effect.js')) });
   checks.push({ name: 'harness-runtime bin/ocode.mjs', ok: existsSync(join(harnessRuntimeDir, 'bin', 'ocode.mjs')) });
 
   // Check doctrine

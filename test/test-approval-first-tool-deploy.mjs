@@ -17,6 +17,8 @@ assert.match(source, /OCODE_HARNESS_ROOT/);
 assert.match(source, /createApprovalFirstEffectTool/);
 assert.match(source, /harness-runtime\/lib\/approval-first-effect-tool/);
 assert.match(source, /helper is not installed/);
+assert.match(source, /custom-tool discovery scans \.js\/\.ts/);
+assert.ok(target.endsWith('tools/request_effect.js'));
 
 const launcher = readFileSync('packages/harness-runtime/bin/ocode.mjs', 'utf8');
 assert.match(launcher, /OCODE_HARNESS_ROOT: context\.harnessRoot/);

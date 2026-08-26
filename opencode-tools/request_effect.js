@@ -21,6 +21,6 @@ if (!helperPath) throw new Error('Ocode request_effect helper is not installed')
 const helperUrl = pathToFileURL(helperPath).href;
 const { createApprovalFirstEffectTool } = await import(helperUrl);
 
-// OpenCode discovers this file from its Ocode-owned tools directory. The
-// filename is the externally visible tool name: request_effect.
+// In OpenCode 1.18.21 custom-tool discovery scans .js/.ts, and the filename
+// becomes the externally visible tool name: request_effect.
 export default createApprovalFirstEffectTool(tool);

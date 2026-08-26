@@ -25,6 +25,20 @@ These declarations define transport shape, not rule precedence, no-match behavio
 
 The failed server startup occurred before a session could be created. It produced no `permission.updated`, no permission ID, and no reply acknowledgement. It is evidence of an unavailable live probe, not evidence of any permission semantics.
 
+## ServeError diagnosis
+
+### Reproduction (observed)
+
+The reusable runner invokes the installed executable as `opencode serve --hostname=127.0.0.1 --port=0` from an empty temporary project. It supplies an empty, temporary `HOME` and all relevant XDG/OpenCode config roots, disables project configuration, and supplies only an isolated server password. `debug info` succeeds under the same environment, while `serve` exits `1` without the SDK's listening banner and writes `Unexpected error` followed by `ServeError` to stderr. The same result occurred with a fixed loopback port, from the repository directory, and with a nonempty isolated password.
+
+### Wrapper behavior (source-confirmed)
+
+The installed `@opencode-ai/sdk` `createOpencodeServer` helper starts `opencode serve`, waits for the listening banner on stdout, and turns a child exit into its generic `ServeError`/server-exited failure. That SDK wrapper does not expose the underlying executable failure reason.
+
+### Root cause (unknown)
+
+The root cause inside the installed executable is **unknown** (low confidence). The local executable is a packaged binary and its server source was not available in the installed package; the observed stderr contains no causal detail. No conclusion is made about configuration loading, provider initialization, project initialization, authentication, or bind/listen beyond: listening was not observed. The provider/mock seam cannot be exercised until this pre-session server fault is resolved.
+
 ## Inferred
 
 - `once`, `always`, and `reject` are valid reply inputs for the pinned SDK route because the generated SDK declares that closed union.
@@ -47,7 +61,7 @@ No live evidence exists yet for:
 
 `CHARACTERIZATION SUFFICIENT: NO`.
 
-The existing M4 longest-match projector remains an Ocode v1 approximation for its historical narrow forms, not a verified statement of the pinned runtime’s rule resolution. Therefore Part B must not change projection semantics, admit ASK-backed actions, or represent generic commands as approval-capable in this environment.
+The reusable `scripts/qualify-opencode-runtime.mjs` runner now records the isolated startup result as normalized machine-readable evidence. The installed runtime's result remains `UNQUALIFIED`, not `INCOMPATIBLE`: the observed server seam fault prevents testing required behavior, but does not establish that the runtime lacks it. The existing M4 longest-match projector remains an Ocode v1 approximation for its historical narrow forms, not a verified statement of the pinned runtime’s rule resolution. Therefore Part B must not change projection semantics, admit ASK-backed actions, or represent generic commands as approval-capable in this environment.
 
 ## Re-entry conditions
 

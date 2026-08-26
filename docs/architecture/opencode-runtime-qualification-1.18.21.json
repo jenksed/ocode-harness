@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "contract_version": 1,
+  "runtime": {
+    "name": "opencode",
+    "executable_path": "/Users/jenksed/.opencode/bin/opencode",
+    "executable_version": "1.18.21",
+    "executable_fingerprint": "8c783005340f8dfc5e7d168478dd0dd2bd1faead531cb34270de2a9689d9f135",
+    "sdk_package_path": "/Users/jenksed/Projects/ocode-harness/node_modules/@opencode-ai/sdk/package.json",
+    "sdk_version": "1.18.21",
+    "sdk_package_fingerprint": "ecf994f1eda35208c41795f5112d51e03afa40952e348ff15360abd27875c84a"
+  },
+  "qualification_status": "UNQUALIFIED",
+  "required": {
+    "server_start": "UNKNOWN",
+    "sdk_endpoint": "UNKNOWN",
+    "session_create": "UNKNOWN",
+    "event_subscribe": "UNKNOWN",
+    "prompt_submit": "UNKNOWN",
+    "session_completion": "UNKNOWN",
+    "session_abort": "UNKNOWN",
+    "clean_shutdown": "UNKNOWN",
+    "permission_request": "UNKNOWN",
+    "permission_request_identity": "UNKNOWN",
+    "permission_reply_once": "UNKNOWN",
+    "permission_reject": "UNKNOWN",
+    "same_session_resume": "UNKNOWN",
+    "rejection_semantics": "UNKNOWN"
+  },
+  "optional": {
+    "permission_reply_session": "UNKNOWN",
+    "bash_metadata": "UNKNOWN",
+    "edit_metadata": "UNKNOWN",
+    "external_directory_metadata": "UNKNOWN",
+    "web_metadata": "UNKNOWN",
+    "skill_metadata": "UNKNOWN",
+    "task_metadata": "UNKNOWN",
+    "interactive_permission_parity": "UNKNOWN"
+  },
+  "observations": [
+    { "id": "isolated-debug-info", "kind": "process", "result": { "exit_code": 0, "signal": null, "spawn_error": null } },
+    { "id": "isolated-serve", "kind": "process", "result": { "exit_code": 1, "signal": null, "timed_out": false, "spawn_error": null, "listened": false } }
+  ],
+  "adapter_fingerprint": null,
+  "isolation": {
+    "project_config_disabled": true,
+    "runtime_home": "temporary",
+    "credentials": "none",
+    "config_content_present": false
+  }
+}

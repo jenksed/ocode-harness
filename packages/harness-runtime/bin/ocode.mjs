@@ -73,9 +73,10 @@ function loadContext(profileOverride) {
   return { harnessRoot, machineConfig, profileName, manifest, contracts, ...loaded };
 }
 
-/** Fail before session/orientation when the pinned SDK contract is not present. */
+/** Enforce the runtime pin only when this release carries a compatibility contract. */
 function assertRuntimeCompatibility(harnessRoot) {
   const path = resolve(harnessRoot, 'runtime-compatibility.json');
+  if (!existsSync(path)) return;
   let compatibility;
   try {
     compatibility = JSON.parse(readFileSync(path, 'utf8'));

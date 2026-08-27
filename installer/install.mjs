@@ -6,7 +6,7 @@
 
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join } from 'node:path';
-import { rmSync } from 'node:fs';
+import { existsSync, rmSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 
 import {
@@ -54,6 +54,15 @@ async function preflightChecks() {
   console.log();
 }
 
+function assertRuntimeDependencies(sourceRoot) {
+  const sdkPackage = resolve(sourceRoot, 'node_modules', '@opencode-ai', 'sdk', 'package.json');
+  if (!existsSync(sdkPackage)) {
+    throw new Error(
+      'Runtime dependencies are not installed in the source checkout. Run "npm ci" in the ocode-harness checkout, then rerun "npm run bootstrap".'
+    );
+  }
+}
+
 async function main() {
   console.log('=== ocode-harness Installer ===\n');
   console.log(`Installation directory: ${CONFIG.harnessRoot}`);
@@ -71,6 +80,8 @@ async function main() {
       throw new Error('Could not find source repository (missing VERSION, installer/install.mjs, agents/, or packages/)');
     }
     console.log(`Source repository: ${sourceRoot}\n`);
+
+    assertRuntimeDependencies(sourceRoot);
 
     const version = readVersion(resolve(sourceRoot, 'VERSION'));
     if (!version) {

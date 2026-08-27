@@ -4,13 +4,23 @@ set -eu
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 if [ -f "$SCRIPT_DIR/../share/ocode-harness/harness-runtime/bin/ocode.mjs" ]; then
   OCODE_RUNTIME="$SCRIPT_DIR/../share/ocode-harness/harness-runtime/bin/ocode.mjs"
+  HARNESS_RUNTIME="$SCRIPT_DIR/../share/ocode-harness/harness-runtime/bin/harness.mjs"
 elif [ -f "$SCRIPT_DIR/../packages/harness-runtime/bin/ocode.mjs" ]; then
   OCODE_RUNTIME="$SCRIPT_DIR/../packages/harness-runtime/bin/ocode.mjs"
+  HARNESS_RUNTIME="$SCRIPT_DIR/../packages/harness-runtime/bin/harness.mjs"
 else
   echo "ERROR: Ocode runtime wrapper not found; refusing raw OpenCode fallback." >&2
   exit 1
 fi
-if [ "$#" -eq 1 ] && [ "$1" = "--version" ]; then
-  exec opencode "$@"
-fi
-exec node "$OCODE_RUNTIME" "$@"
+
+case "${1:-}" in
+  version|update|rollback)
+    exec node "$HARNESS_RUNTIME" "$@"
+    ;;
+  --version|-V)
+    exec node "$HARNESS_RUNTIME" version
+    ;;
+  *)
+    exec node "$OCODE_RUNTIME" "$@"
+    ;;
+esac

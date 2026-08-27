@@ -24,7 +24,6 @@ import { loadBindingProfile } from './opencode-integration.mjs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Configuration paths
 export const CONFIG = {
   harnessRoot: join(homedir(), '.local', 'share', 'ocode-harness'),
   binDir: join(homedir(), '.local', 'bin'),
@@ -60,9 +59,6 @@ const LEGACY_OCODE_FREELLMAPI_MODELS = [
   'auto:judge',
 ];
 
-/**
- * Read version from VERSION file
- */
 export function readVersion(versionPath) {
   if (!existsSync(versionPath)) {
     return null;
@@ -70,18 +66,11 @@ export function readVersion(versionPath) {
   return readFileSync(versionPath, 'utf8').trim();
 }
 
-/**
- * Write version to VERSION file
- */
 export function writeVersion(targetDir, version) {
   const versionPath = join(targetDir, 'VERSION');
   writeFileSync(versionPath, version + '\n', 'utf8');
 }
 
-/**
- * Find source repository by walking up from startDir
- * Looks for VERSION + installer/install.mjs + agents/ + packages/
- */
 export function findSourceRepo(startDir) {
   let dir = resolve(startDir);
   const requiredComponents = [
@@ -109,9 +98,6 @@ export function findSourceRepo(startDir) {
   return null;
 }
 
-/**
- * Copy directory recursively with cpSync (Node 18+)
- */
 function copyDir(src, dest) {
   if (!existsSync(src)) return;
   mkdirSync(dest, { recursive: true });
@@ -197,7 +183,6 @@ export function mergeOpenCodeConfig(existingConfig, sourceConfigData, machineCon
   return merged;
 }
 
-/** Remove only the legacy Ocode-owned custom approval tool after migration to native ASK. */
 export function removeLegacyRequestEffectTools(opencodeConfigPath = CONFIG.opencodeConfig) {
   const toolsDir = join(dirname(opencodeConfigPath), 'tools');
   const removed = [];
@@ -212,59 +197,33 @@ export function removeLegacyRequestEffectTools(opencodeConfigPath = CONFIG.openc
   return removed;
 }
 
-/**
- * Stage candidate from source to staging directory
- * Copies all components: orientation, harness-runtime, doctrine, agents, VERSION, opencode-config
- */
 export function stageCandidate(sourceRoot, stagingDir, version) {
   console.log(`Staging candidate from ${sourceRoot} to ${stagingDir}...`);
 
-  // Clean staging dir
   if (existsSync(stagingDir)) {
     rmSync(stagingDir, { recursive: true, force: true });
   }
   mkdirSync(stagingDir, { recursive: true });
 
-  // Copy orientation package
   copyDir(join(sourceRoot, 'packages', 'orientation'), join(stagingDir, 'orientation'));
-
-  // Copy harness-runtime package
   copyDir(join(sourceRoot, 'packages', 'harness-runtime'), join(stagingDir, 'harness-runtime'));
-
-  // Copy root node_modules to harness-runtime for dependencies
   copyDir(join(sourceRoot, 'node_modules'), join(stagingDir, 'harness-runtime', 'node_modules'));
-
-  // Copy doctrine
   copyDir(join(sourceRoot, 'doctrine'), join(stagingDir, 'doctrine'));
-
-  // Copy agents
   copyDir(join(sourceRoot, 'agents'), join(stagingDir, 'agents'));
-
-  // Copy deterministic execution profiles
   copyDir(join(sourceRoot, 'profiles'), join(stagingDir, 'profiles'));
-
-  // Copy skills placeholder/owned skills when present
   copyDir(join(sourceRoot, 'skills'), join(stagingDir, 'skills'));
-
-  // Copy opencode-config
   copyDir(join(sourceRoot, 'opencode-config'), join(stagingDir, 'opencode-config'));
-
-  // Write VERSION
   writeVersion(stagingDir, version);
 
   console.log(`✓ Staged candidate version ${version}`);
   return stagingDir;
 }
 
-/**
- * Validate candidate by running doctor checks against staging directory
- */
 export function validateCandidate(stagingDir) {
   console.log(`Validating candidate at ${stagingDir}...`);
 
   const checks = [];
 
-  // Check orientation package
   const orientationDir = join(stagingDir, 'orientation');
   const orientationPackageJson = join(orientationDir, 'package.json');
   if (existsSync(orientationPackageJson)) {
@@ -278,18 +237,15 @@ export function validateCandidate(stagingDir) {
     checks.push({ name: 'orientation package', ok: false, error: 'not found' });
   }
 
-  // Check orientation bin
   const orientBin = join(orientationDir, 'bin', 'orient.mjs');
   checks.push({ name: 'orientation bin', ok: existsSync(orientBin) });
 
-  // Check orientation lib files
   const orientationLibs = ['orientation.mjs', 'probe.mjs', 'render.mjs'];
   for (const lib of orientationLibs) {
     const libPath = join(orientationDir, 'lib', lib);
     checks.push({ name: `orientation lib/${lib}`, ok: existsSync(libPath) });
   }
 
-  // Check harness-runtime package
   const harnessRuntimeDir = join(stagingDir, 'harness-runtime');
   const harnessRuntimePackageJson = join(harnessRuntimeDir, 'package.json');
   if (existsSync(harnessRuntimePackageJson)) {
@@ -303,19 +259,16 @@ export function validateCandidate(stagingDir) {
     checks.push({ name: 'harness-runtime package', ok: false, error: 'not found' });
   }
 
-  // Check harness-runtime lib files
   const harnessLibs = ['identity.mjs', 'lifecycle.mjs', 'ledger.mjs', 'evidence.mjs', 'composition.mjs', 'closeout.mjs', 'verify.mjs', 'governance.mjs', 'permission-projection.mjs', 'admission.mjs', 'agent-contract.mjs', 'opencode-integration.mjs', 'execution.mjs', 'skill-contract.mjs', 'skill-capsules.mjs', 'skill-projection.mjs', 'skill-runtime.mjs'];
   for (const lib of harnessLibs) {
     const libPath = join(harnessRuntimeDir, 'lib', lib);
     checks.push({ name: `harness-runtime lib/${lib}`, ok: existsSync(libPath) });
   }
 
-  // Check harness-runtime bin
   const harnessBin = join(harnessRuntimeDir, 'bin', 'harness.mjs');
   checks.push({ name: 'harness-runtime bin/harness.mjs', ok: existsSync(harnessBin) });
   checks.push({ name: 'harness-runtime bin/ocode.mjs', ok: existsSync(join(harnessRuntimeDir, 'bin', 'ocode.mjs')) });
 
-  // Check doctrine
   const doctrineDir = join(stagingDir, 'doctrine');
   const doctrineFiles = ['agentic-agile.md', 'resource-policy.md', 'policy-version.json'];
   for (const file of doctrineFiles) {
@@ -323,7 +276,6 @@ export function validateCandidate(stagingDir) {
     checks.push({ name: `doctrine/${file}`, ok: existsSync(filePath) });
   }
 
-  // Validate policy-version.json
   const policyVersionPath = join(doctrineDir, 'policy-version.json');
   if (existsSync(policyVersionPath)) {
     try {
@@ -337,7 +289,6 @@ export function validateCandidate(stagingDir) {
     checks.push({ name: 'doctrine/policy-version.json', ok: false, error: 'not found' });
   }
 
-  // Check agents
   const agentsDir = join(stagingDir, 'agents');
   try {
     const { manifest } = loadAgentContracts({ baseDir: stagingDir });
@@ -351,19 +302,15 @@ export function validateCandidate(stagingDir) {
   }
   checks.push({ name: 'agents/manifest.json', ok: existsSync(join(agentsDir, 'manifest.json')) });
 
-  // Check skills directory is staged when repository has one
   checks.push({ name: 'skills directory', ok: existsSync(join(stagingDir, 'skills')) });
 
-  // Check opencode-config
   const opencodeConfigPath = join(stagingDir, 'opencode-config', 'opencode.json');
   checks.push({ name: 'opencode-config/opencode.json', ok: existsSync(opencodeConfigPath) });
 
-  // Check VERSION
   const versionPath = join(stagingDir, 'VERSION');
   const versionContent = readVersion(versionPath);
   checks.push({ name: 'VERSION file', ok: !!versionContent, version: versionContent });
 
-  // Report results
   let allPassed = true;
   for (const check of checks) {
     if (check.ok) {
@@ -387,13 +334,9 @@ export function validateCandidate(stagingDir) {
   return allPassed;
 }
 
-/**
- * Promote candidate from staging to target with atomic move and backup
- */
 export function promoteCandidate(stagingDir, targetDir, backupDir) {
   console.log(`Promoting candidate from ${stagingDir} to ${targetDir}...`);
 
-  // Create timestamped backup of current installation
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const versionedBackupDir = join(backupDir, timestamp);
 
@@ -404,7 +347,6 @@ export function promoteCandidate(stagingDir, targetDir, backupDir) {
     console.log(`  ✓ Backup created`);
   }
 
-  // Atomic promotion: remove target and move staging to target
   if (existsSync(targetDir)) {
     rmSync(targetDir, { recursive: true, force: true });
   }
@@ -416,9 +358,6 @@ export function promoteCandidate(stagingDir, targetDir, backupDir) {
   return versionedBackupDir;
 }
 
-/**
- * Rollback to previous installation from backup
- */
 export function rollbackCandidate(backupDir, targetDir) {
   console.log(`Rolling back from ${backupDir}...`);
 
@@ -426,7 +365,6 @@ export function rollbackCandidate(backupDir, targetDir) {
     throw new Error(`Backup directory not found: ${backupDir}`);
   }
 
-  // Find latest backup
   const backups = readdirSync(backupDir)
     .filter(f => statSync(join(backupDir, f)).isDirectory())
     .sort()
@@ -439,17 +377,14 @@ export function rollbackCandidate(backupDir, targetDir) {
   const latestBackup = join(backupDir, backups[0]);
   console.log(`  Restoring from ${latestBackup}...`);
 
-  // Restore
   if (existsSync(targetDir)) {
     rmSync(targetDir, { recursive: true, force: true });
   }
   mkdirSync(dirname(targetDir), { recursive: true });
   cpSync(latestBackup, targetDir, { recursive: true });
 
-  // Remove consumed backup so subsequent rollbacks progress to earlier versions
   rmSync(latestBackup, { recursive: true, force: true });
 
-  // Read restored version
   const restoredVersion = readVersion(join(targetDir, 'VERSION'));
   console.log(`✓ Rollback complete, restored version: ${restoredVersion || 'unknown'}`);
 
@@ -457,7 +392,8 @@ export function rollbackCandidate(backupDir, targetDir) {
 }
 
 /**
- * Install launchers (ocode, orient, harness) pointing to installed stable paths
+ * Install stable launchers. `ocode` is the normal operator surface; the
+ * `harness` launcher remains for deterministic/internal compatibility commands.
  */
 export function installLaunchers(targetDir) {
   console.log('Installing launchers...');
@@ -469,7 +405,6 @@ export function installLaunchers(targetDir) {
   const harnessBin = join(targetDir, 'harness-runtime', 'bin', 'harness.mjs');
   const ocodeBin = join(targetDir, 'harness-runtime', 'bin', 'ocode.mjs');
 
-  // orient launcher
   const orientLauncher = join(binDir, 'orient');
   const orientScript = `#!/bin/sh
 set -eu
@@ -479,17 +414,25 @@ exec node "${orientationBin}" "\${1:-\${PWD}}"
   execSync(`chmod +x "${orientLauncher}"`, { stdio: 'inherit' });
   console.log(`  ✓ orient -> ${orientLauncher}`);
 
-  // ocode launcher
   const ocodeLauncher = join(binDir, 'ocode');
   const ocodeScript = `#!/bin/sh
 set -eu
-exec node "${ocodeBin}" "\${@}"
+case "\${1:-}" in
+  version|update|rollback)
+    exec node "${harnessBin}" "\$@"
+    ;;
+  --version|-V)
+    exec node "${harnessBin}" version
+    ;;
+  *)
+    exec node "${ocodeBin}" "\$@"
+    ;;
+esac
 `;
   writeFileSync(ocodeLauncher, ocodeScript, 'utf8');
   execSync(`chmod +x "${ocodeLauncher}"`, { stdio: 'inherit' });
   console.log(`  ✓ ocode -> ${ocodeLauncher}`);
 
-  // harness launcher
   const harnessLauncher = join(binDir, 'harness');
   const harnessScript = `#!/bin/sh
 set -eu
@@ -497,12 +440,9 @@ exec node "${harnessBin}" "\${@}"
 `;
   writeFileSync(harnessLauncher, harnessScript, 'utf8');
   execSync(`chmod +x "${harnessLauncher}"`, { stdio: 'inherit' });
-  console.log(`  ✓ harness -> ${harnessLauncher}`);
+  console.log(`  ✓ harness -> ${harnessLauncher} (compatibility/internal)`);
 }
 
-/**
- * Install agents to ~/.config/opencode/agents
- */
 export function installAgents(sourceDir) {
   console.log('Installing agents...');
 
@@ -523,9 +463,6 @@ export function installAgents(sourceDir) {
   console.log(`  ✓ Installed ${agentFiles.length} agents to ${targetAgentsDir}`);
 }
 
-/**
- * Patch OpenCode config from staging
- */
 export function patchOpenCodeConfig(stagingDir) {
   console.log('Patching OpenCode configuration...');
 
@@ -552,9 +489,6 @@ export function patchOpenCodeConfig(stagingDir) {
   console.log('  ✓ Patched opencode.json with Ocode-owned entries');
 }
 
-/**
- * Configure Git excludes
- */
 export function configureGitExcludes() {
   console.log('Configuring Git excludes...');
 
@@ -595,15 +529,11 @@ export function configureGitExcludes() {
   }
 }
 
-/**
- * Run post-promotion doctor validation
- */
 export function validatePostPromotion(targetDir) {
   console.log('Running post-promotion validation...');
 
   const checks = [];
 
-  // Check launchers
   for (const launcher of ['orient', 'ocode', 'harness']) {
     try {
       const path = execSync(`which ${launcher}`, { encoding: 'utf8' }).trim();
@@ -613,20 +543,12 @@ export function validatePostPromotion(targetDir) {
     }
   }
 
-  // Check agents directory
   checks.push({ name: 'agents directory', ok: existsSync(CONFIG.agentsDir) });
-
-  // Check orientation package
   checks.push({ name: 'orientation package', ok: existsSync(CONFIG.orientationDir) });
-
-  // Check harness-runtime package
   checks.push({ name: 'harness-runtime package', ok: existsSync(CONFIG.harnessRuntimeDir) });
   checks.push({ name: 'execution profiles', ok: existsSync(join(targetDir, 'profiles', 'free.json')) && existsSync(join(targetDir, 'profiles', 'hybrid.json')) });
-
-  // Check opencode config
   checks.push({ name: 'opencode configuration', ok: existsSync(CONFIG.opencodeConfig) });
 
-  // Check VERSION file
   const versionPath = join(targetDir, 'VERSION');
   checks.push({ name: 'VERSION file', ok: existsSync(versionPath) });
 

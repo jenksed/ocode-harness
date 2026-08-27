@@ -23,6 +23,14 @@ import {
   findSourceRepo,
   CONFIG,
 } from '../packages/harness-runtime/lib/deploy.mjs';
+import {
+  assertPromotableSourceIdentity,
+  inspectSourceIdentity,
+  isExactReleaseIdentity,
+  readReleaseIdentity,
+  sameReleaseIdentity,
+  writeReleaseIdentity,
+} from '../packages/harness-runtime/lib/release-identity.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -87,12 +95,16 @@ async function main() {
     if (!version) {
       throw new Error('Could not read VERSION from source repository');
     }
-    console.log(`Installing version: ${version}\n`);
+    const sourceIdentity = assertPromotableSourceIdentity(inspectSourceIdentity(sourceRoot, version));
+    console.log(`Installing version: ${version}`);
+    console.log(`Source SHA: ${sourceIdentity.source_commit || 'unavailable (non-Git source)'}`);
+    console.log(`Source ref: ${sourceIdentity.source_ref || 'detached/unknown'}\n`);
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const stagingDir = join(CONFIG.stagingDir, timestamp);
 
     stageCandidate(sourceRoot, stagingDir, version);
+    writeReleaseIdentity(stagingDir, sourceIdentity);
 
     const isValid = validateCandidate(stagingDir);
     if (!isValid) {
@@ -109,9 +121,12 @@ async function main() {
     removeLegacyRequestEffectTools(CONFIG.opencodeConfig);
 
     const postValid = validatePostPromotion(CONFIG.harnessRoot);
-    if (!postValid) {
+    const installedIdentity = readReleaseIdentity(CONFIG.harnessRoot);
+    const identityValid = !isExactReleaseIdentity(sourceIdentity)
+      || sameReleaseIdentity(sourceIdentity, installedIdentity);
+    if (!postValid || !identityValid) {
       console.log('\n=== Installation Complete but with Issues ===\n');
-      console.log('Some post-promotion checks failed. Attempting rollback...');
+      console.log(identityValid ? 'Post-promotion checks failed. Attempting rollback...' : 'Release identity mismatch. Attempting rollback...');
       try {
         const { rollbackCandidate } = await import('../packages/harness-runtime/lib/deploy.mjs');
         rollbackCandidate(CONFIG.backupDir, CONFIG.harnessRoot);
@@ -128,11 +143,11 @@ async function main() {
     console.log('Next steps:');
     console.log('  1. Add ~/.local/bin to your PATH if not already present');
     console.log('  2. Run "orient ." in your project directory to generate orientation');
-    console.log('  3. Run "ocode" to start the harness');
-    console.log('  4. Run "harness version" to verify installation');
+    console.log('  3. Run "ocode ." to start the harness');
+    console.log('  4. Run "ocode version" to verify the exact installed release');
     console.log();
     console.log(`Backup created at: ${backupDir}`);
-    console.log('To rollback: harness rollback');
+    console.log('To rollback: ocode rollback');
   } catch (error) {
     console.error('\n✗ Installation failed:', error.message);
     console.error(error.stack);

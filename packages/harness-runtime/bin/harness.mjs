@@ -25,6 +25,14 @@ import {
   writeVersion,
   CONFIG,
 } from '../lib/deploy.mjs';
+import {
+  assertPromotableSourceIdentity,
+  inspectSourceIdentity,
+  isExactReleaseIdentity,
+  readReleaseIdentity,
+  sameReleaseIdentity,
+  writeReleaseIdentity,
+} from '../lib/release-identity.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -171,7 +179,6 @@ program
   .description('ocode-harness deterministic runtime')
   .version('0.1.0');
 
-// Find project root
 function findProjectRoot(startDir) {
   let dir = resolve(startDir);
   while (true) {
@@ -186,49 +193,58 @@ function findProjectRoot(startDir) {
   return process.cwd();
 }
 
-// Get installed version info
 function getInstalledVersionInfo() {
   const harnessRoot = CONFIG.harnessRoot;
   const versionPath = join(harnessRoot, 'VERSION');
   const installedVersion = readVersion(versionPath);
+  const installedIdentity = readReleaseIdentity(harnessRoot);
 
-  // Get doctrine/policy version
   let doctrineVersion = null;
   const policyVersionPath = join(harnessRoot, 'doctrine', 'policy-version.json');
   if (existsSync(policyVersionPath)) {
     try {
       const manifest = JSON.parse(readFileSync(policyVersionPath, 'utf8'));
       doctrineVersion = manifest.policy_version || manifest.doctrine?.version;
-    } catch (err) {
-      // ignore
+    } catch {
+      // Version reporting should still work when optional doctrine metadata is unreadable.
     }
   }
 
-  // Try to find source repo and get source version
   let sourceVersion = null;
+  let sourceIdentity = null;
   let sourceDiffers = false;
   const sourceRoot = findSourceRepo(process.cwd());
   if (sourceRoot) {
-    const sourceVersionPath = join(sourceRoot, 'VERSION');
-    sourceVersion = readVersion(sourceVersionPath);
-    if (sourceVersion && installedVersion && sourceVersion !== installedVersion) {
-      sourceDiffers = true;
+    sourceVersion = readVersion(join(sourceRoot, 'VERSION'));
+    if (sourceVersion) sourceIdentity = inspectSourceIdentity(sourceRoot, sourceVersion);
+    if (sourceIdentity && installedIdentity
+        && isExactReleaseIdentity(sourceIdentity)
+        && isExactReleaseIdentity(installedIdentity)) {
+      sourceDiffers = !sameReleaseIdentity(installedIdentity, sourceIdentity);
+    } else if (sourceVersion && installedVersion) {
+      sourceDiffers = sourceVersion !== installedVersion;
     }
   }
 
   return {
     installed_version: installedVersion,
+    installed_sha: installedIdentity?.source_commit ?? null,
+    installed_ref: installedIdentity?.source_ref ?? null,
+    installed_identity_exact: isExactReleaseIdentity(installedIdentity),
     source_version: sourceVersion,
+    source_sha: sourceIdentity?.source_commit ?? null,
+    source_ref: sourceIdentity?.source_ref ?? null,
+    source_dirty: sourceIdentity?.source_dirty ?? null,
+    source_identity_exact: isExactReleaseIdentity(sourceIdentity),
     doctrine_version: doctrineVersion,
     source_differs: sourceDiffers,
     source_repo: sourceRoot,
   };
 }
 
-// VERSION SUBCOMMAND
 program
   .command('version')
-  .description('Report installed, source, and doctrine versions')
+  .description('Report exact installed and checkout release identity')
   .option('--json', 'Output as JSON')
   .action((options) => {
     const info = getInstalledVersionInfo();
@@ -236,103 +252,108 @@ program
     if (options.json) {
       console.log(JSON.stringify(info, null, 2));
     } else {
-      console.log('=== ocode-harness Version ===\n');
-      console.log(`Installed version: ${info.installed_version || 'not found'}`);
-      console.log(`Source version:    ${info.source_version || 'not detected'}`);
-      console.log(`Doctrine version:  ${info.doctrine_version || 'not found'}`);
-      if (info.source_repo) {
-        console.log(`Source repo:       ${info.source_repo}`);
-      }
+      console.log('=== Ocode Release Identity ===\n');
+      console.log('Installed:');
+      console.log(`  Version: ${info.installed_version || 'not found'}`);
+      console.log(`  SHA:     ${info.installed_sha || 'unavailable (legacy/non-Git release)'}`);
+      console.log(`  Ref:     ${info.installed_ref || 'detached/unknown'}`);
+      console.log('');
+      console.log('Checkout:');
+      console.log(`  Version: ${info.source_version || 'not detected'}`);
+      console.log(`  SHA:     ${info.source_sha || 'unavailable'}`);
+      console.log(`  Ref:     ${info.source_ref || 'detached/unknown'}`);
+      console.log(`  Dirty:   ${info.source_dirty === null ? 'unknown' : info.source_dirty ? 'yes' : 'no'}`);
+      console.log(`Doctrine:  ${info.doctrine_version || 'not found'}`);
+      if (info.source_repo) console.log(`Source:    ${info.source_repo}`);
       if (info.source_differs) {
-        console.log('\n⚠ Source and installed versions differ');
+        console.log('\nCheckout differs from installed release.');
+      } else if (info.installed_identity_exact && info.source_identity_exact) {
+        console.log('\nCheckout matches installed release exactly.');
       } else if (info.installed_version && info.source_version) {
-        console.log('\n✓ Source and installed versions match');
+        console.log('\nSemantic versions match; exact source identity is unavailable.');
       }
     }
     process.exit(0);
   });
 
-// UPDATE SUBCOMMAND
 program
   .command('update')
-  .description('Update installation from source repository with staged promotion')
-  .option('--force', 'Force update even if versions match')
+  .description('Promote the current checkout into the isolated installed runtime')
+  .option('--force', 'Reinstall even when exact release identity already matches')
   .action(async (options) => {
-    console.log('=== ocode-harness Update ===\n');
+    console.log('=== Ocode Update ===\n');
+    let promotionAttempted = false;
 
     try {
-      // Find source repo
       const sourceRoot = findSourceRepo(process.cwd());
       if (!sourceRoot) {
-        throw new Error('Could not find source repository. Run from within the ocode-harness repo or ensure VERSION, installer/install.mjs, agents/, packages/ exist.');
+        throw new Error('Could not find source repository. Run from within the ocode-harness checkout.');
       }
       console.log(`Source repository: ${sourceRoot}`);
 
-      // Read source version
       const sourceVersion = readVersion(join(sourceRoot, 'VERSION'));
-      if (!sourceVersion) {
-        throw new Error('Could not read VERSION from source repository');
-      }
+      if (!sourceVersion) throw new Error('Could not read VERSION from source repository');
+      const sourceIdentity = assertPromotableSourceIdentity(inspectSourceIdentity(sourceRoot, sourceVersion));
       console.log(`Source version: ${sourceVersion}`);
+      console.log(`Source SHA: ${sourceIdentity.source_commit || 'unavailable'}`);
+      console.log(`Source ref: ${sourceIdentity.source_ref || 'detached/unknown'}`);
 
-      // Read installed version
       const installedVersion = readVersion(join(CONFIG.harnessRoot, 'VERSION'));
+      const installedIdentity = readReleaseIdentity(CONFIG.harnessRoot);
       console.log(`Installed version: ${installedVersion || 'none'}`);
+      console.log(`Installed SHA: ${installedIdentity?.source_commit || 'unavailable'}`);
 
-      // Check if update needed
-      if (!options.force && installedVersion === sourceVersion) {
-        console.log('\n✓ Already at latest version. Use --force to reinstall.');
+      if (!options.force && sameReleaseIdentity(installedIdentity, sourceIdentity)) {
+        console.log('\n✓ Installed runtime already matches this exact release. Use --force to reinstall.');
         process.exit(0);
       }
+      if (!options.force && installedVersion === sourceVersion) {
+        console.log('\nSemantic version matches, but source identity does not; promotion will continue.');
+      }
 
-      // Stage candidate
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const stagingDir = join(CONFIG.stagingDir, timestamp);
       console.log(`\nStaging candidate to ${stagingDir}...`);
       stageCandidate(sourceRoot, stagingDir, sourceVersion);
+      writeReleaseIdentity(stagingDir, sourceIdentity);
 
-      // Validate candidate
       console.log('\nValidating candidate...');
       const isValid = validateCandidate(stagingDir);
-      if (!isValid) {
-        throw new Error('Candidate validation failed');
-      }
+      if (!isValid) throw new Error('Candidate validation failed');
 
-      // Promote candidate (with backup)
       console.log('\nPromoting candidate...');
+      promotionAttempted = true;
       const backupDir = promoteCandidate(stagingDir, CONFIG.harnessRoot, CONFIG.backupDir);
       console.log(`Backup preserved at: ${backupDir}`);
 
-      // Install launchers from promoted installation
       console.log('\nUpdating launchers...');
       installLaunchers(CONFIG.harnessRoot);
 
-      // Install agents
       console.log('\nUpdating agents...');
       installAgents(CONFIG.harnessRoot);
-
-      // Patch OpenCode config
       patchOpenCodeConfig(CONFIG.harnessRoot);
-
-      // Configure Git excludes
       configureGitExcludes();
 
-      // Post-promotion validation
       console.log('\nRunning post-promotion validation...');
       const postValid = validatePostPromotion(CONFIG.harnessRoot);
-
-      if (!postValid) {
-        throw new Error('Post-promotion validation failed');
+      const promotedIdentity = readReleaseIdentity(CONFIG.harnessRoot);
+      if (!postValid) throw new Error('Post-promotion validation failed');
+      if (isExactReleaseIdentity(sourceIdentity) && !sameReleaseIdentity(sourceIdentity, promotedIdentity)) {
+        throw new Error('Post-promotion release identity does not match source checkout');
       }
 
       console.log('\n✓ Update complete');
       console.log(`  Version: ${sourceVersion}`);
+      console.log(`  SHA: ${promotedIdentity?.source_commit || 'unavailable'}`);
       console.log(`  Backup: ${backupDir}`);
-
     } catch (error) {
       console.error('\n✗ Update failed:', error.message);
-      console.error('Attempting rollback...');
+      if (!promotionAttempted) {
+        console.error('Installed runtime unchanged; promotion was not attempted.');
+        process.exit(1);
+      }
 
+      console.error('Attempting rollback...');
       try {
         const result = rollbackCandidate(CONFIG.backupDir, CONFIG.harnessRoot);
         console.log(`✓ Rollback complete, restored version: ${result.restoredVersion}`);
@@ -346,7 +367,6 @@ program
     }
   });
 
-// ROLLBACK SUBCOMMAND
 program
   .command('rollback')
   .description('Rollback to previous installation from backup')
@@ -356,18 +376,14 @@ program
     try {
       const result = rollbackCandidate(CONFIG.backupDir, CONFIG.harnessRoot);
 
-      // Reinstall launchers from restored installation
       console.log('\nReinstalling launchers...');
       installLaunchers(CONFIG.harnessRoot);
 
-      // Reinstall agents
       console.log('\nReinstalling agents...');
       installAgents(CONFIG.harnessRoot);
 
-      // Patch OpenCode config
       patchOpenCodeConfig(CONFIG.harnessRoot);
 
-      // Post-rollback validation
       console.log('\nRunning post-rollback validation...');
       const postValid = validatePostPromotion(CONFIG.harnessRoot);
 
@@ -377,6 +393,7 @@ program
 
       console.log('\n✓ Rollback complete');
       console.log(`  Restored version: ${result.restoredVersion}`);
+      console.log(`  Restored SHA: ${readReleaseIdentity(CONFIG.harnessRoot)?.source_commit || 'unavailable (legacy backup)'}`);
       console.log(`  From backup: ${result.backupUsed}`);
 
     } catch (error) {
@@ -385,7 +402,6 @@ program
     }
   });
 
-// LEDGER COMMANDS
 program
   .command('ledger append')
   .description('Append a validated record to the run ledger')
@@ -493,7 +509,6 @@ program
     }
   });
 
-// LIFECYCLE COMMANDS
 program
   .command('lifecycle transition')
   .description('Validate and perform a lifecycle state transition')
@@ -509,7 +524,6 @@ program
     }
   });
 
-// CLOSEOUT COMMANDS
 program
   .command('closeout')
   .description('Execute deterministic Git closeout')
@@ -598,7 +612,6 @@ program
     }
   });
 
-// EVIDENCE COMMANDS
 program
   .command('evidence collect')
   .description('Collect deterministic evidence from repository')
@@ -614,7 +627,6 @@ program
     }
   });
 
-// VERIFY COMMANDS
 program
   .command('verify')
   .description('Run deterministic validation commands (test, build, lint, typecheck, verify)')

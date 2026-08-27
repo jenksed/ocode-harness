@@ -21,16 +21,14 @@ import {
   validatePostPromotion,
   readVersion,
   findSourceRepo,
-  CONFIG,
-} from '../packages/harness-runtime/lib/deploy.mjs';
-import {
   assertPromotableSourceIdentity,
   inspectSourceIdentity,
   isExactReleaseIdentity,
   readReleaseIdentity,
   sameReleaseIdentity,
   writeReleaseIdentity,
-} from '../packages/harness-runtime/lib/release-identity.mjs';
+  CONFIG,
+} from '../packages/harness-runtime/lib/deploy.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -41,21 +39,21 @@ async function preflightChecks() {
   try {
     const nodeVersion = execSync('node --version', { encoding: 'utf8' }).trim();
     console.log(`✓ Node.js: ${nodeVersion}`);
-  } catch (err) {
+  } catch {
     throw new Error('Node.js is required but not found in PATH');
   }
 
   try {
     const opencodeVersion = execSync('opencode --version', { encoding: 'utf8' }).trim();
     console.log(`✓ opencode: ${opencodeVersion}`);
-  } catch (err) {
+  } catch {
     throw new Error('opencode is required but not found in PATH');
   }
 
   try {
     const gitVersion = execSync('git --version', { encoding: 'utf8' }).trim();
     console.log(`✓ git: ${gitVersion}`);
-  } catch (err) {
+  } catch {
     throw new Error('git is required but not found in PATH');
   }
 
@@ -92,9 +90,7 @@ async function main() {
     assertRuntimeDependencies(sourceRoot);
 
     const version = readVersion(resolve(sourceRoot, 'VERSION'));
-    if (!version) {
-      throw new Error('Could not read VERSION from source repository');
-    }
+    if (!version) throw new Error('Could not read VERSION from source repository');
     const sourceIdentity = assertPromotableSourceIdentity(inspectSourceIdentity(sourceRoot, version));
     console.log(`Installing version: ${version}`);
     console.log(`Source SHA: ${sourceIdentity.source_commit || 'unavailable (non-Git source)'}`);
@@ -106,8 +102,7 @@ async function main() {
     stageCandidate(sourceRoot, stagingDir, version);
     writeReleaseIdentity(stagingDir, sourceIdentity);
 
-    const isValid = validateCandidate(stagingDir);
-    if (!isValid) {
+    if (!validateCandidate(stagingDir)) {
       console.error('\n✗ Candidate validation failed, aborting installation');
       rmSync(stagingDir, { recursive: true, force: true });
       process.exit(1);

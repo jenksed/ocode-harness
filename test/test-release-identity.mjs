@@ -10,7 +10,7 @@ import {
   readReleaseIdentity,
   sameReleaseIdentity,
   writeReleaseIdentity,
-} from '../packages/harness-runtime/lib/release-identity.mjs';
+} from '../packages/harness-runtime/lib/deploy.mjs';
 
 function git(cwd, ...args) {
   const result = spawnSync('git', args, { cwd, encoding: 'utf8' });

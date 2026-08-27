@@ -13,6 +13,7 @@ import {
   validateProfileCompleteness,
 } from './opencode-integration.mjs';
 import { appendRecord, createLedgerRecord } from './ledger.mjs';
+import { assertTaskCapsuleHandoff } from './task-capsule.mjs';
 import { runOpenCodeSdkSession } from './opencode-sdk-execution.mjs';
 import {
   createActivityExecutionContext,
@@ -186,7 +187,7 @@ export function createExecutionProvenance({ resolution, reconciliation, subjectR
   };
 }
 
-export function appendExecutionLedgerRecord({ ledgerPath, projectDir, resolution, reconciliation, subjectReconciliation, success, failureClassification, elapsedMs }) {
+export function appendExecutionLedgerRecord({ ledgerPath, projectDir, resolution, reconciliation, subjectReconciliation, success, failureClassification, elapsedMs, modelTelemetry = null }) {
   const provenance = createExecutionProvenance({
     resolution,
     reconciliation,
@@ -205,6 +206,7 @@ export function appendExecutionLedgerRecord({ ledgerPath, projectDir, resolution
       ? [{ role: resolution.subject.role, requested_model: resolution.execution_policy.requested_model }]
       : [],
     execution_provenance: provenance,
+    model_telemetry: modelTelemetry,
   });
   appendRecord(ledgerPath, record);
   return record;
@@ -247,11 +249,31 @@ export function admittedSubjectForExecution(resolution, admissionDecision = null
   return admissionDecision.subject.role;
 }
 
+/** Bind a workflow role to the immutable TaskCapsule it was admitted to execute. */
+export function bindTaskCapsuleToExecution({ taskCapsule, expectedTaskCapsuleFingerprint, role, required = false } = {}) {
+  if (!taskCapsule) {
+    if (required) throw new BindingError('Governed task execution requires a TaskCapsule');
+    return null;
+  }
+  const capsule = assertTaskCapsuleHandoff(taskCapsule, expectedTaskCapsuleFingerprint || taskCapsule.fingerprint);
+  if (capsule.provenance.role !== null && capsule.provenance.role !== role) {
+    throw new BindingError('TaskCapsule provenance role does not match execution role');
+  }
+  return capsule;
+}
+
+/** New workflow entrypoint: requires the machine-valid TaskCapsule contract. */
+export function executeGovernedTask(options) {
+  bindTaskCapsuleToExecution({ taskCapsule: options.taskCapsule, expectedTaskCapsuleFingerprint: options.taskCapsuleFingerprint, role: options.role, required: true });
+  return executeGovernedRole({ ...options, requireTaskCapsule: true });
+}
+
 export function executeGovernedRole(options) {
   if (options.transport === 'sdk') return executeGovernedRoleSdk(options);
   if (options.streaming === true) return executeGovernedRoleStreaming(options);
   const baseDir = resolve(options.baseDir);
   const projectDir = resolve(options.projectDir);
+  bindTaskCapsuleToExecution({ taskCapsule: options.taskCapsule, expectedTaskCapsuleFingerprint: options.taskCapsuleFingerprint, role: options.role, required: options.requireTaskCapsule === true });
   const { manifest, contracts } = loadAgentContracts({ baseDir });
   const loaded = options.profile
     ? { profile: options.profile, source: options.bindingSource || `profiles/${options.profile.name}.json` }
@@ -362,6 +384,7 @@ export function executeGovernedRole(options) {
 export async function executeGovernedRoleSdk(options) {
   const baseDir = resolve(options.baseDir);
   const projectDir = resolve(options.projectDir);
+  bindTaskCapsuleToExecution({ taskCapsule: options.taskCapsule, expectedTaskCapsuleFingerprint: options.taskCapsuleFingerprint, role: options.role, required: options.requireTaskCapsule === true });
   const { manifest, contracts } = loadAgentContracts({ baseDir });
   const loaded = options.profile
     ? { profile: options.profile, source: options.bindingSource || `profiles/${options.profile.name}.json` }
@@ -470,6 +493,7 @@ export async function executeGovernedRoleSdk(options) {
 
 export async function executeGovernedRoleStreaming(options) {
   const baseDir = resolve(options.baseDir), projectDir = resolve(options.projectDir);
+  bindTaskCapsuleToExecution({ taskCapsule: options.taskCapsule, expectedTaskCapsuleFingerprint: options.taskCapsuleFingerprint, role: options.role, required: options.requireTaskCapsule === true });
   const { manifest, contracts } = loadAgentContracts({ baseDir });
   const loaded = options.profile ? { profile: options.profile, source: options.bindingSource || `profiles/${options.profile.name}.json` } : loadBindingProfile(options.profileName, { profilesDir: resolve(baseDir, 'profiles'), manifest });
   validateProfileCompleteness(loaded.profile, manifest);

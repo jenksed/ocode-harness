@@ -81,10 +81,13 @@ copyFileSync(join(harnessRuntimeDir, 'package.json'), join(testSourceHarnessRunt
 copyFileSync(join(harnessRuntimeDir, 'lib', 'identity.mjs'), join(testSourceHarnessRuntimeDir, 'lib', 'identity.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'lib', 'lifecycle.mjs'), join(testSourceHarnessRuntimeDir, 'lib', 'lifecycle.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'lib', 'ledger.mjs'), join(testSourceHarnessRuntimeDir, 'lib', 'ledger.mjs'));
+copyFileSync(join(harnessRuntimeDir, 'lib', 'model-telemetry.mjs'), join(testSourceHarnessRuntimeDir, 'lib', 'model-telemetry.mjs'));
+for (const lib of ['command-admission.mjs', 'deterministic-staging.mjs', 'task-capsule.mjs', 'model-qualification.mjs', 'behavioral-adapters.mjs', 'capability-resolution.mjs', 'tool-loop-control.mjs']) copyFileSync(join(harnessRuntimeDir, 'lib', lib), join(testSourceHarnessRuntimeDir, 'lib', lib));
 copyFileSync(join(harnessRuntimeDir, 'lib', 'evidence.mjs'), join(testSourceHarnessRuntimeDir, 'lib', 'evidence.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'lib', 'composition.mjs'), join(testSourceHarnessRuntimeDir, 'lib', 'composition.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'lib', 'closeout.mjs'), join(testSourceHarnessRuntimeDir, 'lib', 'closeout.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'lib', 'verify.mjs'), join(testSourceHarnessRuntimeDir, 'lib', 'verify.mjs'));
+copyFileSync(join(harnessRuntimeDir, 'lib', 'activity.mjs'), join(testSourceHarnessRuntimeDir, 'lib', 'activity.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'lib', 'governance.mjs'), join(testSourceHarnessRuntimeDir, 'lib', 'governance.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'lib', 'permission-projection.mjs'), join(testSourceHarnessRuntimeDir, 'lib', 'permission-projection.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'lib', 'admission.mjs'), join(testSourceHarnessRuntimeDir, 'lib', 'admission.mjs'));
@@ -147,10 +150,12 @@ copyFileSync(join(testSourceHarnessRuntimeDir, 'package.json'), join(testHarness
 copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'identity.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'identity.mjs'));
 copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'lifecycle.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'lifecycle.mjs'));
 copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'ledger.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'ledger.mjs'));
+copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'model-telemetry.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'model-telemetry.mjs'));
 copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'evidence.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'evidence.mjs'));
 copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'composition.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'composition.mjs'));
 copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'closeout.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'closeout.mjs'));
 copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'verify.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'verify.mjs'));
+copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'activity.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'activity.mjs'));
 copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'governance.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'governance.mjs'));
 copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'permission-projection.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'permission-projection.mjs'));
 copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'admission.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'admission.mjs'));

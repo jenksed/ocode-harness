@@ -62,7 +62,7 @@ assert.equal(full.operations.stage.state, DENY);
 assert.equal(full.operations.commit.state, DENY);
 assert.equal(full.operations.push.state, DENY);
 assert.equal(full.operations.web.state, ALLOW);
-assert.equal(full.not_projected.command_execute, DENY);
+assert.equal(full.not_projected.command_execute, NOT_PROJECTED);
 
 const unknown = projectPermissions({ edit: 'ask', bash: { 'git status': 'allow' } });
 assert.equal(unknown.operations.edit.state, ASK);
@@ -106,8 +106,9 @@ assert.equal(irrelevantUnknown.decision, ADMISSION_DECISIONS.ALLOW);
 assert.equal(irrelevantUnknown.permission_evaluation.status, EVALUATION_STATES.PASS);
 
 const commandAsk = decide('coder', ['command.execute'], {}, { ...coder, permissions: { ...coder.permissions, bash: { '*': 'ask' } } });
-assert.equal(commandAsk.decision, ADMISSION_DECISIONS.ALLOW);
-assert.equal(commandAsk.permission_evaluation.projection.not_projected.command_execute, ASK);
+assert.equal(commandAsk.decision, ADMISSION_DECISIONS.DENY);
+assert.ok(commandAsk.reason_codes.includes(ADMISSION_REASON_CODES.PERMISSION_NOT_PROJECTED));
+assert.equal(commandAsk.permission_evaluation.projection.not_projected.command_execute, NOT_PROJECTED);
 
 const reviewer = contracts.get('reviewer');
 const mutationPermissions = {
@@ -139,5 +140,5 @@ console.log(JSON.stringify({
   status: 'PERMISSION_PROJECTION_TESTS_PROVEN',
   operations: PERMISSION_OPERATIONS,
   states: [ALLOW, ASK, DENY, UNKNOWN, NOT_PROJECTED],
-  generic_command_execute: 'ASK_BACKED_WHEN_CONFIGURED',
+  generic_command_execute: 'NOT_PROJECTED_DENY',
 }));

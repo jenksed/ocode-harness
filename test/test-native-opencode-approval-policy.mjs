@@ -11,6 +11,29 @@ const { contracts } = loadAgentContracts({ baseDir: root });
 const orchestrator = contracts.get('orchestrator');
 const coder = contracts.get('coder');
 
+const readOnlyCommands = [
+  'ls -la',
+  'pwd',
+  'rg activity packages',
+  'grep -R activity packages',
+  'git status --short',
+  'git diff --check',
+  'git log --oneline -1',
+  'git show HEAD',
+  'git rev-parse --show-toplevel',
+  'git worktree list --porcelain',
+  'git branch --show-current',
+  'git branch --list feature/*',
+  'git branch -a',
+  'git branch -r',
+];
+
+for (const [role, contract] of contracts) {
+  for (const command of readOnlyCommands) {
+    assert.equal(projectBashCommand(contract.permissions.bash, command).state, 'ALLOW', `${role}: ${command}`);
+  }
+}
+
 assert.equal(projectBashCommand(orchestrator.permissions.bash, 'uname -a').state, 'ASK');
 assert.equal(projectBashCommand(orchestrator.permissions.bash, 'npm test').state, 'ASK');
 assert.equal(projectBashCommand(orchestrator.permissions.bash, 'git add test.txt').state, 'ASK');
@@ -18,6 +41,7 @@ for (const command of ['git push origin main', 'git reset --hard', 'git clean -f
   assert.equal(projectBashCommand(orchestrator.permissions.bash, command).state, 'DENY', command);
 }
 assert.equal(projectBashCommand(coder.permissions.bash, 'git add test.txt').state, 'DENY');
+assert.notEqual(projectBashCommand(orchestrator.permissions.bash, 'git branch -D stale').state, 'ALLOW');
 
 const orchestratorSource = readFileSync(resolve(root, 'agents/orchestrator.md'), 'utf8');
 const coderSource = readFileSync(resolve(root, 'agents/coder.md'), 'utf8');

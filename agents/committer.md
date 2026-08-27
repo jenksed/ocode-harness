@@ -15,13 +15,30 @@ permission:
     "*": deny
   bash:
     "*": deny
+    "ls": allow
+    "ls *": allow
+    "pwd": allow
+    "rg": allow
+    "rg *": allow
+    "grep": allow
+    "grep *": allow
     "git status": allow
     "git status *": allow
     "git diff": allow
     "git diff *": allow
     "git log": allow
     "git log *": allow
+    "git show": allow
     "git show *": allow
+    "git rev-parse": allow
+    "git rev-parse *": allow
+    "git worktree list": allow
+    "git worktree list *": allow
+    "git branch --show-current": allow
+    "git branch --list": allow
+    "git branch --list *": allow
+    "git branch -a": allow
+    "git branch -r": allow
 ---
 
 You are the committer - a cheap, abundant model for semantic closeout preparation.

@@ -1,308 +1,218 @@
-# Installation
+# Installation and runtime maintenance
 
 ## Prerequisites
 
-Before installing ocode-harness, ensure you have:
-
-- **Node.js**: v18 or higher
-  ```bash
-  node --version
-  ```
-- **opencode**: Latest version
-  ```bash
-  opencode --version
-  ```
-- **git**: v2.20 or higher
-  ```bash
-  git --version
-  ```
-
-## Installation
-
-### Step 1: Clone the Repository
+The currently qualified runtime contract expects:
 
 ```bash
-git clone https://github.com/yourusername/ocode-harness.git
+node --version
+opencode --version
+git --version
+```
+
+Use Node.js 18+ and OpenCode `1.18.21`. The repository pins `@opencode-ai/sdk` to the same OpenCode generation.
+
+## Install from a checkout
+
+```bash
+git clone https://github.com/jenksed/ocode-harness.git
 cd ocode-harness
-```
-
-### Step 2: Run the Installer
-
-```bash
-node installer/install.mjs
-```
-
-The installer will:
-
-1. **Preflight Checks**: Verify Node.js, opencode, and git are installed
-2. **Backup Management**: Create a timestamped backup of your existing opencode configuration (if any)
-3. **Install Runtime**: Copy the orientation package and 8 agent definitions to:
-   - `~/.local/share/ocode-harness/orientation/`
-   - `~/.config/opencode/agents/`
-4. **Install Binaries**: Create orient and ocode wrappers in `~/.local/bin/`
-5. **Patch Configuration**: Merge source configuration with your existing config (preserving unrelated user settings)
-6. **Configure Git**: Set up .git/info/exclude to ignore orientation artifacts
-7. **Validate Installation**: Verify all components are installed correctly
-
-### Step 3: Add to PATH (If Needed)
-
-The installer adds `~/.local/bin` to your PATH during installation. If you need to manually add it:
-
-**Zsh (macOS/Linux):**
-```bash
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
-source ~/.zshrc
-```
-
-**Bash (Linux):**
-```bash
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
-```
-
-**PowerShell (Windows):**
-```powershell
-$env:Path += ";$env:USERPROFILE\.local\bin"
-```
-
-### Step 4: Verify Installation
-
-```bash
-code-harness doctor
-```
-
-This will check:
-- opencode availability and version
-- Node.js availability and version
-- git availability and version
-- Agents directory and 8 agent files
-- Orchestrator configuration (subagent_depth=1)
-- Task allowlist (only harness subagents)
-- orient and ocode binaries
-- Orientation package health
-- Git excludes configuration
-- Environment variables (FREELLMAPI_API_KEY, FREELLMAPI_BASE_URL)
-
-## Configuration
-
-### Environment Variables
-
-Set the following environment variables for FreeLLMAPI:
-
-```bash
-export FREELLMAPI_API_KEY="your-api-key-here"
-export FREELLMAPI_BASE_URL="http://127.0.0.1:3001/v1"
-```
-
-**Note:** The API key is never stored in the repository; it must be set via environment variable.
-
-### opencode Configuration
-
-The installer patches your `~/.config/opencode/opencode.json` with:
-
-- `subagent_depth: 1` - Limits subagent depth to 1
-- Harness-specific model configurations
-- Task allowlist (only harness subagents)
-
-Your existing configuration is preserved and merged with the source configuration.
-
-### Agent Files
-
-Agent definitions are stored in `~/.config/opencode/agents/`:
-
-- `orchestrator.md` - Primary coordinator
-- `planner.md` - Implementation planner
-- `coder.md` - Code implementer
-- `verifier.md` - Independent validator
-- `reviewer.md` - Independent reviewer
-- `researcher.md` - External researcher
-- `judge.md` - Technical disagreement resolver
-- `committer.md` - Read-only semantic closeout preparation agent
-
-## Usage
-
-### Generate Project Orientation
-
-```bash
-cd your-project-directory
-orient .
-```
-
-This creates:
-- `.opencode/orientation.json` - Machine-readable orientation
-- `.opencode/orientation.md` - Human-readable orientation
-
-### Start the Harness
-
-```bash
-ocode
-```
-
-This:
-1. Runs orientation on the current directory
-2. Finds the project root with orientation artifacts
-3. Starts opencode with orientation context
-
-### Run Tests
-
-```bash
-# Run all tests
+npm ci
 npm test
-
-# Run specific test
-node test/test-doctor.mjs
-node test/test-agents.mjs
-node test/test-orientation.mjs
-node test/test-secrets.mjs
+npm run bootstrap
 ```
 
-## Backup & Rollback
+`npm run bootstrap` deliberately fails before promotion when runtime dependencies are missing. It does not create a partially healthy installation and ask the operator to discover the missing SDK later.
 
-### Create a Backup
+The installer stages a candidate and promotes it into:
+
+```text
+~/.local/share/ocode-harness
+```
+
+It also installs launchers under:
+
+```text
+~/.local/bin
+```
+
+and managed OpenCode agents under:
+
+```text
+~/.config/opencode/agents
+```
+
+The source checkout and the installed runtime are separate authorities. Editing the checkout does not alter the installed runtime.
+
+## Verify the installed release
 
 ```bash
-code-harness backup create
+ocode version
 ```
 
-### List Backups
+For machine-readable output:
 
 ```bash
-code-harness backup list
+ocode version --json
 ```
 
-### Restore a Backup
+A promotion carries `RELEASE.json` containing the semantic version plus full source commit SHA, source ref when available, and source dirty state. `ocode version` shows both installed and checkout identity.
+
+A clean Git checkout has exact identity. A dirty Git checkout cannot be promoted because the recorded commit would not identify the bytes being installed. Non-Git sources remain usable for legacy/test fixtures but are reported as non-exact.
+
+## Start Ocode
 
 ```bash
-code-harness backup restore 0  # Restore the most recent backup
+cd /path/to/project
+ocode .
 ```
 
-### Delete a Backup
+Optional one-run profile selection:
 
 ```bash
-code-harness backup delete 1  # Delete backup at index 1
+ocode --profile free .
+ocode --profile hybrid .
 ```
+
+The override does not persist.
+
+## Inspect configuration and governance
+
+```bash
+ocode profile
+ocode profile explain reviewer
+ocode profile diff free hybrid
+ocode govern explain coder
+ocode govern audit
+ocode agents
+ocode activity
+```
+
+Machine-level Ocode configuration lives at:
+
+```text
+~/.config/ocode/config.json
+```
+
+Typical configuration:
+
+```json
+{
+  "profile": "hybrid",
+  "freellmapi": {
+    "base_url": "http://127.0.0.1:3001/v1"
+  },
+  "closeout": {
+    "push": false
+  }
+}
+```
+
+Secrets are not written there. Provider credentials remain in the appropriate environment/OpenCode credential store.
+
+## Health and validation
+
+From the repository checkout:
+
+```bash
+npm run doctor
+npm test
+```
+
+`npm test` is the current broad deterministic validation surface. Milestone-named `acceptance:*` commands are retained for historical/regression investigation rather than normal operation.
+
+## Promote an updated checkout
+
+Develop and test in the source checkout, then commit the intended source state. Promotion from a dirty Git checkout is refused.
+
+```bash
+npm test
+ocode version
+ocode update
+ocode version
+```
+
+`ocode update` compares semantic version and exact source SHA. A different commit is promotable even when `VERSION` is unchanged.
+
+The update flow is:
+
+```text
+source checkout
+  -> inspect clean source identity
+  -> stage candidate
+  -> write release identity
+  -> validate candidate
+  -> backup installed release
+  -> promote
+  -> refresh launchers/agents/config
+  -> post-promotion validation
+```
+
+Failure before the promotion step leaves the installed runtime untouched. Failure after promotion attempts rollback from the newly created backup.
+
+## Roll back
+
+```bash
+ocode rollback
+ocode version
+```
+
+Rollback restores the newest installation backup and consumes that backup so another rollback can move to the previous one.
+
+A backup created before release-identity support may restore successfully without a source SHA. `ocode version` reports that state as legacy/non-exact rather than pretending to know its commit.
+
+## Launcher surface
+
+`ocode` is the normal operator entrypoint. The installed launcher routes these maintenance commands to the existing deterministic maintenance runtime:
+
+```text
+ocode version
+ocode update
+ocode rollback
+```
+
+Other `ocode` commands go to the interactive Ocode runtime.
+
+The `harness` launcher remains for internal/compatibility commands such as deterministic ledger, lifecycle, evidence, closeout, and verify operations. Normal operators should not need it for installation maintenance.
 
 ## Troubleshooting
 
-### Installation Fails
+If bootstrap reports missing runtime dependencies:
 
-If the installer fails:
+```bash
+npm ci
+npm run bootstrap
+```
 
-1. **Check Prerequisites**:
-   ```bash
-   node --version
-   opencode --version
-   git --version
-   ```
+If OpenCode is missing or has the wrong version:
 
-2. **Verify PATH**:
-   ```bash
-   which node opencode git
-   ```
+```bash
+which opencode
+opencode --version
+```
 
-3. **Run Doctor**:
-   ```bash
-   code-harness doctor
-   ```
+If the installed launcher is not found:
 
-### orient/ocode Not Found
+```bash
+ls -l ~/.local/bin/ocode
+echo "$PATH"
+```
 
-If orient or ocode is not in PATH:
+If promotion is refused because the source is dirty:
 
-1. **Verify Installation**:
-   ```bash
-   ls ~/.local/bin/orient
-   ls ~/.local/bin/ocode
-   ```
+```bash
+git status --short
+git diff
+git diff --staged
+```
 
-2. **Check PATH**:
-   ```bash
-   echo $PATH | grep local/bin
-   ```
+Commit, stash, or discard the intended changes before promotion. Do not bypass the check merely to make the SHA look clean.
 
-3. **Manually Add to PATH** (see Step 3 above)
+If runtime behavior or configuration is unclear:
 
-### Environment Variables Not Set
-
-1. **Check Variables**:
-   ```bash
-   echo $FREELLMAPI_API_KEY
-   echo $FREELLMAPI_BASE_URL
-   ```
-
-2. **Set Variables**:
-   ```bash
-   export FREELLMAPI_API_KEY="your-key"
-   export FREELLMAPI_BASE_URL="http://127.0.0.1:3001/v1"
-   ```
-
-3. **Make Permanent** (add to shell config):
-   ```bash
-   echo 'export FREELLMAPI_API_KEY="your-key"' >> ~/.zshrc
-   echo 'export FREELLMAPI_BASE_URL="http://127.0.0.1:3001/v1"' >> ~/.zshrc
-   source ~/.zshrc
-   ```
-
-### Git Excludes Not Configured
-
-If git excludes are missing:
-
-1. **Check .git/info/exclude**:
-   ```bash
-   cat .git/info/exclude
-   ```
-
-2. **Manually Configure**:
-   ```bash
-   echo -e '.opencode/orientation.json\n.opencode/orientation.md\n# Do not track orientation artifacts' >> .git/info/exclude
-   ```
-
-## Uninstallation
-
-To remove ocode-harness:
-
-1. **Restore Backup** (if you have one):
-   ```bash
-   code-harness backup restore 0
-   ```
-
-2. **Remove Files**:
-   ```bash
-   rm -rf ~/.local/share/ocode-harness
-   rm -rf ~/.config/opencode/agents
-   rm ~/.local/bin/orient
-   rm ~/.local/bin/ocode
-   rm ~/.config/opencode/opencode.json
-   ```
-
-3. **Remove from PATH** (edit your shell config and remove the PATH export)
-
-4. **Verify Removal**:
-   ```bash
-   which orient ocode
-   # Should not return anything
-   ```
-
-## Next Steps
-
-1. **Read Documentation**:
-   - [Architecture](architecture.md) - Understand the system design
-   - [Profiles](profiles.md) - Learn about configuration profiles
-   - [Doctor](doctor.md) - Learn about health checks
-   - [Security](security.md) - Understand security model
-
-2. **Generate Orientation**:
-   ```bash
-   cd your-project
-   orient .
-   ```
-
-3. **Start Harness**:
-   ```bash
-   ocode
-   ```
-
-4. **Run Doctor**:
-   ```bash
-   code-harness doctor
-   ```
+```bash
+npm run doctor
+ocode profile
+ocode govern audit
+ocode version
+```

@@ -1,330 +1,234 @@
 # ocode-harness v0.1
 
-A portable, deterministic harness for orchestrating AI-powered coding agents with a human-facing engineering coordinator and 8 specialized subagents.
+Ocode is a deterministic harness around OpenCode for governed coding-agent work. It keeps model routing, agent responsibility, execution permission, evidence, review, and release promotion separate enough that one mechanism does not silently become authority for another.
 
-## Overview
+## Start here
 
-ocode-harness provides a structured workflow for engineering work, ensuring evidence-backed results through a multi-agent system:
+Prerequisites:
 
-- **Orchestrator**: Human-facing engineering coordinator
-- **Planner**: Plans non-trivial implementation work
-- **Coder**: Implements bounded repository changes
-- **Researcher**: Researches current external documentation and APIs
-- **Verifier**: Independently executes repository validation
-- **Reviewer**: Independent read-only review of changes
-- **Judge**: Scarce independent second opinion for technical disagreement
-- **Committer**: Prepares semantic closeout data; deterministic runtime owns Git mutation
+- Node.js 18+
+- Git
+- OpenCode `1.18.21` for the currently qualified runtime contract
 
-## Features
-
-- ✅ **Deterministic Workflow**: Evidence-backed results through multiple agents
-- ✅ **Portable Installation**: Single-command installer with backup/rollback
-- ✅ **Security First**: No secrets in repository, environment variable-based configuration
-- ✅ **Comprehensive Testing**: Isolated tests, agent validation, secret detection
-- ✅ **Health Checks**: Doctor command for comprehensive installation verification
-- ✅ **Git Integration**: Automatic orientation generation and git excludes
-- ✅ **Backup Management**: Timestamped backups with rollback capability
-
-## Installation
-
-### Prerequisites
-
-- Node.js v18 or higher
-- opencode (latest version)
-- git v2.20 or higher
-
-### Quick Install
+From a clean checkout:
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/ocode-harness.git
-cd ocode-harness
-
-# Run the installer
-node installer/install.mjs
+npm ci
+npm test
+npm run bootstrap
+ocode version
 ```
 
-### Add to PATH (If Needed)
-
-**Zsh (macOS/Linux):**
-```bash
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.zshrc
-source ~/.zshrc
-```
-
-**Bash (Linux):**
-```bash
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
-```
-
-### Verify Installation
+Normal use:
 
 ```bash
-code-harness doctor
+cd /path/to/project
+ocode .
 ```
 
-## Usage
+The installed runtime lives under `~/.local/share/ocode-harness`. Editing this checkout does not mutate that installed runtime. Promotion is explicit.
 
-### Generate Project Orientation
+## Stable operator surface
+
+Use `ocode` for normal operation and release maintenance:
 
 ```bash
-cd your-project-directory
-orient .
+ocode .                         # run Ocode in the current project
+ocode --profile free .          # one-run profile override
+ocode profile                   # show effective role bindings
+ocode profile explain reviewer
+ocode profile diff free hybrid
+ocode agents                    # current work/agent view
+ocode activity                  # current activity view
+ocode govern explain coder      # capability/authority/permission projection
+ocode govern audit
+ocode version                   # installed + checkout version/SHA/ref/dirty state
+ocode update                    # promote this checkout into the isolated runtime
+ocode rollback                  # restore the newest installation backup
 ```
 
-This creates:
-- `.opencode/orientation.json` - Machine-readable orientation
-- `.opencode/orientation.md` - Human-readable orientation
+`harness` remains installed for deterministic/internal compatibility commands such as ledger, lifecycle, closeout, evidence, and verify. It is not the normal operator entrypoint.
 
-### Start the Harness
+Health and repository validation are development commands:
 
 ```bash
-ocode
-ocode --profile free
-ocode --profile hybrid
+npm run doctor
+npm test
 ```
 
-This runs orientation, resolves the machine default or per-launch override, validates every governed binding, and starts OpenCode with the Design C runtime overlay. Overrides never persist.
+Milestone-named `acceptance:*` scripts remain for historical/regression evidence. They are not the normal current validation surface; use `npm test` unless you are investigating the milestone contract itself.
 
-Inspect execution policy without inference:
+## Release identity and development isolation
+
+`VERSION` is the semantic product version. It is not sufficient to identify executable code.
+
+Every promotion now writes `RELEASE.json` into the installed release with:
+
+- semantic version;
+- full source commit SHA when the source is a Git checkout;
+- source branch/ref when available;
+- source dirty state.
+
+`ocode version` compares the installed identity with the checkout identity. Two commits carrying the same semantic version are therefore distinguishable.
+
+A dirty Git checkout is not promotable: its commit SHA would not identify the bytes being installed. Commit or stash changes first. A non-Git source remains supported for legacy/test fixtures, but its exact source identity is reported as unavailable rather than invented.
+
+`ocode update` stages a candidate, validates it, backs up the currently installed runtime, promotes the candidate, and runs post-promotion checks. A failure before promotion no longer consumes a backup or rolls back an otherwise healthy installation. A failure after promotion attempts rollback.
+
+## Architecture in one page
+
+The main concepts answer different questions:
+
+| Concept | Question | Primary authority |
+| --- | --- | --- |
+| Agent | Who is responsible? | `agents/manifest.json` + canonical agent file |
+| Skill | What reusable method is used? | `skills/` |
+| Capability | What is the actor equipped to do? | `agents/manifest.json` |
+| Authority | What decisions may the actor make? | `agents/manifest.json` |
+| Execution permission | Is this operation allowed, approval-required, or denied? | canonical agent OpenCode permission frontmatter + native OpenCode runtime |
+| Model routing | What inference resource executes the role? | `profiles/*.json` selected by machine config or explicit override |
+| Evidence | What actually happened? | runtime evidence/ledger/activity records |
+| Review | Was the result independently accepted? | reviewer workflow, separate from implementation |
+| Release identity | What immutable source is installed? | staged `RELEASE.json` owned by deployment |
+
+Capability is not authority. Permission is not authority. Evidence is not judgment. Implementation is not independent acceptance.
+
+## Approval model
+
+Ocode uses OpenCode native permission UI as the single interactive approval owner for governed Bash execution. The old duplicate approval mechanisms (`request_effect`, `ocode effect`, custom `Allow once?` prompts, separate approval ledger, duplicate argv execution) are retired architecture.
+
+Bounded repository inspection is explicitly frictionless for governed roles, including appropriate forms of:
+
+```text
+pwd
+ls
+rg
+grep
+git status
+git diff
+git log
+git show
+git rev-parse
+```
+
+Consequential operations remain `ASK` where the role is allowed to request them. Structural denials remain `DENY`; they do not become approvable merely to reduce friction.
+
+The OpenCode `1.18.21` permission characterization in `docs/architecture/opencode-1.18.21-permission-contract.md` is intentionally conservative. Do not infer unqualified runtime precedence from the deterministic permission projector.
+
+## Agent topology
+
+The manifest currently governs nine roles:
+
+- `orchestrator` — human-facing coordinator and primary approval-routing owner;
+- `planner` — implementation planning;
+- `coder` — bounded implementation;
+- `wayfinder` — structured uncertainty/repository-navigation work;
+- `researcher` — external/current research;
+- `verifier` — independent validation evidence;
+- `reviewer` — independent read-only review/acceptance judgment;
+- `judge` — scarce independent second opinion;
+- `committer` — semantic closeout preparation; deterministic runtime owns Git mutation.
+
+A role exists because it currently has a governed contract, not because role count is a target. Reusable procedures belong in skills; independent review must not collapse into implementation.
+
+## Model and provider routing
+
+Canonical agents do not embed provider/model policy. Profiles bind roles to model resources:
 
 ```bash
 ocode profile
-ocode profile explain reviewer
 ocode profile diff free hybrid
-ocode explain --run <run-id>
-ocode govern explain <role>
-ocode govern check coder --requires implementation.change,repository.edit --edit
-ocode govern audit
 ```
 
-Canonical agents are provider-neutral. `agents/manifest.json` owns the structured role inventory; `profiles/*.json` owns model policy. Binding failures deny execution and there is no silent cross-provider fallback.
+Machine default:
 
-`ocode govern` is a local, deterministic view of the production governance engine. `explain` renders the canonical contract, authority, configured-permission projection, and baseline admission. `check` simulates only explicit capabilities and the established mutation flags; it never creates a TaskSpec or grants authority. `audit` is manifest-derived and read-only. Configured permission is evidence, not observed effective runtime permission.
+```text
+~/.config/ocode/config.json
+```
 
-### Run Tests
+Example:
+
+```json
+{
+  "profile": "hybrid",
+  "freellmapi": {
+    "base_url": "http://127.0.0.1:3001/v1"
+  },
+  "closeout": {
+    "push": false
+  }
+}
+```
+
+An explicit `--profile` is a per-invocation override and does not persist.
+
+## Customization boundaries
+
+Common changes should stay out of runtime internals:
+
+- model/provider selection: `profiles/*.json` and machine config;
+- FreeLLMAPI endpoint: `~/.config/ocode/config.json`;
+- agent capability/authority: `agents/manifest.json`;
+- native execution permission: canonical `agents/*.md` frontmatter;
+- reusable methods: `skills/`;
+- project-specific behavior/context: project `.opencode/` artifacts/config supported by OpenCode/Ocode.
+
+When changing permission policy, preserve the distinction between configured projection and observed OpenCode runtime behavior. When changing authority, edit the authority owner rather than using permission as a proxy.
+
+## Qualification and evidence
+
+Qualification preserves the following order:
+
+```text
+controlled context
+  -> method execution
+  -> immutable execution evidence
+  -> acceptance evaluation
+```
+
+Execution evidence is not an agent report. Report-generation failure must not erase already captured execution evidence.
+
+Activity/work-view state should remain a projection of authoritative execution/work events. Presentation is an observer, not an execution authority.
+
+## Development workflow
 
 ```bash
-# Run all tests
+npm ci
 npm test
-
-# Run specific tests
-node test/test-doctor.mjs
-node test/test-agents.mjs
-node test/test-orientation.mjs
-node test/test-secrets.mjs
-node test/test-installer.mjs
+npm run doctor
 ```
 
-## Configuration
+Focused checks remain available through `test:*` scripts. Historical milestone acceptance commands remain in `package.json` while their evidence is still useful; they should not be treated as permanent product UX.
 
-### Environment Variables
-
-Set the following environment variables:
+To promote a tested clean checkout:
 
 ```bash
-export FREELLMAPI_API_KEY="your-api-key-here"
-export FREELLMAPI_BASE_URL="http://127.0.0.1:3001/v1"
+ocode version
+ocode update
+ocode version
 ```
 
-### Backup & Rollback
+To restore the most recent installed backup:
 
 ```bash
-# Create a backup
-code-harness backup create
-
-# List backups
-code-harness backup list
-
-# Restore a backup
-code-harness backup restore 0
-
-# Delete a backup
-code-harness backup delete 1
+ocode rollback
+ocode version
 ```
 
-## Documentation
+## Repository map
 
-- [Architecture](docs/architecture.md) - System design and component relationships
-- [Governance contracts](docs/architecture/governance-contracts.md) - M4A capability, authority, permission, identity, governance, and admission language
-- [Installation](docs/installation.md) - Detailed installation and troubleshooting guide
-- [Profiles](docs/profiles.md) - Configuration profiles and customization
-- [Doctor](docs/doctor.md) - Health checks and troubleshooting
-- [Security](docs/security.md) - Security model and best practices
-
-## Testing
-
-### Test Suite
-
-The test suite includes:
-
-- **test-installer.mjs**: Tests installer against isolated temp HOME
-- **test-doctor.mjs**: Tests doctor command health checks
-- **test-agents.mjs**: Validates 8 agents exist with correct contracts
-- **test-orientation.mjs**: Runs orientation's existing tests
-- **test-secrets.mjs**: Verifies no credentials in committed files
-
-### Running Tests
-
-```bash
-# Run all tests
-npm test
-
-# Run specific test
-node test/test-doctor.mjs
+```text
+agents/                       governed role inventory + canonical OpenCode agent files
+profiles/                     provider-neutral role binding policy
+skills/                       reusable methods and qualification material
+opencode-config/              Ocode-owned OpenCode configuration projection
+packages/harness-runtime/     execution, governance, evidence, deployment, CLI runtime
+packages/orientation/         project orientation
+installer/                    staged bootstrap/promotion
+scripts/                      development, qualification, historical acceptance helpers
+test/                         deterministic behavioral tests
+docs/                         current architecture + retained historical evidence
+VERSION                       semantic version only
 ```
 
-## Project Structure
-
-```
-ocode-harness/
-├── agents/                          # 8 agent definitions
-│   ├── orchestrator.md
-│   ├── planner.md
-│   ├── coder.md
-│   ├── verifier.md
-│   ├── reviewer.md
-│   ├── researcher.md
-│   ├── judge.md
-│   └── committer.md
-├── packages/
-│   └── orientation/                 # Orientation package
-│       ├── lib/
-│       │   ├── orientation.mjs
-│       │   ├── probe.mjs
-│       │   └── render.mjs
-│       ├── bin/
-│       │   └── orient.mjs
-│       ├── test/
-│       │   └── orient.test.mjs
-│       ├── package.json
-│       └── README.md
-├── bin/
-│   ├── orient                       # orient wrapper
-│   └── ocode                        # ocode wrapper
-├── installer/
-│   └── install.mjs                  # Deterministic installer
-├── profiles/                        # Ocode role-binding schema and M3 policy location
-│   ├── README.md
-│   └── schema.json
-├── skills/                          # (empty for v0.1)
-├── test/                            # Automated tests
-│   ├── test-installer.mjs
-│   ├── test-doctor.mjs
-│   ├── test-agents.mjs
-│   ├── test-orientation.mjs
-│   └── test-secrets.mjs
-├── scripts/                         # Utility scripts
-│   ├── doctor.mjs                   # doctor command
-│   └── backup.mjs                   # backup/rollback utilities
-├── docs/                            # Documentation
-│   ├── architecture.md
-│   ├── architecture/opencode-integration-contract.md
-│   ├── installation.md
-│   ├── profiles.md
-│   ├── doctor.md
-│   └── security.md
-├── README.md
-├── package.json
-└── VERSION
-```
-
-## Workflow
-
-### QUICK Work (Localized, Low-Risk)
-
-1. Orchestrator classifies as QUICK
-2. Orchestrator → Coder
-3. Coder implements change
-4. Orchestrator → Reviewer
-5. Reviewer accepts/rejects
-6. (Optional) Orchestrator → Committer
-7. Orchestrator returns result
-
-### STANDARD Work (Normal Feature Work)
-
-1. Orchestrator classifies as STANDARD
-2. (Optional) Orchestrator → Planner
-3. Orchestrator → Coder
-4. Orchestrator → Verifier (produces validationEvidence)
-5. Orchestrator → Reviewer
-6. (Optional) Orchestrator → Committer
-7. Orchestrator returns result
-
-### DEEP Work (Architecture, External Dependencies)
-
-1. Orchestrator classifies as DEEP
-2. (Optional) Orchestrator → Researcher
-3. (Optional) Orchestrator → Planner
-4. Orchestrator → Coder
-5. Orchestrator → Verifier (produces validationEvidence)
-6. Orchestrator → Reviewer
-7. (Optional) Orchestrator → Committer
-8. (Optional) Orchestrator → Judge
-9. Orchestrator returns result
-
-## Validation Evidence
-
-For STANDARD and DEEP workflows, the verifier produces **validation evidence** — an object containing:
-- `status`: `'PASS'` or `'FAIL'`
-- `commands`: Array of validation command objects with `command`, `exit_code`, `output`, `duration_ms`
-
-The closeout gates require `validationEvidence.status === 'PASS'` for STANDARD/DEEP workflows. QUICK workflows do not require validation evidence. This replaces the legacy `verifierResult === 'PASS'` gate with a deterministic, evidence-based approach.
-
-## Security
-
-### Secrets Management
-
-- All secrets use environment variables
-- Never commit secrets to the repository
-- Use `{env:VARIABLE_NAME}` pattern for API keys
-- Use `${env:VAR:default}` pattern for base URLs
-
-### Permission System
-
-Each agent has a defined permission set that controls what actions it can perform. The orchestrator denies generic Task invocations and only allows harness subagents.
-
-Each manifest-governed role also has a versioned semantic capability declaration. Capabilities describe what work a role is equipped to perform; they do not grant constitutional authority. OpenCode permission remains a separate runtime constraint. See [Governance contracts](docs/architecture/governance-contracts.md).
-
-### Git Excludes
-
-Orientation artifacts are excluded from version control to prevent them from being committed.
-
-## Version 0.1 Scope
-
-This initial release includes:
-
-- ✅ 8 agent definitions with complete permissions
-- ✅ Orientation package with full probe/render functionality
-- ✅ Deterministic installer with backup/rollback
-- ✅ Doctor command for health checks
-- ✅ Backup management utilities
-- ✅ Comprehensive test suite
-- ✅ Security-focused architecture
-- ✅ Portable, isolated testing
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Write tests for your changes
-4. Run the test suite
-5. Submit a pull request
-
-## License
-
-MIT
-
-## Support
-
-For issues and questions, please open an issue on GitHub.
-
-## Roadmap
-
-- [ ] Skills system integration
-- [ ] Multi-project orientation support
-- [ ] Performance optimizations
-- [ ] Additional agent types
-- [ ] Web interface
-- [ ] CI/CD integration
+See `docs/installation.md` for installation details and `docs/architecture/` for the authority, approval, OpenCode, qualification, and runtime contracts.

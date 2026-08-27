@@ -10,5 +10,8 @@
   },
   "scripts": {
     "test": "node ../../test/test-ledger.mjs && node ../../test/test-lifecycle.mjs && node ../../test/test-evidence.mjs && node ../../test/test-closeout.mjs && node ../../test/test-verify.mjs && node ../../test/test-activity.mjs && node ../../test/test-work-view.mjs && node ../../test/test-interactive-activity.mjs && node ../../test/test-opencode-integration.mjs && node ../../test/test-opencode-sdk-execution.mjs && node ../../test/test-governance-contracts.mjs && node ../../test/test-admission.mjs && node ../../test/test-permission-governance.mjs && node ../../test/test-subject-reconciliation.mjs"
+  },
+  "dependencies": {
+    "@opencode-ai/sdk": "1.18.21"
   }
 }

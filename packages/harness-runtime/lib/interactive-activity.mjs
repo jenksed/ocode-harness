@@ -49,8 +49,9 @@ export function createInteractiveActivityCapture({ projectDir, activity }) {
   const contexts = new Map();
   const projectors = new Map();
   const pendingDelegations = new Map();
+  const taskDelegations = new Map();
   const unboundChildren = new Map();
-  const terminalSessions = new Set();
+  const terminalSessions = new Map();
   let rootSessionID = null;
   let rootStarted = false;
 
@@ -91,7 +92,46 @@ export function createInteractiveActivityCapture({ projectDir, activity }) {
     contexts.set(child.id, context);
     projectors.set(child.id, createRuntimeActivityProjector(context));
     startActivityExecution(context);
+    const terminal = terminalSessions.get(child.id);
+    if (terminal) finishChild(child.id, terminal);
     reconcile(child.id);
+  };
+
+  const finishChild = (id, terminal) => {
+    const context = contexts.get(id);
+    if (!context || context === activity || terminal.finished) return;
+    terminal.finished = true;
+    finishActivityExecution(context, {
+      success: terminal.success,
+      session_id: id,
+      failure_classification: terminal.failure_classification,
+    });
+  };
+
+  const removeUnboundChild = (parentID, childID) => {
+    const children = unboundChildren.get(parentID);
+    if (!children) return;
+    const remaining = children.filter((child) => child.id !== childID);
+    if (remaining.length) unboundChildren.set(parentID, remaining);
+    else unboundChildren.delete(parentID);
+  };
+
+  // OpenCode 1.18.21 represents delegation as a native task-tool part, not a
+  // subtask part. The structured state supplies both configured semantic role
+  // and child session identity; prompt/description/output are never inspected.
+  const registerTaskDelegation = (part) => {
+    const input = part?.state?.input;
+    const metadata = part?.state?.metadata;
+    const role = roleFromOpenCodeAgent(input?.subagent_type);
+    const childSessionID = metadata?.sessionId;
+    const parentSessionID = metadata?.parentSessionId ?? part?.sessionID;
+    if (!role || typeof childSessionID !== 'string' || typeof parentSessionID !== 'string' || typeof part?.id !== 'string') return;
+    const delegation = { id: part.id, role, parent_session_id: parentSessionID };
+    taskDelegations.set(childSessionID, delegation);
+    const child = sessions.get(childSessionID);
+    if (!child || child.parentID && child.parentID !== parentSessionID) return;
+    removeUnboundChild(parentSessionID, childSessionID);
+    startChild(child, delegation);
   };
 
   // A subtask part and child session are separate server events. Pair only the
@@ -121,6 +161,11 @@ export function createInteractiveActivityCapture({ projectDir, activity }) {
       return;
     }
     if (!info.parentID) return;
+    const delegation = taskDelegations.get(info.id);
+    if (delegation && delegation.parent_session_id === info.parentID) {
+      startChild(info, delegation);
+      return;
+    }
     queue(unboundChildren, info.parentID, info);
     reconcile(info.parentID);
   };
@@ -141,6 +186,7 @@ export function createInteractiveActivityCapture({ projectDir, activity }) {
     }
     if (event.type === 'message.part.updated') {
       const part = properties(event)?.part;
+      if (part?.type === 'tool' && part.tool === 'task') registerTaskDelegation(part);
       if (part?.type === 'subtask' && typeof part.sessionID === 'string' && typeof part.id === 'string') {
         const role = roleFromOpenCodeAgent(part.agent);
         if (role) {
@@ -153,20 +199,20 @@ export function createInteractiveActivityCapture({ projectDir, activity }) {
     }
     if (event.type === 'session.idle' || event.type === 'session.status' && properties(event)?.status?.type === 'idle') {
       const id = sessionID(event);
-      const context = contexts.get(id);
-      if (context && context !== activity && !terminalSessions.has(id)) {
-        terminalSessions.add(id);
-        finishActivityExecution(context, { success: true, session_id: id });
-      }
+      if (!id) return;
+      const terminal = terminalSessions.get(id) ?? { success: true, failure_classification: null, finished: false };
+      terminalSessions.set(id, terminal);
+      finishChild(id, terminal);
       return;
     }
     if (event.type === 'session.error') {
       const id = sessionID(event);
-      const context = contexts.get(id);
-      if (context && context !== activity && !terminalSessions.has(id)) {
-        terminalSessions.add(id);
-        finishActivityExecution(context, { success: false, session_id: id, failure_classification: errorSummary(event) });
-      }
+      if (!id) return;
+      const terminal = terminalSessions.get(id) ?? { success: false, failure_classification: errorSummary(event), finished: false };
+      terminal.success = false;
+      terminal.failure_classification ??= errorSummary(event);
+      terminalSessions.set(id, terminal);
+      finishChild(id, terminal);
       return;
     }
     projectToSession(event);

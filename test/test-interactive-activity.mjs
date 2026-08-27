@@ -3,7 +3,7 @@ import { EventEmitter } from 'node:events';
 import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import {
   activityStorePath,
   createActivityExecutionContext,
@@ -157,4 +157,65 @@ try {
   }
 } finally {
   rmSync(bridgeProject, { recursive: true, force: true });
+}
+
+const taskToolProject = mkdtempSync(join(tmpdir(), 'ocode-interactive-task-tool-'));
+try {
+  const rootActivity = createActivityExecutionContext({
+    activity_store_path: activityStorePath(taskToolProject), workflow_id: 'interactive-task-tool-workflow', agent_instance_id: 'task-root',
+  }, { projectDir: taskToolProject, role: 'orchestrator' });
+  const capture = createInteractiveActivityCapture({ projectDir: taskToolProject, activity: rootActivity });
+  const event = (type, properties) => ({ type, properties });
+  capture.project(event('session.created', { info: { id: 'root-task-session', directory: taskToolProject } }));
+  capture.project(event('message.part.updated', {
+    part: {
+      id: 'task-tool-part', type: 'tool', tool: 'task', callID: 'task-call', sessionID: 'root-task-session',
+      state: { status: 'running', input: { subagent_type: 'verifier', prompt: 'not authority' }, metadata: { parentSessionId: 'root-task-session', sessionId: 'verifier-task-session' } },
+    },
+  }));
+  capture.project(event('session.created', { info: { id: 'verifier-task-session', parentID: 'root-task-session', directory: taskToolProject } }));
+  capture.project(event('session.idle', { sessionID: 'verifier-task-session' }));
+  // Completion can arrive before a delayed task-tool update; terminal state is
+  // retained and applied once structured role/session correlation arrives.
+  capture.project(event('session.created', { info: { id: 'reviewer-task-session', parentID: 'root-task-session', directory: taskToolProject } }));
+  capture.project(event('session.idle', { sessionID: 'reviewer-task-session' }));
+  capture.project(event('message.part.updated', {
+    part: {
+      id: 'review-task-tool-part', type: 'tool', tool: 'task', callID: 'review-call', sessionID: 'root-task-session',
+      state: { status: 'completed', input: { subagent_type: 'reviewer', prompt: 'not authority' }, metadata: { parentSessionId: 'root-task-session', sessionId: 'reviewer-task-session' } },
+    },
+  }));
+  const activity = queryActivity(activityStorePath(taskToolProject), { workflow_id: 'interactive-task-tool-workflow' });
+  assert.equal(activity.events.some((record) => record.event_type === 'AGENT_STARTED' && record.agent_role === 'verifier'), true);
+  assert.equal(activity.events.some((record) => record.event_type === 'VERIFICATION_COMPLETED'), true);
+  assert.equal(activity.events.some((record) => record.event_type === 'AGENT_COMPLETED' && record.agent_role === 'reviewer'), true);
+  assert.equal(activity.workflow_graph.edges.some((edge) => edge.child_agent_instance_id === 'verifier-task-session' && edge.parent_session_id === 'root-task-session'), true);
+  console.log('✓ Actual OpenCode task-tool delegation fields correlate child sessions without prompt parsing');
+} finally {
+  rmSync(taskToolProject, { recursive: true, force: true });
+}
+
+const followProject = mkdtempSync(join(tmpdir(), 'ocode-follow-before-workflow-'));
+try {
+  mkdirSync(join(followProject, '.opencode'), { recursive: true });
+  const child = spawn(process.execPath, [resolve(root, 'packages/harness-runtime/bin/ocode.mjs'), 'activity', '--follow', '--raw'], {
+    cwd: followProject,
+    env: { ...process.env, OCODE_HARNESS_ROOT: root },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  let stdout = '';
+  child.stdout.on('data', (chunk) => { stdout += chunk; });
+  await new Promise((resolve) => setTimeout(resolve, 650));
+  const { appendActivityEvent, createActivityEvent } = await import('../packages/harness-runtime/lib/activity.mjs');
+  appendActivityEvent(activityStorePath(followProject), createActivityEvent({
+    event_type: 'WORKFLOW_STARTED', workflow_id: 'follow-created-later', agent_role: 'orchestrator', agent_instance_id: 'follow-root',
+    session_id: 'follow-root-session', status: 'STARTED', summary: 'Workflow started by runtime', metadata: {},
+  }));
+  await new Promise((resolve) => setTimeout(resolve, 750));
+  child.kill('SIGINT');
+  await new Promise((resolve) => child.once('close', resolve));
+  assert.match(stdout, /follow-created-later/);
+  console.log('✓ activity --follow started before a workflow discovers later persisted runtime activity');
+} finally {
+  rmSync(followProject, { recursive: true, force: true });
 }

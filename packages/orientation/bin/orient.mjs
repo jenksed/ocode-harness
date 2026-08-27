@@ -21,28 +21,28 @@ try {
   process.exit(1);
 }
 
-// Probe for project root via manifest files
-const { projectRoot: manifestRoot, foundViaManifest } = await probeProjectRoot(dir);
+// A Git worktree is a hard project boundary. Discover it before walking for
+// manifests so a manifest in the worktree's parent cannot claim this project.
+let gitRoot = null;
+try {
+  const { stdout: gitRootOut } = await execFilePromise('git', ['rev-parse', '--show-toplevel'], { cwd: dir, encoding: 'utf8' });
+  gitRoot = gitRootOut.trim() || null;
+} catch (_) {
+  // Not in a Git repository; manifest discovery may walk normally.
+}
+
+// Probe for project root via manifest files, bounded by the Git worktree when
+// one exists.
+const { projectRoot: manifestRoot, foundViaManifest } = await probeProjectRoot(dir, { stopAt: gitRoot });
 
 let orientDir;
 if (foundViaManifest) {
   // Project markers found - use that as project root (regardless of git)
   orientDir = manifestRoot;
 } else {
-  // No project markers - fall back to existing behavior:
-  // Check if inside a git repo and get git root
-  orientDir = dir;
-  try {
-    const { stdout: gitRootOut } = await execFilePromise('git', ['rev-parse', '--show-toplevel'], { cwd: dir, encoding: 'utf8' });
-    const gitRoot = gitRootOut.trim();
-    // If we got a non-empty output, use it as the orientation directory
-    if (gitRoot) {
-      orientDir = gitRoot;
-    }
-  } catch (err) {
-    // Not in a git repo, or git command failed; use dir as-is
-    // orientDir remains dir
-  }
+  // No project markers inside the boundary: use the Git worktree root when
+  // available, otherwise preserve the requested directory.
+  orientDir = gitRoot || dir;
 }
 
 // Run orientation on the determined directory

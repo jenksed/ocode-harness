@@ -268,4 +268,33 @@ describe('Project Orientation v1', () => {
     assert.ok(mdContent.includes('# Project Orientation'));
     assert.ok(mdContent.includes('node test.js'));
   });
+
+  test('does not select a manifest above a Git worktree boundary', async () => {
+    const outerDir = await createTempDir();
+    testDir = outerDir;
+    await writeFile(join(outerDir, 'package.json'), '{"name":"outer-project"}', 'utf8');
+
+    const sourceDir = join(outerDir, 'source');
+    await mkdir(sourceDir, { recursive: true });
+    await git(['init'], sourceDir);
+    await setupGitConfig(sourceDir);
+    await writeFile(join(sourceDir, 'README.md'), '# Source repository', 'utf8');
+    await git(['add', 'README.md'], sourceDir);
+    await git(['commit', '-m', 'initial'], sourceDir);
+
+    const worktreeDir = join(outerDir, 'worktrees', 'child');
+    await git(['worktree', 'add', '-b', 'child', worktreeDir], sourceDir);
+    const { stdout: actualGitRoot } = await git(['rev-parse', '--show-toplevel'], worktreeDir);
+    const canonicalWorktreeDir = await realpath(worktreeDir);
+    assert.strictEqual(actualGitRoot.trim(), canonicalWorktreeDir);
+
+    const { stdout } = await execFilePromise(process.execPath, ['../bin/orient.mjs', worktreeDir], {
+      cwd: resolve(import.meta.dirname),
+      encoding: 'utf8'
+    });
+
+    assert.match(stdout, new RegExp(`Project root:\\s+${canonicalWorktreeDir.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}`));
+    await readFile(join(worktreeDir, '.opencode', 'orientation.json'), 'utf8');
+    await assert.rejects(readFile(join(outerDir, '.opencode', 'orientation.json'), 'utf8'));
+  });
 });

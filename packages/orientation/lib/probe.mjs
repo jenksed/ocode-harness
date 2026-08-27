@@ -1,4 +1,4 @@
-import { stat, readdir, readFile, access } from 'node:fs/promises';
+import { stat, readdir, readFile, access, realpath } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { execFile } from 'node:child_process';
 import util from 'node:util';
@@ -111,11 +111,17 @@ export async function probeGit(dir) {
  * Checks the given directory and walks up parent chain for markers:
  * package.json, go.mod, mix.exs, pyproject.toml, Cargo.toml
  * @param {string} dir - The directory to start probing from.
+ * @param {{stopAt?: string|null}} [options] - Optional inclusive directory at
+ * which to stop walking. This keeps a project discovered inside a Git
+ * worktree from being claimed by an unrelated manifest above that worktree.
  * @returns {Promise<{projectRoot: string|null, foundViaManifest: boolean}>}
  */
-export async function probeProjectRoot(dir) {
+export async function probeProjectRoot(dir, { stopAt = null } = {}) {
   const manifestNames = ['package.json', 'go.mod', 'mix.exs', 'pyproject.toml', 'Cargo.toml'];
-  let currentDir = resolve(dir);
+  // Git may canonicalize a system path (for example macOS /var -> /private/var).
+  // Canonicalize both sides so the worktree boundary comparison remains valid.
+  let currentDir = await realpath(resolve(dir));
+  const boundary = stopAt ? await realpath(resolve(stopAt)) : null;
 
   while (true) {
     for (const name of manifestNames) {
@@ -126,6 +132,13 @@ export async function probeProjectRoot(dir) {
       } catch (_) {
         // File does not exist, continue checking
       }
+    }
+
+    // The boundary is inclusive: inspect its manifests, but never continue
+    // into its parent. Git worktrees commonly live below a directory that
+    // belongs to a different project.
+    if (boundary && currentDir === boundary) {
+      break;
     }
 
     // Get parent directory

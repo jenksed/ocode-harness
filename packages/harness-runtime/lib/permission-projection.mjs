@@ -132,7 +132,10 @@ export function projectPermissions(permissions = {}) {
     schema_version: PERMISSION_PROJECTION_SCHEMA_VERSION,
     operations: Object.fromEntries(PERMISSION_OPERATIONS.map((operation) => [operation, operations[operation]])),
     not_projected: {
-      command_execute: projectBashCommand(permissions.bash, '*').state,
+      // Generic command execution deliberately has no configured-permission
+      // projection. It must stay fail-closed even when a role's Bash catch-all
+      // would otherwise permit or ask for a command.
+      command_execute: PERMISSION_PROJECTION_STATES.NOT_PROJECTED,
     },
   };
 }

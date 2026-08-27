@@ -2,7 +2,7 @@
 description: Independently executes repository validation and returns validationEvidence object without modifying source
 mode: subagent
 temperature: 0.0
-steps: 15
+steps: 30
 subagent_type: subagent
 permission:
   edit: deny

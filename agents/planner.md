@@ -2,7 +2,7 @@
 description: Plans non-trivial implementation work against repository reality, contracts, dependencies, and acceptance evidence
 mode: subagent
 temperature: 0.1
-steps: 18
+steps: 36
 subagent_type: subagent
 permission:
   edit: deny

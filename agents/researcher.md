@@ -2,7 +2,7 @@
 description: Researches current external documentation, APIs, libraries, standards, and upstream implementation evidence
 mode: subagent
 temperature: 0.2
-steps: 20
+steps: 40
 subagent_type: subagent
 permission:
   edit: deny

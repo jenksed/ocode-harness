@@ -2,7 +2,7 @@
 description: Scarce independent second opinion for unresolved technical disagreement after normal review/repair
 mode: subagent
 temperature: 0.1
-steps: 10
+steps: 20
 subagent_type: subagent
 permission:
   edit: deny

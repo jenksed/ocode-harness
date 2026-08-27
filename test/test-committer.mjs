@@ -65,7 +65,7 @@ try {
   assert(content.includes('temperature: 0.1'), 'Temperature is 0.1');
 
   // Test 7: Limited steps
-  assert(content.includes('steps: 10'), 'Steps limited to 10');
+  assert(content.includes('steps: 15'), 'Steps limited to 15');
 
   // Test 8: Permission structure
   assert(content.includes('edit: deny'), 'Edit permission denied');

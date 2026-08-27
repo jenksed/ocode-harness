@@ -181,6 +181,58 @@ for (const required of ['"*": ask', '"git push": deny', '"git reset --hard": den
   }
 }
 
+console.log('\n=== Step Budget and Recovery Policy ===\n');
+const expectedSteps = {
+  orchestrator: 80,
+  coder: 80,
+  planner: 36,
+  researcher: 40,
+  verifier: 30,
+  reviewer: 36,
+  wayfinder: 24,
+  judge: 20,
+  committer: 15,
+};
+for (const [role, steps] of Object.entries(expectedSteps)) {
+  const content = readFileSync(join(agentsDir, `${role}.md`), 'utf8');
+  const match = content.match(/^steps:\s*(\d+)\s*$/m);
+  if (!match || Number(match[1]) !== steps) {
+    console.error(`✗ ${role} must have finite ${steps}-step budget`);
+    invalidAgents.push({ file: `${role}.md`, field: `steps: ${steps}` });
+  } else {
+    console.log(`✓ ${role} has finite ${steps}-step budget`);
+  }
+}
+for (const required of ['## Step-limit recovery', 'capacity interruption', 'fresh delegation of the same role', 'CAPACITY LIMIT REACHED', 'structural denial']) {
+  if (!orchestratorPolicy.includes(required)) {
+    console.error(`✗ orchestrator step-limit recovery missing: ${required}`);
+    invalidAgents.push({ file: 'orchestrator.md', field: required });
+  } else {
+    console.log(`✓ orchestrator step-limit recovery includes ${required}`);
+  }
+}
+
+console.log('\n=== Delegation Packet ===\n');
+for (const required of [
+  'DELEGATION PACKET',
+  'ROLE',
+  'OBJECTIVE',
+  'IN SCOPE / OUT OF SCOPE',
+  'CURRENT FACTS AND AUTHORITATIVE EVIDENCE',
+  'RELEVANT FILES AND CURRENT DIFF',
+  'ACCEPTANCE AND VALIDATION',
+  'ALREADY COMPLETED — do not repeat',
+  'RETURN FORMAT AND STOP CONDITION',
+  'transcript/history and unrelated repository context',
+]) {
+  if (!orchestratorPolicy.includes(required)) {
+    console.error(`✗ orchestrator delegation packet missing: ${required}`);
+    invalidAgents.push({ file: 'orchestrator.md', field: required });
+  } else {
+    console.log(`✓ orchestrator delegation packet includes ${required}`);
+  }
+}
+
 // Summary
 console.log('\n=== Summary ===\n');
 

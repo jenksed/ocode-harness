@@ -2,7 +2,7 @@
 description: Cheap semantic closeout preparation
 mode: subagent
 temperature: 0.1
-steps: 10
+steps: 15
 subagent_type: subagent
 permission:
   edit: deny

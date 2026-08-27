@@ -2,7 +2,7 @@
 description: Implements bounded repository changes, tests them, and returns evidence without claiming unsupported completion
 mode: subagent
 temperature: 0.1
-steps: 40
+steps: 80
 subagent_type: subagent
 permission:
   edit: allow

@@ -2,7 +2,7 @@
 description: Independent read-only reviewer; inspects objective, diff, source, tests, regressions, and unsupported completion claims
 mode: subagent
 temperature: 0.1
-steps: 20
+steps: 36
 subagent_type: subagent
 permission:
   edit: deny

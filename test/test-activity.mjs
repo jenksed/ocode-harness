@@ -108,6 +108,20 @@ try {
   assert.throws(() => createActivityEvent({ event_type: 'NOT_REAL', workflow_id: workflowID }), /event_type/);
   assert.equal(ACTIVITY_EVENT_TYPES.includes('REVIEW_ACCEPTED'), true);
   console.log('✓ Durable reopen, malformed-record isolation, and explicit schema/event validation work');
+
+  const boundedStore = join(root, 'bounded-activity');
+  const bounded = (timestamp) => appendActivityEvent(boundedStore, createActivityEvent({
+    event_type: 'AGENT_STARTED', workflow_id: 'bounded-workflow', status: 'STARTED', timestamp,
+  }), { max_events: 2 });
+  bounded('2026-01-01T00:00:00.000Z');
+  bounded('2026-01-01T00:00:02.000Z');
+  bounded('2026-01-01T00:00:01.000Z');
+  const retained = queryActivity(boundedStore, { workflow_id: 'bounded-workflow' });
+  assert.equal(retained.events.length, 2);
+  assert.deepEqual(retained.events.map((event) => event.timestamp), [
+    '2026-01-01T00:00:01.000Z', '2026-01-01T00:00:02.000Z',
+  ]);
+  console.log('✓ Activity retention preserves the exact newest bounded records without per-append rescans');
 } finally {
   rmSync(root, { recursive: true, force: true });
 }

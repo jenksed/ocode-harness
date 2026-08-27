@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 export const ACTIVITY_SCHEMA_VERSION = 1;
@@ -34,6 +34,10 @@ const EVENT_FIELDS = new Set([
   'parent_agent_role', 'parent_session_id', 'delegation_id', 'task_id', 'work_item_id', 'effect_request_id', 'status', 'summary', 'metadata',
 ]);
 const TERMINAL_AGENT_EVENTS = new Set(['AGENT_COMPLETED', 'AGENT_BLOCKED', 'AGENT_FAILED']);
+// Activity is normally written by one harness runtime. Keep its recovered
+// directory index in-process so each append does not rescan every immutable
+// record merely to establish that retention is still below its limit.
+const activityIndexes = new Map();
 
 function plainObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -109,6 +113,33 @@ function eventFiles(storePath) {
   return readdirSync(directory).filter((name) => name.endsWith('.json')).sort();
 }
 
+function eventDirectoryMtime(storePath) {
+  const directory = eventsDirectory(storePath);
+  return existsSync(directory) ? statSync(directory).mtimeMs : null;
+}
+
+function compareActivityRecords(left, right) {
+  if (left.event === null) return -1;
+  if (right.event === null) return 1;
+  return left.event.timestamp.localeCompare(right.event.timestamp) || left.event.event_id.localeCompare(right.event.event_id);
+}
+
+function loadActivityIndex(storePath) {
+  const cached = activityIndexes.get(storePath);
+  const mtime_ms = eventDirectoryMtime(storePath);
+  if (cached && cached.mtime_ms === mtime_ms) return cached;
+  const entries = eventFiles(storePath).map((file) => {
+    try {
+      return { file, event: createActivityEvent(JSON.parse(readFileSync(join(eventsDirectory(storePath), file), 'utf8'))) };
+    } catch {
+      return { file, event: null };
+    }
+  });
+  const index = { entries, mtime_ms };
+  activityIndexes.set(storePath, index);
+  return index;
+}
+
 function readStoredEvents(storePath) {
   const directory = eventsDirectory(storePath);
   const records = [];
@@ -125,22 +156,12 @@ function readStoredEvents(storePath) {
   return { events: records.map((record) => record.event), malformed_records };
 }
 
-function retainBounded(storePath, maxEvents) {
-  const files = eventFiles(storePath);
+function retainBounded(storePath, maxEvents, index) {
   if (!Number.isInteger(maxEvents) || maxEvents < 1) throw new Error('Activity retention must be a positive integer');
-  if (files.length <= maxEvents) return;
-  const records = files.map((file) => {
-    try {
-      return { file, event: createActivityEvent(JSON.parse(readFileSync(join(eventsDirectory(storePath), file), 'utf8'))) };
-    } catch {
-      return { file, event: null };
-    }
-  }).sort((left, right) => {
-    if (left.event === null) return -1;
-    if (right.event === null) return 1;
-    return left.event.timestamp.localeCompare(right.event.timestamp) || left.event.event_id.localeCompare(right.event.event_id);
-  });
-  for (const record of records.slice(0, records.length - maxEvents)) unlinkSync(join(eventsDirectory(storePath), record.file));
+  if (index.length <= maxEvents) return;
+  index.sort(compareActivityRecords);
+  const removed = index.splice(0, index.length - maxEvents);
+  for (const record of removed) unlinkSync(join(eventsDirectory(storePath), record.file));
 }
 
 /** Atomically persist one record; each event gets an immutable file so appends never rewrite a prior event. */
@@ -148,13 +169,16 @@ export function appendActivityEvent(storePath, event, { max_events = DEFAULT_ACT
   const validated = createActivityEvent(event);
   const directory = eventsDirectory(storePath);
   mkdirSync(directory, { recursive: true });
+  const index = loadActivityIndex(storePath);
   // hrtime is only a storage ordering aid; timestamp remains the portable schema field.
   const stem = `${validated.timestamp.replace(/[:.]/g, '-')}-${process.hrtime.bigint().toString().padStart(20, '0')}-${validated.event_id}`;
   const target = join(directory, `${stem}.json`);
   const temporary = join(directory, `.${stem}.${process.pid}.tmp`);
   writeFileSync(temporary, `${JSON.stringify(validated)}\n`, { encoding: 'utf8', flag: 'wx' });
   renameSync(temporary, target);
-  retainBounded(storePath, max_events);
+  index.entries.push({ file: `${stem}.json`, event: validated });
+  retainBounded(storePath, max_events, index.entries);
+  index.mtime_ms = eventDirectoryMtime(storePath);
   return validated;
 }
 

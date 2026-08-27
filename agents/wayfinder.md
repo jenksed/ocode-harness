@@ -2,7 +2,7 @@
 description: Assesses uncertainty and evidence needs before implementation planning
 mode: subagent
 temperature: 0.1
-steps: 12
+steps: 24
 subagent_type: subagent
 permission:
   edit: deny

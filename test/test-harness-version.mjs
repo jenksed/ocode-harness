@@ -60,6 +60,7 @@ copyFileSync(join(harnessRuntimeDir, 'lib', 'evidence.mjs'), join(testHarnessRoo
 copyFileSync(join(harnessRuntimeDir, 'lib', 'composition.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'composition.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'lib', 'closeout.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'closeout.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'lib', 'verify.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'verify.mjs'));
+copyFileSync(join(harnessRuntimeDir, 'lib', 'activity.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'activity.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'lib', 'governance.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'governance.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'lib', 'permission-projection.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'permission-projection.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'lib', 'admission.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'admission.mjs'));

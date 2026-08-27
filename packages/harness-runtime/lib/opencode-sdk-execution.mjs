@@ -100,6 +100,7 @@ export async function runOpenCodeSdkSession(options) {
   let controlledStopStarted = false;
   let cleanupComplete = false;
   const sdkEvents = [];
+  const normalizedEvents = [];
   let resolveCompletion;
   let rejectCompletion;
   const completion = new Promise((resolve, reject) => {
@@ -124,6 +125,10 @@ export async function runOpenCodeSdkSession(options) {
       try {
         for await (const event of subscription.stream) {
           sdkEvents.push(structuredClone(event));
+          // Qualification gates receive the same normalized history as before,
+          // but normalization now occurs once per transport event rather than
+          // once per event for every gate evaluation.
+          normalizedEvents.push(normalizeOpenCodeSdkEvent(event));
           // Observability callbacks consume native transport events only. A
           // persistence failure must not alter the governed runtime outcome.
           try { await options.onRuntimeEvent?.(event); } catch { /* best-effort operational telemetry */ }
@@ -134,8 +139,8 @@ export async function runOpenCodeSdkSession(options) {
           }
           if (!controlledStopStarted && typeof options.methodEvidenceGate === 'function') {
             const evaluated = await options.methodEvidenceGate({
-              event: normalizeOpenCodeSdkEvent(event),
-              events: sdkEvents.map(normalizeOpenCodeSdkEvent),
+              event: normalizedEvents.at(-1),
+              events: normalizedEvents,
               session_id: sessionID,
             });
             if (evaluated?.method_evidence_sufficient === true) {

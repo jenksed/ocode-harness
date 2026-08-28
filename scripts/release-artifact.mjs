@@ -123,7 +123,7 @@ export function buildReleaseArtifact({ sourceRoot, outputDir }) {
     for (const dir of ['agents', 'profiles', 'doctrine', 'opencode-config']) copy(join(sourceRoot, dir), join(root, dir)); copySkills(join(sourceRoot, 'skills'), join(root, 'skills'));
     const artifact = createArtifactManifest(root, release, lockSHA, sdkVersion); writeFileSync(join(root, 'ARTIFACT.json'), json(artifact)); assertNoContamination(root, [resolve(sourceRoot), homedir(), temp]);
     mkdirSync(outputDir, { recursive: true }); const name = `ocode-${version}+${release.source_commit.slice(0, 7)}.tar.gz`, archive = join(outputDir, name), temporaryArchive = join(temp, name);
-    execFileSync('tar', ['-czf', temporaryArchive, '-C', temp, 'ocode-release'], { env: { ...process.env, COPYFILE_DISABLE: '1' } }); inspectArtifactArchive(temporaryArchive); publish(archive, readFileSync(temporaryArchive)); const archiveSHA = fileSHA(archive); publish(`${archive}.sha256`, `${archiveSHA}  ${name}\n`);
+    execFileSync('tar', ['--format', 'ustar', '-czf', temporaryArchive, '-C', temp, 'ocode-release'], { env: { ...process.env, COPYFILE_DISABLE: '1' } }); inspectArtifactArchive(temporaryArchive); publish(archive, readFileSync(temporaryArchive)); const archiveSHA = fileSHA(archive); publish(`${archive}.sha256`, `${archiveSHA}  ${name}\n`);
     return { archive, checksum: `${archive}.sha256`, archive_sha256: archiveSHA, artifact, release };
   } finally { rmSync(temp, { recursive: true, force: true }); }
 }

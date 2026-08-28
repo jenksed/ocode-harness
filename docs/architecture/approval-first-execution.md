@@ -48,10 +48,10 @@ Use these prompts:
 
 ```text
 Run uname -a and tell me the result.
-Create test.txt and stage it.
+Create test.txt, then return it to deterministic closeout for staging.
 ```
 
-Expected approval UI: one native OpenCode Bash permission interaction for each approvable command; no `request_effect`, no `ocode effect`, and no Ocode terminal `Allow once? [y/N]` prompt. Rejecting `git add test.txt` prevents staging and lets the workflow report the rejection. `git push` and `git reset --hard` are denied without an approval escalation.
+Expected behavior: repository edits use the coder's native edit mechanism and Git staging is performed by deterministic closeout runtime; no `request_effect`, no `ocode effect`, and no Ocode terminal `Allow once? [y/N]` prompt. Direct `git add`, `git commit`, and `git push` are denied without an approval escalation, including executable- and environment-prefixed forms.
 
 ## Limitation
 

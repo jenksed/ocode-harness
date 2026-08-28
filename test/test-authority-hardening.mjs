@@ -6,7 +6,7 @@ import { projectBashCommand, projectPermissions } from '../packages/harness-runt
 const root = new URL('..', import.meta.url).pathname;
 const { contracts } = loadAgentContracts({ baseDir: root });
 const projection = createRuntimePermissionProjection({ contracts, projectDir: root });
-const effectCommands = ['echo unsafe > program/SUPERSESSION-NOTICE.md', 'git add program/SUPERSESSION-NOTICE.md', 'git -C . add program/SUPERSESSION-NOTICE.md', 'git commit -m update', 'git --git-dir=.git commit -m update', 'git push origin main', 'git --git-dir=.git push origin main', 'git checkout -- program/SUPERSESSION-NOTICE.md', 'git restore program/SUPERSESSION-NOTICE.md', 'git switch feature'];
+const effectCommands = ['echo unsafe > program/SUPERSESSION-NOTICE.md', 'git add program/SUPERSESSION-NOTICE.md', 'git -C . add program/SUPERSESSION-NOTICE.md', 'GIT_DIR=.git git add program/SUPERSESSION-NOTICE.md', 'env git add program/SUPERSESSION-NOTICE.md', '/usr/bin/git add program/SUPERSESSION-NOTICE.md', 'git commit -m update', 'git --git-dir=.git commit -m update', 'env git commit -m update', 'git push origin main', 'git --git-dir=.git push origin main', 'env git push origin main', 'git checkout -- program/SUPERSESSION-NOTICE.md', 'git restore program/SUPERSESSION-NOTICE.md', 'git switch feature'];
 const readOnlyRoles = ['orchestrator', 'planner', 'wayfinder', 'researcher', 'verifier', 'reviewer', 'judge', 'committer'];
 
 for (const role of readOnlyRoles) {
@@ -24,12 +24,17 @@ for (const [command, effect] of [['git -C . add file', 'stage'], ['git --git-dir
   const denied = decideCommandAdmission({ command, role: 'orchestrator', roleAuthority: orchestrator.authority });
   assert.equal(denied.code, 'OCODE_ROLE_EFFECT_DENIED'); assert.equal(denied.effect, effect);
 }
+for (const command of ['GIT_DIR=.git git add file', 'env git commit -m x', '/usr/bin/git add file']) {
+  const denied = decideCommandAdmission({ command, role: 'orchestrator', roleAuthority: orchestrator.authority });
+  assert.equal(denied.code, 'OCODE_ROLE_EFFECT_DENIED');
+}
 
 const coder = contracts.get('coder');
 assert.equal(projectPermissions(coder.permissions).operations.edit.state, 'ALLOW', 'coder native edit remains admitted');
 assert.equal(projectBashCommand(projection.agents.coder.permission.bash, 'npm test').state, 'ALLOW', 'coder admitted validation remains low friction');
 for (const command of ['git add file', 'git commit -m update', 'git push origin main']) assert.equal(projectBashCommand(projection.agents.coder.permission.bash, command).state, 'DENY');
 for (const command of ['git -C . add file', 'git --git-dir=.git commit -m update', 'git --git-dir=.git push origin main']) assert.equal(projectBashCommand(projection.agents.coder.permission.bash, command).state, 'DENY');
+for (const command of ['GIT_DIR=.git git add file', 'env git commit -m update', '/usr/bin/git add file']) assert.equal(projectBashCommand(projection.agents.coder.permission.bash, command).state, 'DENY');
 assert.equal(decideEffectAdmission({ effect: 'repository.edit', role: 'coder', authority: coder.authority }).decision, 'ALLOW');
 
 console.log(JSON.stringify({ status: 'AUTHORITY_HARDENING_PROVEN', read_only_roles: readOnlyRoles, coder_edit: 'ALLOW', direct_stage_commit_push: 'DENY', effect_routing: 'orchestrator→coder' }));

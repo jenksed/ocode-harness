@@ -54,7 +54,7 @@ function sha(value) { return createHash('sha256').update(value).digest('hex'); }
 function normalizedCommand(command) { return ensureString(command, 'command').trim().replace(/\s+/g, ' '); }
 
 function gitEffect(command) {
-  const match = command.match(/^git\s+(?:(?:-[A-Za-z-]+(?:\s+|=)[^\s]+)\s+)*(add|commit|push|merge|rebase|cherry-pick|checkout|restore|switch)\b/);
+  const match = command.match(/(?:^|\s)(?:\S*\/)?git\s+(?:(?:-[A-Za-z-]+(?:\s+|=)[^\s]+)\s+)*(add|commit|push|merge|rebase|cherry-pick|checkout|restore|switch|update-index|tag|rm|mv|config)\b/);
   return match?.[1] ?? null;
 }
 
@@ -141,9 +141,14 @@ export function createNativeBashPermissionRules({ baseRules = {}, validationRegi
     if (/^(?:npm test|npm run |pnpm |yarn |pytest|python -m pytest|go (?:test|build)|mix (?:test|compile)|cargo (?:test|build))/.test(pattern)) { validationPatterns.push(pattern); continue; }
     rules[pattern] = action;
   }
-  const readOnly = roleAuthority && roleAuthority.may_edit === false;
-  const unadmitted = readOnly || baseRules['*'] === 'deny' ? 'deny' : 'ask';
-  if (readOnly) rules['*'] = 'deny';
+  const restricted = roleAuthority && (
+    roleAuthority.may_edit === false
+    || roleAuthority.may_stage === false
+    || roleAuthority.may_commit === false
+    || roleAuthority.may_push === false
+  );
+  const unadmitted = restricted || baseRules['*'] === 'deny' ? 'deny' : 'ask';
+  if (restricted) rules['*'] = 'deny';
   for (const pattern of validationPatterns) rules[pattern] = unadmitted;
   if (validationRegistry && roleCapabilities.includes('test.execute')) {
     const registry = validateValidationRegistry(validationRegistry);
@@ -202,7 +207,7 @@ export function decideCommandAdmission({ command, role, roleCapabilities = [], r
   if (classified.risk_class === COMMAND_RISK_CLASSES.DESTRUCTIVE || classified.risk_class === COMMAND_RISK_CLASSES.REMOTE_EFFECT) return { decision: COMMAND_DECISIONS.DENY, ...provenance };
   if (classified.risk_class === COMMAND_RISK_CLASSES.REPOSITORY_EFFECT) {
     const gitCommand = classified.git_effect;
-    const effect = gitCommand === 'add' ? 'stage' : ['commit', 'merge', 'rebase', 'cherry-pick'].includes(gitCommand) ? 'commit' : ['checkout', 'restore', 'switch'].includes(gitCommand) ? 'repository.edit' : gitCommand === 'push' ? 'push' : null;
+    const effect = ['add', 'update-index'].includes(gitCommand) ? 'stage' : ['commit', 'merge', 'rebase', 'cherry-pick', 'tag'].includes(gitCommand) ? 'commit' : ['checkout', 'restore', 'switch', 'rm', 'mv', 'config'].includes(gitCommand) ? 'repository.edit' : gitCommand === 'push' ? 'push' : null;
     if (effect && roleAuthority) return { ...decideEffectAdmission({ effect, role, authority: roleAuthority }), ...provenance };
     return { decision: COMMAND_DECISIONS.ASK, ...provenance };
   }

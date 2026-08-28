@@ -1,189 +1,502 @@
 # Ocode Lanes — Architecture
 
+## Status
+
+This document defines the L0.1 Ocode Lanes architecture and desired-topology contract.
+
+L0.1 implements contract definition, normalization, validation, graph validation, and deterministic topology fingerprinting.
+
+L0.1 does not observe or mutate Git.
+
 ## Product Purpose
 
-Ocode Lanes is a deterministic Git execution-topology, workspace-isolation,
-dependency-readiness, and integration-readiness substrate for governed Ocode
-execution.
+Ocode Lanes is the deterministic Git execution-topology, workspace-isolation, dependency-readiness, and integration-readiness substrate for governed Ocode execution.
 
-## Central Invariant
+Its central invariant is:
 
+> Models may propose work. Lanes determines whether declared execution topology is valid. Git determines what topology actually exists. Evidence determines what was proven. Humans retain acceptance and release authority.
+
+## Authority Domains
+
+Ocode Lanes maintains strict separation between five truth domains.
+
+### Desired Topology
+
+Authority: `LanePlan`
+
+Contains declaration-time intent including:
+
+* lane identity;
+* intended branch;
+* intended base;
+* workspace identity;
+* mutation claims;
+* task binding;
+* dependency relationships;
+* integration destination;
+* integration ordering.
+
+L0.1 implements this domain.
+
+### Observed Git State
+
+Authority: Git
+
+Examples include:
+
+* worktrees that actually exist;
+* branches actually checked out;
+* actual HEAD commit;
+* dirty state;
+* detached state;
+* upstream configuration.
+
+L0.1 does not implement Git observation.
+
+### Resolved Topology
+
+Authority: future deterministic Lanes reconciliation/resolution machinery.
+
+Examples include:
+
+* the concrete checkpoint satisfying a logical checkpoint requirement;
+* the exact commit resolved for that checkpoint;
+* the actual worktree associated with a lane;
+* contradictions between declared and observed topology.
+
+L0.1 does not implement resolved topology.
+
+### Runtime Activity
+
+Authority: existing Ocode runtime activity machinery.
+
+Examples include:
+
+* agent execution;
+* delegation;
+* verification invocation;
+* native effect activity.
+
+LanePlan does not own runtime activity state.
+
+### Work and Evidence State
+
+Authority: existing Ocode lifecycle, evidence, verification, review, closeout, and acceptance authorities.
+
+LanePlan does not own task lifecycle state.
+
+## Core Identity Rules
+
+The following are distinct concepts:
+
+```text
+Lane != Task
+Lane != Branch
+Lane != Worktree
+Lane != Session
+Lane != Run
+Lane != Agent
+
+Branch != Base Commit
+Desired Checkpoint Requirement != Resolved Checkpoint
+Git Commit ID != Semantic SHA-256 Fingerprint
 ```
-Models may propose work.
-Lanes determines whether declared execution topology is valid.
-Git determines what topology actually exists.
-Evidence determines what was proven.
-Humans retain acceptance and release authority.
+
+`lane_id` is the stable logical identity of a lane.
+
+Branch, worktree location, session, run, and agent execution may vary without changing lane identity.
+
+## LanePlan
+
+A `LanePlan` is the authoritative desired-topology declaration.
+
+Conceptually:
+
+```json
+{
+  "schema_version": 1,
+  "plan_id": "lanes-v1",
+  "lanes": {},
+  "dependency_graph": [],
+  "integration_graph": []
+}
 ```
 
-## Authority Separation (Five Truth Domains)
+A LanePlan must contain at least one lane.
 
-| Domain | Authority | Examples |
-|---|---|---|
-| DESIRED TOPOLOGY | `LanePlan` | lane identity, intended branch, intended base, declared dependencies, workspace slug, mutation claims |
-| OBSERVED GIT STATE | `Git` | actual branch, actual HEAD, worktree path, dirty state, detached state, upstream |
-| RESOLVED TOPOLOGY | deterministic L0 resolution (future) | a logical `LANE_CHECKPOINT` reference becomes exact SHA `abc1234…` |
-| RUNTIME ACTIVITY | existing Ocode runtime/activity machinery | coder active, verifier invoked, delegation occurred |
-| WORK / EVIDENCE STATE | existing Ocode lifecycle/evidence/review/verification/closeout | validation passed, review accepted, closeout ready |
+All authoritative nested structures are closed contracts. Unknown fields are rejected.
 
-These five domains MUST NOT be collapsed into a single mutable status object.
-L0 implements only the first domain and the schema skeleton for checkpoint
-representation; it does NOT observe Git, execute work, or evaluate evidence.
+## LaneDefinition
 
-## Lane Identity
+Each lane declares, at minimum:
 
-`lane_id` is the primary identity of a lane. It MUST NOT be conflated with branch
-name, worktree path, session, run, or agent.
-
-Validation rule:
-
-```
-^[a-z0-9][a-z0-9_-]{0,127}$
+```json
+{
+  "lane_id": "runtime-core",
+  "branch": "feature/runtime-core",
+  "base": {},
+  "workspace": {},
+  "mutation_claims": {},
+  "task_binding": null
+}
 ```
 
-The following may change independently without destroying historical lane
-identity: branch, worktree path, session, run, agent.
+Presentation-only fields may exist where supported by the contract, but they do not determine execution-topology identity.
 
-## Core Distinctions
+LaneDefinition contains no mutable task or runtime lifecycle state.
 
+Operational conditions such as materialized, active, drifted, blocked, or integration-ready will be derived by later layers from authoritative facts.
+
+## Branch Intent
+
+Every lane owns one explicit intended local branch name.
+
+Branch identity is independent of base commit identity.
+
+This is valid:
+
+```text
+feature/a -> base abc123
+feature/b -> base abc123
 ```
-Lane        !=  Task
-Lane        !=  Branch
-Lane        !=  Worktree
-Lane        !=  Session
-Lane        !=  Run
-Lane        !=  Agent
+
+Multiple lanes may share an exact base commit.
+
+Multiple lanes may not claim the same intended branch within one LanePlan.
+
+## Lane Base
+
+A lane base represents intended Git ancestry.
+
+### Exact Commit
+
+An exact-commit base identifies one immutable Git commit using the repository's current Git object-ID representation.
+
+Conceptually:
+
+```json
+{
+  "kind": "EXACT_COMMIT",
+  "commit": "0123456789abcdef0123456789abcdef01234567"
+}
 ```
 
-A Lane references a Task (via `TaskBinding`) but retains its own identity across
-task reassignment. A Lane references a Workspace (via `WorkspaceIntent.slug`) but
-does not store an absolute path.
+The exact field/type spelling must match the implementation.
 
-## LaneBase
+An exact commit is not a branch identity.
 
-A `LanePlan` lane declares one `base` of type:
+### Lane Checkpoint Requirement
 
-- `EXACT_COMMIT` — references an immutable Git commit SHA-1 (40 lowercase hex
-  characters). The branch identity is the commit SHA itself.
-- `LANE_CHECKPOINT` — references a logical checkpoint (`checkpoint_id` +
-  `laneId`) and is NOT resolved to a SHA until that checkpoint exists.
+A logical checkpoint base declares a prerequisite that may not yet exist.
 
-## MutationClaims
+Conceptually:
 
-Distinguishes the following mutation scopes (all boolean, at least `paths`
-required as a repository-relative path):
+```json
+{
+  "kind": "LANE_CHECKPOINT",
+  "lane_id": "runtime-core",
+  "minimum_class": "VERIFIED"
+}
+```
 
-1. `paths` — repository-relative file paths
-2. `resources` — external/non-file resource handles
-3. `contracts` — semantic contract changes
-4. `generated_outputs` — build/generated artifacts
-5. `repository_global_state` — repo-wide configuration or metadata
-6. `external_state` — external systems outside the repository
+The exact field/type spelling must match the implementation.
 
-L0 validates the declaration only; conflict calculation is deferred.
+The desired plan specifies the requirement.
 
-## Two-Graph Model
+It does not specify:
 
-### A. Work Dependency Graph
+* the future checkpoint ID;
+* its resolved commit;
+* resolution time;
+* evidence lookup results.
 
-Edge `A → B` means B requires an output/checkpoint from A before B becomes
-eligible.
+Those belong to resolved topology.
 
-### B. Integration Order Graph
+## Checkpoint Classes
 
-Edge `B → C` means B must integrate before C.
+The contract supports checkpoint maturity classes:
 
-These graphs MAY overlap but MUST NOT be treated as equivalent. L0 validates
-both independently: self-dependencies, unknown references, duplicate edges, and
-cycles are rejected in each graph.
+```text
+WORK
+VERIFIED
+REVIEWED
+ACCEPTED
+```
 
-## LaneCheckpoint Contract (L0 skeleton)
+These classes describe prerequisites satisfied by other authorities.
 
-A checkpoint captures one lane's exact state at a point in time. Checkpoint
-classes:
+Lanes does not manufacture verification, review, or human acceptance.
 
-| Class | Semantics |
-|---|---|
-| `WORK` | A lane reached a buildable/proposable working state. |
-| `VERIFIED` | Deterministic validation passed on the checkpoint. |
-| `REVIEWED` | An independent review accepted the checkpoint. |
-| `ACCEPTED` | The checkpoint passed all gating (verification + review + closeout). |
+In particular, `ACCEPTED` means that an authoritative human-acceptance fact is available to satisfy the checkpoint requirement. It does not mean Lanes granted acceptance.
 
-A checkpoint is NOT equivalent to acceptance. The `ACCEPTED` class denotes a
-checkpoint that passed all gates — acceptance remains a human authority.
+## LaneCheckpoint
 
-Checkpoint identity fields: `checkpoint_id`, `lane_id`, exact commit SHA
-(SHA-256 fingerprint, 64 hex chars), `checkpoint_class`, `evidence_refs`,
-`task_fingerprint` (optional).
+A runtime checkpoint is separate from a LanePlan checkpoint requirement.
 
-## LanePlan Fingerprint
+Conceptually:
 
-The deterministic fingerprint participates in the following identity fields
-(in canonical key-sorted order):
+```json
+{
+  "schema_version": 1,
+  "checkpoint_id": "runtime-core-001",
+  "lane_id": "runtime-core",
+  "commit": "0123456789abcdef0123456789abcdef01234567",
+  "checkpoint_class": "VERIFIED",
+  "evidence_refs": [],
+  "task_fingerprint": null
+}
+```
 
-1. `schema_version`
-2. `plan_id`
-3. `lanes` (all lane IDs as keys + normalized values)
-4. `dependency_graph` (edges sorted by `from->to` key)
-5. `integration_graph` (edges sorted by `from->to` key)
-6. `metadata` (only when non-empty)
+Git commit identity and semantic fingerprints are different types:
 
-The fingerprint MUST NOT depend on:
+* Git commit: current repository Git object ID;
+* task/topology fingerprint: SHA-256 semantic identity.
 
-- absolute local worktree path
-- current timestamp
-- current username
-- current machine
-- insertion order of object keys
+## Workspace Intent
 
-Fingerprint method: SHA-256 of `canonicalJSONStringify` (the repository's
-existing canonicalization from `packages/harness-runtime/lib/agent-contract.mjs`),
-which recursively sorts object keys by code-point order.
+LanePlan stores a portable logical workspace identifier such as:
 
-## Files
+```json
+{
+  "slug": "runtime-core"
+}
+```
 
-| File | Purpose |
-|---|---|
-| `packages/harness-runtime/lib/lanes/identity.mjs` | LaneId, workspaceSlug, Git SHA + SHA-256 patterns, base-type enum, checkoutReference |
-| `packages/harness-runtime/lib/lanes/graph.mjs` | Directed-graph validation + deterministic cycle detection (dependency + integration) |
-| `packages/harness-runtime/lib/lanes/contract.mjs` | All L0 domain validators: MutationClaims, TaskBinding, WorkspaceIntent, LaneCheckpoint, LaneDefinition, LaneIntegrationIntent, LanePlan, fingerprint |
-| `packages/harness-runtime/lib/lanes/plan.mjs` | Public API: `createLanePlan(raw)`, `computeFingerprint(plan)` |
-| `test/test-lanes.mjs` | L0 contract tests (cases A–S + extras) |
+It does not store a machine-specific absolute worktree path.
 
-## Staged Implementation Sequence
+Workspace paths are resolved from local runtime policy in later milestones.
 
-- **L0** (this checkpoint): Contracts, schemas, validation, architecture doc,
-  deterministic tests. No Git observation, no worktree creation, no execution.
-- **L1** (future): Read-only Git topology observation (branch, HEAD, worktree
-  path, dirty state) — see [Recommendation for L1](#recommendation-for-l1).
-- **L2-L8** (future): Resolved topology, runtime activity binding, work/evidence
-  state reconciliation, materialization, execution binding, parallelism.
+Two lanes in the same LanePlan may not claim the same workspace slug.
 
-## Non-Goals
+## Mutation Claims
 
-L0 does NOT implement:
+Mutation claims describe the complete declared mutation surface of a lane.
 
-- git worktree/branch creation or deletion
-- git switch / checkout / merge / rebase / cherry-pick
-- task execution, scheduler, or concurrency
-- automatic Git repair
-- review, verification, or acceptance authority
-- database, TUI, or web UI
+Conceptually:
 
-If architecture pressure suggests implementing any of these, document the future
-requirement and stop at the contract boundary.
+```json
+{
+  "paths": [
+    "packages/harness-runtime/lib/lanes/**"
+  ],
+  "resources": [],
+  "contracts": [
+    "LanePlan.v1"
+  ],
+  "generated_outputs": [],
+  "repository_global_state": [],
+  "external_state": []
+}
+```
 
-## Recommendation for L1
+The six claim domains are:
 
-The smallest correct next step is read-only Git topology observation:
+1. `paths`
+2. `resources`
+3. `contracts`
+4. `generated_outputs`
+5. `repository_global_state`
+6. `external_state`
 
-1. A `git-observe.mjs` utility that uses `execFileSync('git', …)` to collect:
-   actual branch, actual HEAD SHA, worktree path, dirty flag, detached state,
-   upstream presence.
-2. A `GitTopologySnapshot` schema (schema_version=1) that maps each lane to its
-   observed facts.
-3. Reconciliation functions that compare `LanePlan.base` (desired) against the
-   `GitTopologySnapshot` (observed) using the existing `identity` state enum
-   pattern from `packages/harness-runtime/lib/evidence.mjs`.
-4. Tests against a fixture git repository (created in a temp directory) that
-   verifies dirty/branch/detached detection without requiring a live remote.
+These are identities, not boolean category flags.
+
+L0.1 validates and normalizes declarations.
+
+It does not yet calculate conflict or parallel-execution safety.
+
+## Task Binding
+
+A lane may reference task identity without absorbing task semantics.
+
+Conceptually:
+
+```json
+{
+  "task_id": "runtime-core",
+  "task_fingerprint": "..."
+}
+```
+
+Task binding does not contain lane identity because the containing LaneDefinition already establishes that identity.
+
+Agent/runtime versions are execution provenance and do not belong in desired topology.
+
+## Relationship Model
+
+Lanes deliberately distinguishes three relationships.
+
+### Base Ancestry
+
+Example:
+
+```text
+Lane B bases itself on an eligible checkpoint from Lane A.
+```
+
+Base ancestry determines where B's Git history begins.
+
+### Work Dependency
+
+Represented by `dependency_graph`.
+
+```text
+A -> B
+```
+
+means B requires work/output from A before B becomes eligible.
+
+### Integration Ordering
+
+Represented by `integration_graph`.
+
+```text
+A -> B
+```
+
+means A must integrate before B.
+
+Base ancestry, work dependency, and integration ordering may overlap, but they are not automatically equivalent.
+
+## Integration Destination
+
+A lane's integration destination, when present, references logical lane identity rather than misusing a Git commit as a destination.
+
+Integration ordering itself has exactly one authority: `integration_graph`.
+
+There is no second independently writable per-lane integration-order representation.
+
+## Graph Contracts
+
+Both dependency and integration graphs contain closed edges:
+
+```json
+{
+  "from": "lane-a",
+  "to": "lane-b"
+}
+```
+
+Validation rejects:
+
+* unknown lane references;
+* self edges;
+* duplicate edges;
+* cycles;
+* unknown edge fields.
+
+Normalized graph edge order is deterministic.
+
+The dependency and integration graphs remain independent.
+
+## Topology Fingerprint
+
+LanePlan's SHA-256 fingerprint represents authority-bearing desired topology.
+
+It includes topology-changing facts such as:
+
+* schema version;
+* plan identity;
+* lane identity;
+* branch;
+* base requirement;
+* workspace identity;
+* mutation claims;
+* task binding where present;
+* integration destination where present;
+* dependency graph;
+* integration graph.
+
+It excludes presentation/runtime information such as:
+
+* lane descriptions;
+* workspace descriptions;
+* timestamps;
+* username;
+* machine identity;
+* absolute worktree path;
+* observed Git state;
+* runtime activity;
+* lifecycle state.
+
+Equivalent normalized topology produces the same fingerprint regardless of input object-key or graph-edge ordering.
+
+## L0.1 Non-Goals
+
+L0.1 does not implement:
+
+* Git repository observation;
+* worktree discovery;
+* reconciliation;
+* checkpoint resolution;
+* branch creation;
+* worktree creation;
+* checkout or switch;
+* automatic Git repair;
+* execution binding;
+* scheduling;
+* parallel execution;
+* merge;
+* rebase;
+* cherry-pick;
+* push;
+* acceptance;
+* release promotion.
+
+## Milestone Progression
+
+### L0 / L0.1 — Contract Foundation
+
+Define and validate desired topology.
+
+### L1 — Read-Only Git Observation
+
+Observe repository and worktree reality without comparing it to LanePlan.
+
+Required capabilities include:
+
+* enumerate all worktrees;
+* record worktree path;
+* record branch or detached state;
+* record HEAD commit;
+* record dirty/clean condition;
+* observe upstream information where available;
+* normalize this into a deterministic read-only Git topology snapshot.
+
+L1 performs no Git mutations and does not yet decide whether observed state matches LanePlan.
+
+### L2 — Reconciliation
+
+Compare desired LanePlan topology against observed Git topology.
+
+Classify conditions such as:
+
+```text
+MATCH
+ABSENT
+MATERIALIZABLE
+DRIFTED
+AMBIGUOUS
+STALE
+UNRESOLVED
+```
+
+L2 remains read-only.
+
+### L3 — Materialization
+
+Safely create declared branches/worktrees from exact resolved bases.
+
+Materialization must be idempotent and crash-recoverable.
+
+### Later Milestones
+
+Later milestones add:
+
+* lane-bound execution;
+* checkpoint production/resolution;
+* integration readiness;
+* recovery;
+* safe concurrency;
+* planner/compiler integration.
+
+Each remains subject to Ocode's existing authority boundaries.

@@ -7,21 +7,10 @@
  *
  * Public surface:
  *   createLanePlan(raw)           -> validated LanePlan with fingerprint
- *   computeFingerprint(plan)      -> { plan_fingerprint, participating_fields }
- *   VALID_LANE_STATES             -> array
- *   CHECKPOINT_CLASSES            -> array
+ *   CHECKPOINT_CLASSES            -> array of valid checkpoint class names
  */
 
 import { validateLanePlan, computeLanePlanFingerprint } from './contract.mjs';
-
-export const VALID_LANE_STATES = [
-  'PENDING',
-  'ACTIVE',
-  'INTEGRATED',
-  'CLOSEOUT_READY',
-  'REVIEW_READY',
-  'ABANDONED',
-];
 
 export const CHECKPOINT_CLASSES = ['WORK', 'VERIFIED', 'REVIEWED', 'ACCEPTED'];
 

@@ -21,10 +21,11 @@
 import { canonicalJSONStringify } from '../agent-contract.mjs';
 import { createHash } from 'node:crypto';
 import {
-  assertLaneId, assertSHA256, assertWorkspaceSlug,
+  assertLaneId, assertGitSha, assertSHA256, assertWorkspaceSlug,
   normalizedLaneId, normalizedWorkspaceSlug,
+  normalizedBranchName,
   checkoutReference,
-  EXACT_COMMIT, LANE_CHECKPOINT, BASE_TYPES,
+  EXACT_COMMIT, LANE_CHECKPOINT_REQUIREMENT, BASE_TYPES,
   CHECKPOINT_CLASSES,
   CHECKPOINT_CLASS,
 } from './identity.mjs';
@@ -81,16 +82,50 @@ function onlyKeys(value, allowed, label) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Path validation (repository-relative, no absolute, no "..", not ".")
+// ---------------------------------------------------------------------------
+
 /**
  * Validate a repository-relative path segment (no absolute, no "..", not ".").
+ * Checks path SEGMENTS rather than substring "..".
+ */
+/**
+ * Validate a repository-relative path segment (no absolute, no "..", not ".").
+ * Checks path SEGMENTS rather than substring "..".
+ */
+/**
+ * Validate a repository-relative path segment (no absolute, no "..", not ".").
+ * Checks path SEGMENTS rather than substring "..".
  */
 function relPath(value, label) {
   str(value, label);
-  if (value.includes('\\') || value.startsWith('/') || value === '.' || value.includes('..')) {
-    throw new Error(`${label} must be a repository-relative normalized path: ${value}`);
+  if (value.includes("\\")) {
+    throw new Error(`${label} must be a repository-relative normalized path (no backslashes): ${value}`);
   }
+
+  // Split into path segments and validate each
+  const segments = value.split('/');
+  for (const segment of segments) {
+    if (segment === '') {
+      throw new Error(`${label} must be a repository-relative normalized path (no empty segments): ${value}`);
+    }
+    if (segment === '.') {
+      throw new Error(`${label} must be a repository-relative normalized path (no "." segments): ${value}`);
+    }
+    if (segment === '..') {
+      throw new Error(`${label} must be a repository-relative normalized path (no ".." segments): ${value}`);
+    }
+  }
+
   return value;
 }
+
+
+
+// ---------------------------------------------------------------------------
+// Fingerprint validation
+// ---------------------------------------------------------------------------
 
 function fingerprint(value, label) {
   if (typeof value !== 'string' || !/^[0-9a-f]{64}$/.test(value)) {
@@ -107,7 +142,7 @@ function oneOf(value, set, label) {
 }
 
 // ---------------------------------------------------------------------------
-// MutationClaims
+// MutationClaims (six actual collections)
 // ---------------------------------------------------------------------------
 
 const MUTATION_CLAIM_FIELDS = [
@@ -122,45 +157,106 @@ const MUTATION_CLAIM_FIELDS = [
 function normalizeMutationClaim(raw) {
   own(raw, 'MutationClaim');
   onlyKeys(raw, MUTATION_CLAIM_FIELDS, 'MutationClaim');
-  const path = relPath(raw.paths, 'MutationClaim.paths');
-
-  const boolFields = [
-    'resources',
-    'contracts',
-    'generated_outputs',
-    'repository_global_state',
-    'external_state',
-  ];
-  for (const field of boolFields) {
-    bool(raw[field], `MutationClaim.${field}`);
-  }
+  
+  // Normalize paths array
+  const paths = arr(raw.paths, 'MutationClaim.paths').map(path => relPath(path, 'MutationClaim.paths item'));
+  
+  // Validate and normalize resource arrays
+  const resources = arr(raw.resources, 'MutationClaim.resources').map(resource => {
+    str(resource, 'MutationClaim.resources item');
+    return resource;
+  });
+  
+  const contracts = arr(raw.contracts, 'MutationClaim.contracts').map(contract => {
+    str(contract, 'MutationClaim.contracts item');
+    return contract;
+  });
+  
+  const generated_outputs = arr(raw.generated_outputs, 'MutationClaim.generated_outputs').map(output => {
+    str(output, 'MutationClaim.generated_outputs item');
+    return output;
+  });
+  
+  const repository_global_state = arr(raw.repository_global_state, 'MutationClaim.repository_global_state').map(state => {
+    str(state, 'MutationClaim.repository_global_state item');
+    return state;
+  });
+  
+  const external_state = arr(raw.external_state, 'MutationClaim.external_state').map(state => {
+    str(state, 'MutationClaim.external_state item');
+    return state;
+  });
 
   return {
-    paths: path,
-    resources: raw.resources,
-    contracts: raw.contracts,
-    generated_outputs: raw.generated_outputs,
-    repository_global_state: raw.repository_global_state,
-    external_state: raw.external_state,
+    paths,
+    resources,
+    contracts,
+    generated_outputs,
+    repository_global_state,
+    external_state,
   };
 }
 
 /**
  * Validate the array of MutationClaims.
- * Rejects: non-array, missing paths, missing bool fields, duplicate path entries.
+ * Rejects: non-array, missing paths, duplicate entries.
  */
 export function validateMutationClaims(claims) {
   const normalized = [];
-  const seen = new Set();
+  const pathsSeen = new Set();
+  const resourcesSeen = new Set();
+  const contractsSeen = new Set();
+  const generatedOutputsSeen = new Set();
+  const repositoryGlobalStateSeen = new Set();
+  const externalStateSeen = new Set();
 
   for (let i = 0; i < claims.length; i++) {
     const raw = claims[i];
     own(raw, `MutationClaims[${i}]`);
     const nc = normalizeMutationClaim(raw);
-    if (seen.has(nc.paths)) {
-      throw new Error(`Duplicate MutationClaim path "${nc.paths}" at index ${i}`);
+    
+    // Check for duplicate paths
+    const pathKey = nc.paths.join('|');
+    if (pathsSeen.has(pathKey)) {
+      throw new Error(`Duplicate MutationClaim path set "${pathKey}" at index ${i}`);
     }
-    seen.add(nc.paths);
+    pathsSeen.add(pathKey);
+    
+    // Check for duplicate resources
+    const resourcesKey = nc.resources.join('|');
+    if (resourcesSeen.has(resourcesKey)) {
+      throw new Error(`Duplicate MutationClaim resources "${resourcesKey}" at index ${i}`);
+    }
+    resourcesSeen.add(resourcesKey);
+    
+    // Check for duplicate contracts
+    const contractsKey = nc.contracts.join('|');
+    if (contractsSeen.has(contractsKey)) {
+      throw new Error(`Duplicate MutationClaim contracts "${contractsKey}" at index ${i}`);
+    }
+    contractsSeen.add(contractsKey);
+    
+    // Check for duplicate generated_outputs
+    const generatedOutputsKey = nc.generated_outputs.join('|');
+    if (generatedOutputsSeen.has(generatedOutputsKey)) {
+      throw new Error(`Duplicate MutationClaim generated_outputs "${generatedOutputsKey}" at index ${i}`);
+    }
+    generatedOutputsSeen.add(generatedOutputsKey);
+    
+    // Check for duplicate repository_global_state
+    const repositoryGlobalStateKey = nc.repository_global_state.join('|');
+    if (repositoryGlobalStateSeen.has(repositoryGlobalStateKey)) {
+      throw new Error(`Duplicate MutationClaim repository_global_state "${repositoryGlobalStateKey}" at index ${i}`);
+    }
+    repositoryGlobalStateSeen.add(repositoryGlobalStateKey);
+    
+    // Check for duplicate external_state
+    const externalStateKey = nc.external_state.join('|');
+    if (externalStateSeen.has(externalStateKey)) {
+      throw new Error(`Duplicate MutationClaim external_state "${externalStateKey}" at index ${i}`);
+    }
+    externalStateSeen.add(externalStateKey);
+    
     normalized.push(nc);
   }
 
@@ -168,14 +264,12 @@ export function validateMutationClaims(claims) {
 }
 
 // ---------------------------------------------------------------------------
-// TaskBinding
+// TaskBinding (no lane_id, no agent_version)
 // ---------------------------------------------------------------------------
 
 const TASK_BINDING_FIELDS = [
-  'lane_id',
   'task_id',
   'task_fingerprint',
-  'agent_version',
 ];
 
 export function validateTaskBinding(raw) {
@@ -184,11 +278,6 @@ export function validateTaskBinding(raw) {
   onlyKeys(raw, TASK_BINDING_FIELDS, 'TaskBinding');
 
   const out = {};
-  if (raw.lane_id !== undefined) {
-    out.lane_id = assertLaneId(raw.lane_id);
-  } else {
-    out.lane_id = null;
-  }
   if ('task_id' in raw) {
     out.task_id = str(raw.task_id, 'TaskBinding.task_id');
   } else {
@@ -198,11 +287,6 @@ export function validateTaskBinding(raw) {
     out.task_fingerprint = fingerprint(raw.task_fingerprint, 'TaskBinding.task_fingerprint');
   } else {
     out.task_fingerprint = null;
-  }
-  if ('agent_version' in raw) {
-    out.agent_version = str(raw.agent_version, 'TaskBinding.agent_version');
-  } else {
-    out.agent_version = null;
   }
 
   return out;
@@ -225,27 +309,31 @@ export function validateWorkspaceIntent(raw) {
 }
 
 // ---------------------------------------------------------------------------
-// LaneCheckpoint (type description, validated at instantiation)
+// LaneCheckpoint (runtime checkpoint, not intent)
 // ---------------------------------------------------------------------------
 
 const LANE_CHECKPOINT_FIELDS = [
   'checkpoint_id',
   'lane_id',
-  'sha',
+  'commit',           // 40-char Git commit, not SHA-256
   'checkpoint_class',
   'evidence_refs',
-  'task_fingerprint',
+  'task_fingerprint', // optional 64-char SHA-256
 ];
 
 export function validateLaneCheckpoint(raw) {
   own(raw, 'LaneCheckpoint');
   onlyKeys(raw, LANE_CHECKPOINT_FIELDS, 'LaneCheckpoint');
 
-  const evidenceRefs = arr(raw.evidence_refs, 'LaneCheckpoint.evidence_refs');
+  const evidenceRefs = arr(raw.evidence_refs, 'LaneCheckpoint.evidence_refs').map(ref => {
+    str(ref, `LaneCheckpoint.evidence_refs item`);
+    return ref;
+  });
+  
+  // Check for duplicate evidence refs
   const seen = new Set();
   for (let i = 0; i < evidenceRefs.length; i++) {
     const ref = evidenceRefs[i];
-    str(ref, `LaneCheckpoint.evidence_refs[${i}]`);
     if (seen.has(ref)) {
       throw new Error(`Duplicate LaneCheckpoint evidence_ref "${ref}"`);
     }
@@ -255,7 +343,7 @@ export function validateLaneCheckpoint(raw) {
   return {
     checkpoint_id: assertLaneId(raw.checkpoint_id),
     lane_id: assertLaneId(raw.lane_id),
-    sha: assertSHA256(raw.sha, 'LaneCheckpoint.sha'),
+    commit: assertGitSha(raw.commit, 'LaneCheckpoint.commit'),
     checkpoint_class: oneOf(raw.checkpoint_class, CHECKPOINT_CLASSES, 'LaneCheckpoint.checkpoint_class'),
     evidence_refs: evidenceRefs,
     task_fingerprint: raw.task_fingerprint ? fingerprint(raw.task_fingerprint, 'LaneCheckpoint.task_fingerprint') : null,
@@ -263,7 +351,7 @@ export function validateLaneCheckpoint(raw) {
 }
 
 // ---------------------------------------------------------------------------
-// LaneDefinition
+// LaneDefinition (NO state field, HAS branch field)
 // ---------------------------------------------------------------------------
 
 const LANE_DEFINITION_FIELDS = [
@@ -271,21 +359,11 @@ const LANE_DEFINITION_FIELDS = [
   'name',
   'description',
   'base',
-  'state',
+  'branch',           // explicit branch intent
   'workspace',
   'mutation_claims',
   'task_binding',
   'integration_intent',
-  'metadata',
-];
-
-const LEGAL_LANE_STATES = [
-  'PENDING',
-  'ACTIVE',
-  'INTEGRATED',
-  'CLOSEOUT_READY',
-  'REVIEW_READY',
-  'ABANDONED',
 ];
 
 export function validateLaneDefinition(raw) {
@@ -298,7 +376,7 @@ export function validateLaneDefinition(raw) {
   };
 
   out.base = checkoutReference(raw.base);
-  out.state = oneOf(raw.state, LEGAL_LANE_STATES, 'LaneDefinition.state');
+  out.branch = normalizedBranchName(str(raw.branch, 'LaneDefinition.branch'));
 
   if ('workspace' in raw) {
     out.workspace = validateWorkspaceIntent(raw.workspace);
@@ -318,63 +396,42 @@ export function validateLaneDefinition(raw) {
     out.task_binding = null;
   }
 
-  if ('integration_intent' in raw) {
+  if ('integration_intent' in raw && raw.integration_intent !== null && raw.integration_intent !== undefined) {
     out.integration_intent = validateLaneIntegrationIntent(raw.integration_intent);
   } else {
     out.integration_intent = null;
-  }
-
-  if ('metadata' in raw) {
-    out.metadata = own(raw.metadata, 'LaneDefinition.metadata');
-  } else {
-    out.metadata = {};
   }
 
   return out;
 }
 
 // ---------------------------------------------------------------------------
-// LaneIntegrationIntent
+// LaneIntegrationIntent (simplified - no integration_order, target uses lane identity)
 // ---------------------------------------------------------------------------
 
 const LANE_INTEGRATION_INTENT_FIELDS = [
-  'integration_target',
-  'integration_order',
-  'target_class',
+  'target_lane_id',   // references lane identity, not checkout reference
+  'target_class',     // optional minimum class for target
 ];
 
 export function validateLaneIntegrationIntent(raw) {
   own(raw, 'LaneIntegrationIntent');
   onlyKeys(raw, LANE_INTEGRATION_INTENT_FIELDS, 'LaneIntegrationIntent');
 
-  if (!raw.integration_target && !raw.integration_order) {
-    throw new Error(
-      'LaneIntegrationIntent requires at least integration_target or integration_order',
-    );
-  }
-
-  let it = null;
-  if (raw.integration_target !== undefined && raw.integration_target !== null) {
-    it = checkoutReference(raw.integration_target);
-  }
-
-  let io = null;
-  if (raw.integration_order !== undefined && raw.integration_order !== null) {
-    io = arr(raw.integration_order, 'LaneIntegrationIntent.integration_order');
-    for (let i = 0; i < io.length; i++) {
-      assertLaneId(io[i]);
-    }
-  }
-
   const out = {};
-  if (it) out.integration_target = it;
-  if (io) out.integration_order = io;
-  if ('target_class' in raw && raw.target_class !== undefined && raw.target_class !== null) {
-    out.target_class = oneOf(
-      raw.target_class,
-      CHECKPOINT_CLASSES,
-      'LaneIntegrationIntent.target_class',
-    );
+  
+  // target_lane_id is optional (root lanes may have no target)
+  if ('target_lane_id' in raw && raw.target_lane_id !== null && raw.target_lane_id !== undefined) {
+    out.target_lane_id = assertLaneId(raw.target_lane_id, 'LaneIntegrationIntent.target_lane_id');
+  } else {
+    out.target_lane_id = null;
+  }
+  
+  // target_class is optional
+  if ('target_class' in raw && raw.target_class !== null && raw.target_class !== undefined) {
+    out.target_class = oneOf(raw.target_class, CHECKPOINT_CLASSES, 'LaneIntegrationIntent.target_class');
+  } else {
+    out.target_class = null;
   }
 
   return out;
@@ -390,8 +447,10 @@ const LANE_PLAN_FIELDS = [
   'lanes',
   'dependency_graph',
   'integration_graph',
-  'metadata',
 ];
+
+// Remove metadata from authoritative contract - it's presentation-only
+// If needed for presentation, it should be handled outside the identity boundary
 
 export function validateLanePlan(raw) {
   onlyKeys(raw, LANE_PLAN_FIELDS, 'LanePlan');
@@ -404,6 +463,11 @@ export function validateLanePlan(raw) {
 
   if (!raw.lanes || typeof raw.lanes !== 'object' || Array.isArray(raw.lanes)) {
     throw new Error('LanePlan.lanes must be an object (map from laneId to LaneDefinition)');
+  }
+  
+  // Reject empty lanes map
+  if (Object.keys(raw.lanes).length === 0) {
+    throw new Error('LanePlan must contain at least one lane');
   }
 
   const laneDefs = new Map();
@@ -427,14 +491,12 @@ export function validateLanePlan(raw) {
     laneIds.add(def.lane_id);
     laneDefs.set(def.lane_id, def);
 
-    // branch uniqueness (EXACT_COMMIT ref = the resolved commit SHA = branch identity)
-    if (def.base.type === EXACT_COMMIT) {
-      const branch = def.base.ref;
-      if (branches.has(branch)) {
-        throw new Error(`Duplicate EXACT_COMMIT branch ownership "${branch}" for lane "${def.lane_id}"`);
-      }
-      branches.add(branch);
+    // branch uniqueness - two lanes MAY start from the same exact commit
+    // but they MUST NOT own the same intended branch
+    if (branches.has(def.branch)) {
+      throw new Error(`Duplicate branch ownership "${def.branch}" for lane "${def.lane_id}"`);
     }
+    branches.add(def.branch);
 
     // workspace slug uniqueness
     if (slugs.has(def.workspace.slug)) {
@@ -452,26 +514,15 @@ export function validateLanePlan(raw) {
     ? validateDirectedGraph(arr(raw.integration_graph, 'LanePlan.integration_graph'), laneIds, 'LanePlan.integration_graph')
     : { edges: [], laneIds: new Set() };
 
-  const metadata = raw.metadata ? own(raw.metadata, 'LanePlan.metadata') : {};
-
   return {
     schema_version: 1,
     plan_id: planId,
     lanes: Object.fromEntries(
-      [...laneDefs.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
+      [...laneDefs.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)), // deterministic order
     ),
     dependency_graph: depGraph.edges,
     integration_graph: intGraph.edges,
-    metadata,
   };
-}
-
-// ---------------------------------------------------------------------------
-// Checkpoint validation utility
-// ---------------------------------------------------------------------------
-
-export function validateCheckpointReference(raw) {
-  return checkoutReference(raw);
 }
 
 // ---------------------------------------------------------------------------
@@ -485,54 +536,103 @@ export function validateCheckpointReference(raw) {
  *   - schema_version
  *   - plan_id
  *   - all lanes (keys AND values, sorted by laneId)
+ *       - lane_id
+ *       - branch
+ *       - base
+ *       - workspace.slug
+ *       - mutation_claims
+ *       - task_binding (when present)
  *   - dependency_graph (sorted edges; edge key = from + '->' + to)
  *   - integration_graph (sorted edges; edge key = from + '->' + to)
- *   - metadata (if present and non-empty)
  *
  * Excluded from identity:
+ *   - name/description (presentation-only)
  *   - absolute local worktree paths
  *   - timestamps
  *   - usernames
  *   - machine identifiers
  *   - object key insertion order
- *
- * @param {object} plan - a validated LanePlan (or its output)
- * @returns {{ plan_fingerprint: string, participating_fields: string[] }}
+ *   - arbitrary metadata fields
  */
+
 export function computeLanePlanFingerprint(plan) {
+  // Sort lanes by laneId for deterministic ordering
   const sortedLaneEntries = Object.entries(plan.lanes)
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
     .map(([, def]) => def);
 
-  const depEdges = [...plan.dependency_graph]
-    .sort((a, b) => {
-      const ak = `${a.from}->${a.to}`;
-      const bk = `${b.from}->${b.to}`;
-      return ak < bk ? -1 : ak > bk ? 1 : 0;
-    })
-    .map((e) => ({ from: e.from, to: e.to }));
+  // Normalize mutation claims for deterministic ordering
+  const normalizedLanes = sortedLaneEntries.map(def => ({
+    lane_id: def.lane_id,
+    branch: def.branch,
+    base: def.base,
+    workspace: {
+      slug: def.workspace.slug,
+      // description excluded from identity (presentation-only)
+    },
+    mutation_claims: def.mutation_claims.map(claim => ({
+      // Sort arrays for deterministic ordering
+      paths: [...claim.paths].sort(),
+      resources: [...claim.resources].sort(),
+      contracts: [...claim.contracts].sort(),
+      generated_outputs: [...claim.generated_outputs].sort(),
+      repository_global_state: [...claim.repository_global_state].sort(),
+      external_state: [...claim.external_state].sort(),
+    })).sort((a, b) => {
+      // Sort mutation claims by their normalized representation
+      const keyA = JSON.stringify({
+        paths: a.paths,
+        resources: a.resources,
+        contracts: a.contracts,
+        generated_outputs: a.generated_outputs,
+        repository_global_state: a.repository_global_state,
+        external_state: a.external_state,
+      });
+      const keyB = JSON.stringify({
+        paths: b.paths,
+        resources: b.resources,
+        contracts: b.contracts,
+        generated_outputs: b.generated_outputs,
+        repository_global_state: b.repository_global_state,
+        external_state: b.external_state,
+      });
+      return keyA < keyB ? -1 : keyA > keyB ? 1 : 0;
+    }),
+    task_binding: def.task_binding ? {
+      task_id: def.task_binding.task_id,
+      task_fingerprint: def.task_binding.task_fingerprint,
+    } : null,
+    integration_intent: def.integration_intent ? {
+      target_lane_id: def.integration_intent.target_lane_id,
+      // target_class excluded - presentation only
+    } : null,
+  }));
 
-  const intEdges = [...plan.integration_graph]
+  // Sort dependency edges deterministically
+  const depEdges = [...plan.dependency_graph]
+    .map(edge => ({ from: edge.from, to: edge.to }))
     .sort((a, b) => {
-      const ak = `${a.from}->${a.to}`;
-      const bk = `${b.from}->${b.to}`;
-      return ak < bk ? -1 : ak > bk ? 1 : 0;
-    })
-    .map((e) => ({ from: e.from, to: e.to }));
+      if (a.from !== b.from) return a.from < b.from ? -1 : 1;
+      return a.to < b.to ? -1 : 1;
+    });
+
+  // Sort integration edges deterministically
+  const intEdges = [...plan.integration_graph]
+    .map(edge => ({ from: edge.from, to: edge.to }))
+    .sort((a, b) => {
+      if (a.from !== b.from) return a.from < b.from ? -1 : 1;
+      return a.to < b.to ? -1 : 1;
+    });
 
   const identityObject = {
     schema_version: plan.schema_version,
     plan_id: plan.plan_id,
     lanes: Object.fromEntries(
-      sortedLaneEntries.map((def) => [def.lane_id, def]),
+      normalizedLanes.map(def => [def.lane_id, def]),
     ),
     dependency_graph: depEdges,
     integration_graph: intEdges,
   };
-
-  if (plan.metadata && Object.keys(plan.metadata).length > 0) {
-    identityObject.metadata = plan.metadata;
-  }
 
   const canonical = canonicalJSONStringify(identityObject);
   const digest = createHash('sha256').update(canonical).digest('hex');
@@ -545,7 +645,6 @@ export function computeLanePlanFingerprint(plan) {
       'lanes',
       'dependency_graph',
       'integration_graph',
-      'metadata',
     ],
   };
 }

@@ -14,10 +14,17 @@
 
 /**
  * Normalize an edge object: return as-is if already canonical, else build.
+ * Rejects unknown edge fields (additionalProperties = false).
  */
 function normalizeEdge(raw) {
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
     throw new Error('Graph edge must be an object');
+  }
+  const keys = Object.keys(raw);
+  for (const key of keys) {
+    if (key !== 'from' && key !== 'to') {
+      throw new Error(`Unknown graph edge field: ${key}`);
+    }
   }
   const { from, to } = raw;
   if (typeof from !== 'string' || typeof to !== 'string') {
@@ -134,5 +141,13 @@ export function validateDirectedGraph(rawEdges, knownLaneIds, graphLabel) {
     throw new Error(`${graphLabel} contains a cycle`);
   }
 
-  return { edges: rawEdges.map((e) => normalizeEdge(e)), laneIds };
+  // Return edges in deterministic order (lexical by from, then to)
+  const sortedEdges = [...rawEdges]
+    .map(normalizeEdge)
+    .sort((a, b) => {
+      if (a.from !== b.from) return a.from < b.from ? -1 : 1;
+      return a.to < b.to ? -1 : 1;
+    });
+
+  return { edges: sortedEdges, laneIds };
 }

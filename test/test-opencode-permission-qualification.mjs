@@ -35,6 +35,9 @@ assert.equal(scenario('low-interruption-loop').tool_states.filter((state) => sta
 const runtimeParity = [
   ['orchestrator-git-status-observation', 'git status --short', 'ALLOW', 'completed'],
   ['interactive-source-orchestrator-git-status-observation', 'git status --short', 'ALLOW', 'completed'],
+  ['interactive-source-orchestrator-git-rev-parse-observation', 'git rev-parse HEAD', 'ALLOW', 'completed'],
+  ['interactive-source-orchestrator-git-branch-observation', 'git branch --show-current', 'ALLOW', 'completed'],
+  ['interactive-source-orchestrator-git-worktree-observation', 'git worktree list', 'ALLOW', 'completed'],
   ['orchestrator-pwd-observation', 'pwd', 'ALLOW', 'completed'],
   ['orchestrator-ls-observation', 'ls', 'ALLOW', 'completed'],
   ['orchestrator-rg-observation', 'rg needle fixture.txt', 'ALLOW', 'completed'],

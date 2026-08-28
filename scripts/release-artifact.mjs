@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { gunzipSync } from 'node:zlib';
 import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync, chmodSync, renameSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
-import { join, relative, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { inspectSourceIdentity, isExactReleaseIdentity, readReleaseIdentity, readVersion, validateReleaseIdentity, writeReleaseIdentity } from '../packages/harness-runtime/lib/deploy.mjs';
 import { checkVersionMirrors } from './version-authority.mjs';
@@ -84,8 +84,14 @@ export function inspectArtifactArchive(archive) {
 
 /** Safe reusable materializer: it never invokes a generic extractor on untrusted archive bytes. */
 export function materializeVerifiedArtifact(archive, candidateRoot) {
-  if (existsSync(candidateRoot) && readdirSync(candidateRoot).length) throw new Error('Artifact candidate root must be empty');
-  mkdirSync(candidateRoot, { recursive: true }); const entries = inspectArtifactArchive(archive), root = join(candidateRoot, 'ocode-release');
+  const rootPath = resolve(candidateRoot), parent = dirname(rootPath);
+  try { lstatSync(rootPath); throw new Error('Artifact candidate root must not already exist'); } catch (error) { if (error?.code !== 'ENOENT') throw error; }
+  const parentInfo = lstatSync(parent);
+  if (!parentInfo.isDirectory() || parentInfo.isSymbolicLink()) throw new Error('Artifact candidate parent must be a real directory');
+  mkdirSync(rootPath);
+  const rootInfo = lstatSync(rootPath);
+  if (!rootInfo.isDirectory() || rootInfo.isSymbolicLink()) throw new Error('Artifact candidate root creation was unsafe');
+  const entries = inspectArtifactArchive(archive), root = join(rootPath, 'ocode-release');
   for (const entry of entries.filter((entry) => entry.type === 'directory').sort((a, b) => a.path.length - b.path.length)) { const target = entry.path ? join(root, entry.path) : root; mkdirSync(target, { recursive: true, mode: entry.mode & 0o777 }); chmodSync(target, entry.mode & 0o777); }
   for (const entry of entries.filter((entry) => entry.type === 'file')) { const target = join(root, entry.path); mkdirSync(join(target, '..'), { recursive: true }); writeFileSync(target, entry.data, { flag: 'wx', mode: entry.mode & 0o777 }); chmodSync(target, entry.mode & 0o777); }
   return { root, entries };

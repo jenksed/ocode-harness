@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { gzipSync } from 'node:zlib';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createArtifactManifest, inspectArtifactArchive, materializeVerifiedArtifact } from '../scripts/release-artifact.mjs';
@@ -31,6 +31,18 @@ try {
   assert.equal(inspectArtifactArchive(valid).length, 2);
   const candidate = join(root, 'candidate'); materializeVerifiedArtifact(valid, candidate);
   assert.equal(readFileSync(join(candidate, 'ocode-release', 'VERSION'), 'utf8'), '0.1.0\n');
+  assert.equal(lstatSync(candidate).isDirectory(), true);
+  assert.equal(lstatSync(candidate).isSymbolicLink(), false);
+
+  const external = join(root, 'external'), linkedCandidate = join(root, 'linked-candidate');
+  mkdirSync(external); symlinkSync(external, linkedCandidate);
+  assert.throws(() => materializeVerifiedArtifact(valid, linkedCandidate), /candidate root must not already exist/);
+  assert.deepEqual(readdirSync(external), []);
+  assert.equal(existsSync(join(external, 'ocode-release')), false);
+  const existingDirectory = join(root, 'existing-directory'); mkdirSync(existingDirectory);
+  assert.throws(() => materializeVerifiedArtifact(valid, existingDirectory), /candidate root must not already exist/);
+  const existingFile = join(root, 'existing-file'); writeFileSync(existingFile, 'fixture');
+  assert.throws(() => materializeVerifiedArtifact(valid, existingFile), /candidate root must not already exist/);
 
   const sentinel = join(root, 'outside-sentinel'); writeFileSync(sentinel, 'unchanged');
   const attacks = [

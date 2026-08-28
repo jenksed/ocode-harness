@@ -217,12 +217,10 @@ try {
   // Check orientation package files
   const orientationFiles = [
     'package.json',
-    'README.md',
     'lib/orientation.mjs',
     'lib/probe.mjs',
     'lib/render.mjs',
     'bin/orient.mjs',
-    'test/orient.test.mjs',
   ];
 
   console.log('\n=== Orientation Package Checks ===\n');

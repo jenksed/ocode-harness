@@ -79,7 +79,7 @@ export function buildReleaseArtifact({ sourceRoot, outputDir }) {
     const artifact = createArtifactManifest(root, release, lockSHA, sdkVersion); writeFileSync(join(root, 'ARTIFACT.json'), json(artifact));
     assertNoContamination(root, [resolve(sourceRoot), homedir(), temp]);
     mkdirSync(outputDir, { recursive: true }); const name = `ocode-${version}+${release.source_commit.slice(0, 7)}.tar.gz`, archive = join(outputDir, name);
-    execFileSync('tar', ['--sort=name', '--mtime=@0', '--owner=0', '--group=0', '--numeric-owner', '-czf', archive, '-C', temp, 'ocode-release']);
+    execFileSync('tar', ['-czf', archive, '-C', temp, 'ocode-release']);
     const archiveSHA = fileSHA(archive); writeFileSync(`${archive}.sha256`, `${archiveSHA}  ${name}\n`);
     return { archive, checksum: `${archive}.sha256`, archive_sha256: archiveSHA, artifact, release };
   } finally { rmSync(temp, { recursive: true, force: true }); }

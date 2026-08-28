@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join } from 'node:path';
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync, mkdtempSync, rmSync } from 'node:fs';
 import { execSync } from 'node:child_process';
-import { homedir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import { createLedgerRecord, appendRecord, readRecords, getLatestRecord, getRecentRecords, LEDGER_SCHEMA_VERSION } from '../lib/ledger.mjs';
 import { generateTaskId, generateRunId } from '../lib/identity.mjs';
 import { transition, LIFECYCLE_STATES } from '../lib/lifecycle.mjs';
@@ -31,6 +31,7 @@ import {
   writeReleaseIdentity,
   CONFIG,
 } from '../lib/deploy.mjs';
+import { activateRelease, installVerifiedArtifact, listInstalledReleases, releaseEntrypoint, releaseStorePaths, resolveReleasePointer, rollbackRelease } from '../lib/release-store.mjs';
 
 function toCamelCase(flag) {
   return flag.replace(/^--/, '').replace(/-([a-z])/g, (_, char) => char.toUpperCase());
@@ -139,7 +140,8 @@ function findProjectRoot(startDir) {
 }
 
 function getInstalledVersionInfo() {
-  const harnessRoot = CONFIG.harnessRoot;
+  const active = resolveReleasePointer(CONFIG.currentRelease, CONFIG.installStoreRoot);
+  const harnessRoot = active?.path || CONFIG.harnessRoot;
   const installedVersion = readVersion(join(harnessRoot, 'VERSION'));
   const installedIdentity = readReleaseIdentity(harnessRoot);
 
@@ -183,6 +185,10 @@ function getInstalledVersionInfo() {
     doctrine_version: doctrineVersion,
     source_differs: sourceDiffers,
     source_repo: sourceRoot,
+    logical_release_id: active?.id ?? null,
+    payload_manifest_sha256: active?.artifact.payload.manifest_sha256 ?? null,
+    active_release_path: active?.path ?? null,
+    archive_sha256: active?.archive_sha256 ?? null,
   };
 }
 
@@ -199,6 +205,9 @@ program
       console.log('Installed:');
       console.log(`  Version: ${info.installed_version || 'not found'}`);
       console.log(`  SHA:     ${info.installed_sha || 'unavailable (legacy/non-Git release)'}`);
+      console.log(`  Release: ${info.logical_release_id || 'not found'}`);
+      console.log(`  Payload: ${info.payload_manifest_sha256 || 'not found'}`);
+      console.log(`  Path:    ${info.active_release_path || 'not found'}`);
       console.log(`  Ref:     ${info.installed_ref || 'detached/unknown'}`);
       console.log('');
       console.log('Checkout:');
@@ -217,106 +226,43 @@ program
 
 program
   .command('update')
-  .description('Promote the current checkout into the isolated installed runtime')
-  .option('--force', 'Reinstall even when exact release identity already matches')
+  .description('Install a verified artifact and atomically activate its immutable release')
+  .option('--artifact <path>', 'Phase-2 artifact to install (works without a checkout)')
+  .option('--force', 'Build and install even when source identity appears unchanged')
   .action(async (options) => {
     console.log('=== Ocode Update ===\n');
-    let promotionAttempted = false;
     try {
-      const sourceRoot = findSourceRepo(process.cwd());
-      if (!sourceRoot) throw new Error('Could not find source repository. Run from within the ocode-harness checkout.');
-      console.log(`Source repository: ${sourceRoot}`);
-
-      const sourceVersion = readVersion(join(sourceRoot, 'VERSION'));
-      if (!sourceVersion) throw new Error('Could not read VERSION from source repository');
-      const sourceIdentity = assertPromotableSourceIdentity(inspectSourceIdentity(sourceRoot));
-      console.log(`Source version: ${sourceVersion}`);
-      console.log(`Source SHA: ${sourceIdentity.source_commit || 'unavailable'}`);
-      console.log(`Source ref: ${sourceIdentity.source_ref || 'detached/unknown'}`);
-
-      const installedVersion = readVersion(join(CONFIG.harnessRoot, 'VERSION'));
-      const installedIdentity = readReleaseIdentity(CONFIG.harnessRoot);
-      console.log(`Installed version: ${installedVersion || 'none'}`);
-      console.log(`Installed SHA: ${installedIdentity?.source_commit || 'unavailable'}`);
-
-      if (!options.force && sameReleaseIdentity(installedIdentity, sourceIdentity)) {
-        console.log('\n✓ Installed runtime already matches this exact release. Use --force to reinstall.');
-        process.exit(0);
+      let archive = options.artifact ? resolve(options.artifact) : null, temporary = null;
+      if (!archive) {
+        const sourceRoot = findSourceRepo(process.cwd());
+        if (!sourceRoot) throw new Error('Provide --artifact outside an ocode-harness checkout.');
+        temporary = mkdtempSync(join(tmpdir(), 'ocode-update-'));
+        const { buildReleaseArtifact } = await import(join(sourceRoot, 'scripts', 'release-artifact.mjs'));
+        archive = buildReleaseArtifact({ sourceRoot, outputDir: temporary }).archive;
       }
-      if (!options.force && installedVersion === sourceVersion) {
-        console.log('\nSemantic version matches, but source identity does not; promotion will continue.');
-      }
-
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const stagingDir = join(CONFIG.stagingDir, timestamp);
-      console.log(`\nStaging candidate to ${stagingDir}...`);
-      stageCandidate(sourceRoot, stagingDir, sourceVersion);
-      writeReleaseIdentity(stagingDir, sourceIdentity);
-
-      console.log('\nValidating candidate...');
-      if (!validateCandidate(stagingDir)) throw new Error('Candidate validation failed');
-
-      console.log('\nPromoting candidate...');
-      promotionAttempted = true;
-      const backupDir = promoteCandidate(stagingDir, CONFIG.harnessRoot, CONFIG.backupDir);
-      console.log(`Backup preserved at: ${backupDir}`);
-
-      console.log('\nUpdating launchers...');
-      installLaunchers(CONFIG.harnessRoot);
-      console.log('\nUpdating agents...');
-      installAgents(CONFIG.harnessRoot);
-      patchOpenCodeConfig(CONFIG.harnessRoot);
-      configureGitExcludes();
-
-      console.log('\nRunning post-promotion validation...');
-      const postValid = validatePostPromotion(CONFIG.harnessRoot);
-      const promotedIdentity = readReleaseIdentity(CONFIG.harnessRoot);
-      if (!postValid) throw new Error('Post-promotion validation failed');
-      if (isExactReleaseIdentity(sourceIdentity) && !sameReleaseIdentity(sourceIdentity, promotedIdentity)) {
-        throw new Error('Post-promotion release identity does not match source checkout');
-      }
-
-      console.log('\n✓ Update complete');
-      console.log(`  Version: ${sourceVersion}`);
-      console.log(`  SHA: ${promotedIdentity?.source_commit || 'unavailable'}`);
-      console.log(`  Backup: ${backupDir}`);
+      const installed = installVerifiedArtifact({ archive, installStore: CONFIG.installStoreRoot });
+      const result = activateRelease(installed.id, CONFIG.installStoreRoot);
+      installLaunchers(CONFIG.installStoreRoot);
+      // External configuration remains deliberately outside release atomicity.
+      installAgents(result.current.path); patchOpenCodeConfig(result.current.path); configureGitExcludes();
+      console.log(`✓ Active immutable release: ${result.current.id}`);
+      if (temporary) rmSync(temporary, { recursive: true, force: true });
     } catch (error) {
       console.error('\n✗ Update failed:', error.message);
-      if (!promotionAttempted) {
-        console.error('Installed runtime unchanged; promotion was not attempted.');
-        process.exit(1);
-      }
-      console.error('Attempting rollback...');
-      try {
-        const result = rollbackCandidate(CONFIG.backupDir, CONFIG.harnessRoot);
-        console.log(`✓ Rollback complete, restored version: ${result.restoredVersion}`);
-        console.log(`  From backup: ${result.backupUsed}`);
-      } catch (rollbackErr) {
-        console.error('✗ Rollback also failed:', rollbackErr.message);
-        console.error('Installation may be in inconsistent state!');
-      }
       process.exit(1);
     }
   });
 
 program
   .command('rollback')
-  .description('Rollback to previous installation from backup')
+  .description('Atomically switch current to the verified previous immutable release')
   .action(() => {
     console.log('=== ocode-harness Rollback ===\n');
     try {
-      const result = rollbackCandidate(CONFIG.backupDir, CONFIG.harnessRoot);
-      console.log('\nReinstalling launchers...');
-      installLaunchers(CONFIG.harnessRoot);
-      console.log('\nReinstalling agents...');
-      installAgents(CONFIG.harnessRoot);
-      patchOpenCodeConfig(CONFIG.harnessRoot);
-      console.log('\nRunning post-rollback validation...');
-      if (!validatePostPromotion(CONFIG.harnessRoot)) throw new Error('Post-rollback validation failed');
+      const result = rollbackRelease(CONFIG.installStoreRoot);
       console.log('\n✓ Rollback complete');
-      console.log(`  Restored version: ${result.restoredVersion}`);
-      console.log(`  Restored SHA: ${readReleaseIdentity(CONFIG.harnessRoot)?.source_commit || 'unavailable (legacy backup)'}`);
-      console.log(`  From backup: ${result.backupUsed}`);
+      console.log(`  Restored version: ${result.current.release.version}`);
+      console.log(`  Restored SHA: ${result.current.release.source_commit}`);
     } catch (error) {
       console.error('\n✗ Rollback failed:', error.message);
       process.exit(1);

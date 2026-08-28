@@ -14,6 +14,7 @@ import {
   cpSync,
   statSync,
   readdirSync,
+  renameSync,
 } from 'node:fs';
 import { execSync, spawnSync } from 'node:child_process';
 import { homedir } from 'node:os';
@@ -26,12 +27,16 @@ const __dirname = dirname(__filename);
 
 export const CONFIG = {
   harnessRoot: join(homedir(), '.local', 'share', 'ocode-harness'),
+  installStoreRoot: join(homedir(), '.local', 'share', 'ocode-harness'),
+  releasesRoot: join(homedir(), '.local', 'share', 'ocode-harness', 'releases'),
+  currentRelease: join(homedir(), '.local', 'share', 'ocode-harness', 'current'),
+  previousRelease: join(homedir(), '.local', 'share', 'ocode-harness', 'previous'),
   binDir: join(homedir(), '.local', 'bin'),
   agentsDir: join(homedir(), '.config', 'opencode', 'agents'),
   opencodeConfig: join(homedir(), '.config', 'opencode', 'opencode.json'),
   machineConfig: join(homedir(), '.config', 'ocode', 'config.json'),
-  orientationDir: join(homedir(), '.local', 'share', 'ocode-harness', 'orientation'),
-  harnessRuntimeDir: join(homedir(), '.local', 'share', 'ocode-harness', 'harness-runtime'),
+  orientationDir: join(homedir(), '.local', 'share', 'ocode-harness', 'current', 'orientation'),
+  harnessRuntimeDir: join(homedir(), '.local', 'share', 'ocode-harness', 'current', 'harness-runtime'),
   stagingDir: join(homedir(), '.local', 'share', 'ocode-harness-staging'),
   backupDir: join(homedir(), '.local', 'share', 'ocode-harness-backups'),
 };
@@ -450,13 +455,15 @@ export function installLaunchers(targetDir) {
   const binDir = CONFIG.binDir;
   mkdirSync(binDir, { recursive: true });
 
-  const orientationBin = join(targetDir, 'orientation', 'bin', 'orient.mjs');
-  const harnessBin = join(targetDir, 'harness-runtime', 'bin', 'harness.mjs');
-  const ocodeBin = join(targetDir, 'harness-runtime', 'bin', 'ocode.mjs');
+  // Launchers are stable: activation changes only current, never these files.
+  const active = join(CONFIG.installStoreRoot, 'current');
+  const orientationBin = join(active, 'orientation', 'bin', 'orient.mjs');
+  const harnessBin = join(active, 'harness-runtime', 'bin', 'harness.mjs');
+  const ocodeBin = join(active, 'harness-runtime', 'bin', 'ocode.mjs');
+  const publishLauncher = (path, source) => { const temp = `${path}.tmp-${process.pid}`; writeFileSync(temp, source, { mode: 0o755 }); renameSync(temp, path); };
 
   const orientLauncher = join(binDir, 'orient');
-  writeFileSync(orientLauncher, `#!/bin/sh\nset -eu\nexec node "${orientationBin}" "\${1:-\${PWD}}"\n`, 'utf8');
-  execSync(`chmod +x "${orientLauncher}"`, { stdio: 'inherit' });
+  publishLauncher(orientLauncher, `#!/bin/sh\nset -eu\nexec node "${orientationBin}" "\${1:-\${PWD}}"\n`);
   console.log(`  ✓ orient -> ${orientLauncher}`);
 
   const ocodeLauncher = join(binDir, 'ocode');
@@ -474,13 +481,11 @@ case "\${1:-}" in
     ;;
 esac
 `;
-  writeFileSync(ocodeLauncher, ocodeScript, 'utf8');
-  execSync(`chmod +x "${ocodeLauncher}"`, { stdio: 'inherit' });
+  publishLauncher(ocodeLauncher, ocodeScript);
   console.log(`  ✓ ocode -> ${ocodeLauncher}`);
 
   const harnessLauncher = join(binDir, 'harness');
-  writeFileSync(harnessLauncher, `#!/bin/sh\nset -eu\nexec node "${harnessBin}" "\${@}"\n`, 'utf8');
-  execSync(`chmod +x "${harnessLauncher}"`, { stdio: 'inherit' });
+  publishLauncher(harnessLauncher, `#!/bin/sh\nset -eu\nexec node "${harnessBin}" "\${@}"\n`);
   console.log(`  ✓ harness -> ${harnessLauncher} (compatibility/internal)`);
 }
 

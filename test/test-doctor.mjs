@@ -28,7 +28,9 @@ writeFileSync(mockOpencodePath, '#!/bin/sh\necho "mock-1.0.0"\n', 'utf8');
 
 const mockGitPath = join(testBinDir, 'git');
 writeFileSync(mockGitPath, `#!/bin/sh
-if [ "$1" = "--version" ]; then
+if [ "$1" = "-C" ]; then
+  exec /usr/bin/git "$@"
+elif [ "$1" = "--version" ]; then
   echo "mock-git-2.40.0"
 elif [ "$1" = "rev-parse" ] && [ "$2" = "--show-toplevel" ]; then
   echo "${testProject}"

@@ -121,11 +121,8 @@ const mockOpencodePath = join(testBinDir, 'opencode');
 writeFileSync(mockOpencodePath, `#!/bin/sh\necho "${mockOpencodeVersion}"\n`, 'utf8');
 execSync(`chmod +x "${mockOpencodePath}"`, { stdio: 'inherit' });
 
-// Mock git binary in PATH
-const mockGitVersion = 'mock-git-2.40.0';
-const mockGitPath = join(testBinDir, 'git');
-writeFileSync(mockGitPath, `#!/bin/sh\necho "${mockGitVersion}"\n`, 'utf8');
-execSync(`chmod +x "${mockGitPath}"`, { stdio: 'inherit' });
+// Bootstrap now builds a Phase-2 artifact, so it must use the real Git identity
+// rather than the historical version-only Git mock.
 
 // Use real Node.js for spawning installer (avoid mock node shadowing)
 const nodeBin = process.execPath;

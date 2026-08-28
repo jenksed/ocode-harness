@@ -27,8 +27,8 @@ try {
   run(root, process.execPath, [join(repo, 'scripts', 'verify-release-artifact.mjs'), artifact]); const installed = cli(root, 'release', 'install', artifact).trim().split(/\s+/).pop(); assert.equal(pointers().current, aId);
   const listed = cli(root, 'release', 'list'); assert.ok(listed.includes(aId) && listed.includes(installed)); assert.equal(JSON.parse(cli(root, 'release', 'current')).id, aId);
   cli(root, 'release', 'run', installed, 'agents'); assert.equal(pointers().current, aId);
-  cli(root, 'release', 'promote', installed); const promoted = pointers(); assert.equal(promoted.current, installed); assert.equal(JSON.parse(cli(root, 'version', '--json')).installed_sha, bSha);
-  cli(root, 'rollback'); const rolled = pointers(); assert.equal(rolled.current, aId); assert.equal(JSON.parse(cli(root, 'version', '--json')).installed_sha, aSha);
+  cli(root, 'release', 'promote', installed); const promoted = pointers(); assert.equal(promoted.current, installed); assert.equal(promoted.previous, aId); assert.equal(JSON.parse(cli(root, 'version', '--json')).installed_sha, bSha);
+  cli(root, 'rollback'); const rolled = pointers(); assert.equal(rolled.current, aId); assert.equal(rolled.previous, installed); assert.equal(JSON.parse(cli(root, 'version', '--json')).installed_sha, aSha);
   cli(root, 'release', 'list'); cli(root, 'release', 'run', installed, 'agents');
   console.log(`SELF_HOSTING_E2E_PROVEN A=${aId} B=${installed}`);
 } finally { for (const path of [a, b]) if (existsSync(path)) spawnSync('git', ['worktree', 'remove', '--force', path], { cwd: repo }); rmSync(root, { recursive: true, force: true }); }

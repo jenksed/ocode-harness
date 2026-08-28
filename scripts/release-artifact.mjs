@@ -1,12 +1,15 @@
 import { createHash } from 'node:crypto';
-import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
+import { gunzipSync } from 'node:zlib';
+import { cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync, chmodSync, renameSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
-import { basename, join, posix, relative, resolve } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { inspectSourceIdentity, isExactReleaseIdentity, readReleaseIdentity, readVersion, validateReleaseIdentity, writeReleaseIdentity } from '../packages/harness-runtime/lib/deploy.mjs';
+import { checkVersionMirrors } from './version-authority.mjs';
 
 export const ARTIFACT_SCHEMA_VERSION = 1;
 export const ARTIFACT_FORMAT = 'ocode-release-artifact-v1';
+export const ARTIFACT_LINK_POLICY = 'FINAL_ARTIFACT_NO_LINK_ENTRIES';
 const sha = (value) => createHash('sha256').update(value).digest('hex');
 const fileSHA = (path) => sha(readFileSync(path));
 const json = (value) => `${JSON.stringify(value, null, 2)}\n`;
@@ -17,26 +20,19 @@ function list(root, current = root, entries = []) {
   for (const name of readdirSync(current).sort()) {
     const absolute = join(current, name), rel = toPosix(relative(root, absolute)), info = lstatSync(absolute);
     if (info.isDirectory()) list(root, absolute, entries);
-    else if (info.isSymbolicLink()) entries.push({ path: rel, type: 'symlink', target: readlinkSync(absolute), executable: false, size: 0, sha256: null });
+    else if (info.isSymbolicLink()) throw new Error(`Artifact link entries are prohibited: ${rel}`);
     else if (info.isFile()) entries.push({ path: rel, type: 'file', size: info.size, sha256: fileSHA(absolute), executable: Boolean(info.mode & 0o111) });
     else throw new Error(`Unsupported artifact payload entry: ${rel}`);
   }
   return entries.sort((a, b) => a.path.localeCompare(b.path));
 }
-function assertSafeEntries(entries) {
-  for (const entry of entries) {
-    if (entry.path.startsWith('/') || entry.path.split('/').includes('..')) throw new Error(`Unsafe artifact path: ${entry.path}`);
-    if (entry.type === 'symlink') {
-      const resolved = posix.normalize(posix.join(posix.dirname(entry.path), entry.target));
-      if (entry.target.startsWith('/') || resolved.startsWith('../') || resolved === '..') throw new Error(`Escaping artifact symlink: ${entry.path} -> ${entry.target}`);
-    }
-  }
+function assertSafePayloadPath(path) {
+  if (typeof path !== 'string' || !path || path.startsWith('/') || path.includes('\\') || path.split('/').some((part) => !part || part === '.' || part === '..')) throw new Error(`Unsafe artifact path: ${path}`);
 }
 export function createArtifactManifest(root, release, lockSHA, sdkVersion) {
   const files = list(root).filter((entry) => entry.path !== 'ARTIFACT.json');
-  assertSafeEntries(files);
-  const manifestSHA = sha(JSON.stringify(files));
-  return { schema_version: ARTIFACT_SCHEMA_VERSION, format: ARTIFACT_FORMAT, release: { version: release.version, source_commit: release.source_commit }, build_inputs: { package_lock_sha256: lockSHA }, runtime: { sdk: { package: '@opencode-ai/sdk', version: sdkVersion } }, payload: { manifest_sha256: manifestSHA, files } };
+  for (const entry of files) assertSafePayloadPath(entry.path);
+  return { schema_version: ARTIFACT_SCHEMA_VERSION, format: ARTIFACT_FORMAT, release: { version: release.version, source_commit: release.source_commit }, build_inputs: { package_lock_sha256: lockSHA }, runtime: { sdk: { package: '@opencode-ai/sdk', version: sdkVersion } }, payload: { manifest_sha256: sha(JSON.stringify(files)), files } };
 }
 function sanitizedRuntimeManifest(source, version) {
   const pkg = JSON.parse(readFileSync(source, 'utf8'));
@@ -50,54 +46,88 @@ function copySkills(source, target) {
   }
 }
 function assertNoContamination(root, forbidden) {
-  for (const entry of list(root)) if (entry.type === 'file' && entry.size < 2_000_000) {
+  for (const entry of list(root)) if (entry.size < 2_000_000) {
     const content = readFileSync(join(root, entry.path), 'utf8');
     for (const value of forbidden) if (value && content.includes(value)) throw new Error(`Artifact contains forbidden absolute path in ${entry.path}`);
   }
 }
+function publish(path, bytes) { const partial = `${path}.partial-${process.pid}`; writeFileSync(partial, bytes); renameSync(partial, path); }
+function parseOctal(buffer) { const text = buffer.toString('ascii').replace(/\0.*$/, '').trim(); if (!text) return 0; if (!/^[0-7]+$/.test(text)) throw new Error('Invalid tar numeric field'); return Number.parseInt(text, 8); }
+function tarText(buffer) { return buffer.toString('utf8').replace(/\0.*$/, ''); }
+function zeroBlock(buffer) { return buffer.every((value) => value === 0); }
+function validTarChecksum(header) { const expected = parseOctal(header.subarray(148, 156)); const copy = Buffer.from(header); copy.fill(0x20, 148, 156); return copy.reduce((sum, value) => sum + value, 0) === expected; }
+function archivePath(name) {
+  const clean = name.endsWith('/') ? name.slice(0, -1) : name;
+  if (clean === 'ocode-release') return '';
+  if (!clean.startsWith('ocode-release/')) throw new Error(`Artifact root is invalid: ${name}`);
+  const payload = clean.slice('ocode-release/'.length); assertSafePayloadPath(payload); return payload;
+}
+
+/** Inspect untrusted bytes before any filesystem materialization. Only directories and regular files are accepted. */
+export function inspectArtifactArchive(archive) {
+  const bytes = gunzipSync(readFileSync(archive)); const entries = []; const names = new Set(); let offset = 0;
+  while (offset < bytes.length) {
+    const header = bytes.subarray(offset, offset + 512); if (header.length !== 512) throw new Error('Truncated tar header'); if (zeroBlock(header)) break;
+    if (!validTarChecksum(header)) throw new Error('Invalid tar header checksum');
+    const prefix = tarText(header.subarray(345, 500)), base = tarText(header.subarray(0, 100)), name = `${prefix}${prefix ? '/' : ''}${base}`;
+    const type = tarText(header.subarray(156, 157)) || '0', size = parseOctal(header.subarray(124, 136)), mode = parseOctal(header.subarray(100, 108)), path = archivePath(name);
+    if (!path && type !== '5') throw new Error('Artifact root must be a directory');
+    if (!['0', '5'].includes(type)) throw new Error(`Artifact link or special entry is prohibited: ${name}`);
+    if (type === '5' && size !== 0) throw new Error(`Directory with content is invalid: ${name}`);
+    if (names.has(path)) throw new Error(`Duplicate artifact path: ${name}`); names.add(path);
+    const dataStart = offset + 512, dataEnd = dataStart + size; if (dataEnd > bytes.length) throw new Error(`Truncated tar entry: ${name}`);
+    entries.push({ path, type: type === '5' ? 'directory' : 'file', mode, data: bytes.subarray(dataStart, dataEnd) }); offset = dataStart + Math.ceil(size / 512) * 512;
+  }
+  if (!entries.some((entry) => entry.path === '' && entry.type === 'directory')) throw new Error('Artifact root directory missing');
+  return entries;
+}
+
+/** Safe reusable materializer: it never invokes a generic extractor on untrusted archive bytes. */
+export function materializeVerifiedArtifact(archive, candidateRoot) {
+  if (existsSync(candidateRoot) && readdirSync(candidateRoot).length) throw new Error('Artifact candidate root must be empty');
+  mkdirSync(candidateRoot, { recursive: true }); const entries = inspectArtifactArchive(archive), root = join(candidateRoot, 'ocode-release');
+  for (const entry of entries.filter((entry) => entry.type === 'directory').sort((a, b) => a.path.length - b.path.length)) { const target = entry.path ? join(root, entry.path) : root; mkdirSync(target, { recursive: true, mode: entry.mode & 0o777 }); chmodSync(target, entry.mode & 0o777); }
+  for (const entry of entries.filter((entry) => entry.type === 'file')) { const target = join(root, entry.path); mkdirSync(join(target, '..'), { recursive: true }); writeFileSync(target, entry.data, { flag: 'wx', mode: entry.mode & 0o777 }); chmodSync(target, entry.mode & 0o777); }
+  return { root, entries };
+}
+function validateArtifactMetadata(root, release, artifact) {
+  validateReleaseIdentity(release);
+  if (!artifact || artifact.schema_version !== ARTIFACT_SCHEMA_VERSION || artifact.format !== ARTIFACT_FORMAT) throw new Error('Artifact schema invalid');
+  if (artifact.release?.version !== release.version || artifact.release?.source_commit !== release.source_commit) throw new Error('Release/artifact identity mismatch');
+  if (readFileSync(join(root, 'VERSION'), 'utf8') !== `${release.version}\n`) throw new Error('Artifact VERSION identity mismatch');
+  if (!/^[0-9a-f]{64}$/.test(artifact.build_inputs?.package_lock_sha256 || '') || fileSHA(join(root, 'package-lock.json')) !== artifact.build_inputs.package_lock_sha256) throw new Error('Artifact lockfile identity mismatch');
+  if (artifact.runtime?.sdk?.package !== '@opencode-ai/sdk' || typeof artifact.runtime.sdk.version !== 'string') throw new Error('Artifact SDK metadata invalid');
+}
+export function verifyMaterializedPayload(root) {
+  const release = readReleaseIdentity(root), artifact = JSON.parse(readFileSync(join(root, 'ARTIFACT.json'), 'utf8')); validateArtifactMetadata(root, release, artifact);
+  const actual = list(root).filter((entry) => entry.path !== 'ARTIFACT.json');
+  if (sha(JSON.stringify(actual)) !== artifact.payload?.manifest_sha256 || JSON.stringify(actual) !== JSON.stringify(artifact.payload.files)) throw new Error('Artifact payload manifest mismatch');
+  const sdk = join(root, 'harness-runtime/node_modules/@opencode-ai/sdk/package.json'); if (!existsSync(sdk) || JSON.parse(readFileSync(sdk, 'utf8')).version !== artifact.runtime.sdk.version) throw new Error('Artifact SDK dependency mismatch');
+  for (const required of ['harness-runtime/bin/harness.mjs', 'harness-runtime/bin/ocode.mjs', 'harness-runtime/lib/deploy.mjs', 'orientation/bin/orient.mjs', 'agents/manifest.json', 'profiles/free.json', 'doctrine/policy-version.json', 'opencode-config/opencode.json']) if (!existsSync(join(root, required))) throw new Error(`Artifact missing ${required}`);
+  return { release, artifact };
+}
 export function buildReleaseArtifact({ sourceRoot, outputDir }) {
-  const version = readVersion(join(sourceRoot, 'VERSION')); if (!version) throw new Error('Missing canonical VERSION');
-  const release = inspectSourceIdentity(sourceRoot); if (!isExactReleaseIdentity(release)) throw new Error('OCODE_RELEASE_SOURCE_NOT_EXACT: release artifacts require a clean Git source');
-  const runtimePkg = JSON.parse(readFileSync(join(sourceRoot, 'packages/harness-runtime/package.json'), 'utf8'));
-  const rootPkg = JSON.parse(readFileSync(join(sourceRoot, 'package.json'), 'utf8'));
-  const sdkVersion = runtimePkg.dependencies?.['@opencode-ai/sdk'];
+  const version = checkVersionMirrors(sourceRoot), release = inspectSourceIdentity(sourceRoot); if (!isExactReleaseIdentity(release)) throw new Error('OCODE_RELEASE_SOURCE_NOT_EXACT: release artifacts require a clean Git source');
+  const runtimePkg = JSON.parse(readFileSync(join(sourceRoot, 'packages/harness-runtime/package.json'), 'utf8')), rootPkg = JSON.parse(readFileSync(join(sourceRoot, 'package.json'), 'utf8')), sdkVersion = runtimePkg.dependencies?.['@opencode-ai/sdk'];
   if (!sdkVersion || rootPkg.dependencies?.['@opencode-ai/sdk'] !== sdkVersion) throw new Error('Runtime SDK declaration disagrees with root locked build dependency');
-  const lockPath = join(sourceRoot, 'package-lock.json'), lockSHA = fileSHA(lockPath);
+  const lockPath = join(sourceRoot, 'package-lock.json'), lockSHA = fileSHA(lockPath); if (readVersion(join(sourceRoot, 'VERSION')) !== version) throw new Error('Canonical version authority mismatch');
+  if (existsSync(outputDir) && readdirSync(outputDir).length) throw new Error('Release output directory must be empty');
   const temp = mkdtempSync(join(tmpdir(), 'ocode-release-build-'));
   try {
-    const dependencyRoot = join(temp, 'dependencies'); mkdirSync(dependencyRoot);
-    copy(join(sourceRoot, 'package.json'), join(dependencyRoot, 'package.json')); copy(lockPath, join(dependencyRoot, 'package-lock.json'));
+    const dependencyRoot = join(temp, 'dependencies'); mkdirSync(dependencyRoot); copy(join(sourceRoot, 'package.json'), join(dependencyRoot, 'package.json')); copy(lockPath, join(dependencyRoot, 'package-lock.json'));
     execFileSync('npm', ['ci', '--omit=dev', '--ignore-scripts'], { cwd: dependencyRoot, stdio: 'inherit' });
-    const sdkPackage = join(dependencyRoot, 'node_modules/@opencode-ai/sdk/package.json');
-    if (!existsSync(sdkPackage) || JSON.parse(readFileSync(sdkPackage, 'utf8')).version !== sdkVersion) throw new Error('Locked production SDK dependency is unavailable or mismatched');
-    const root = join(temp, 'ocode-release'); mkdirSync(root);
-    writeFileSync(join(root, 'VERSION'), `${version}\n`); writeReleaseIdentity(root, release);
+    const sdkPackage = join(dependencyRoot, 'node_modules/@opencode-ai/sdk/package.json'); if (!existsSync(sdkPackage) || JSON.parse(readFileSync(sdkPackage, 'utf8')).version !== sdkVersion) throw new Error('Locked production SDK dependency is unavailable or mismatched');
+    const root = join(temp, 'ocode-release'); mkdirSync(root); writeFileSync(join(root, 'VERSION'), `${version}\n`); writeReleaseIdentity(root, release); copy(lockPath, join(root, 'package-lock.json'));
     const runtime = join(root, 'harness-runtime'); mkdirSync(runtime); copy(join(sourceRoot, 'packages/harness-runtime/bin'), join(runtime, 'bin')); copy(join(sourceRoot, 'packages/harness-runtime/lib'), join(runtime, 'lib')); writeFileSync(join(runtime, 'package.json'), json(sanitizedRuntimeManifest(join(sourceRoot, 'packages/harness-runtime/package.json'), version))); copy(join(dependencyRoot, 'node_modules'), join(runtime, 'node_modules'), true); rmSync(join(runtime, 'node_modules', '.bin'), { recursive: true, force: true });
     const orientation = join(root, 'orientation'); mkdirSync(orientation); copy(join(sourceRoot, 'packages/orientation/bin'), join(orientation, 'bin')); copy(join(sourceRoot, 'packages/orientation/lib'), join(orientation, 'lib')); copy(join(sourceRoot, 'packages/orientation/package.json'), join(orientation, 'package.json'));
-    for (const dir of ['agents', 'profiles', 'doctrine', 'opencode-config']) copy(join(sourceRoot, dir), join(root, dir));
-    copySkills(join(sourceRoot, 'skills'), join(root, 'skills'));
-    const artifact = createArtifactManifest(root, release, lockSHA, sdkVersion); writeFileSync(join(root, 'ARTIFACT.json'), json(artifact));
-    assertNoContamination(root, [resolve(sourceRoot), homedir(), temp]);
-    mkdirSync(outputDir, { recursive: true }); const name = `ocode-${version}+${release.source_commit.slice(0, 7)}.tar.gz`, archive = join(outputDir, name);
-    execFileSync('tar', ['-czf', archive, '-C', temp, 'ocode-release']);
-    const archiveSHA = fileSHA(archive); writeFileSync(`${archive}.sha256`, `${archiveSHA}  ${name}\n`);
+    for (const dir of ['agents', 'profiles', 'doctrine', 'opencode-config']) copy(join(sourceRoot, dir), join(root, dir)); copySkills(join(sourceRoot, 'skills'), join(root, 'skills'));
+    const artifact = createArtifactManifest(root, release, lockSHA, sdkVersion); writeFileSync(join(root, 'ARTIFACT.json'), json(artifact)); assertNoContamination(root, [resolve(sourceRoot), homedir(), temp]);
+    mkdirSync(outputDir, { recursive: true }); const name = `ocode-${version}+${release.source_commit.slice(0, 7)}.tar.gz`, archive = join(outputDir, name), temporaryArchive = join(temp, name);
+    execFileSync('tar', ['-czf', temporaryArchive, '-C', temp, 'ocode-release']); inspectArtifactArchive(temporaryArchive); publish(archive, readFileSync(temporaryArchive)); const archiveSHA = fileSHA(archive); publish(`${archive}.sha256`, `${archiveSHA}  ${name}\n`);
     return { archive, checksum: `${archive}.sha256`, archive_sha256: archiveSHA, artifact, release };
   } finally { rmSync(temp, { recursive: true, force: true }); }
 }
 export function verifyReleaseArtifact(archive) {
-  const checksum = `${archive}.sha256`; if (!existsSync(checksum)) throw new Error('Detached archive checksum missing');
-  const expected = readFileSync(checksum, 'utf8').trim().split(/\s+/)[0]; if (!/^[0-9a-f]{64}$/.test(expected) || fileSHA(archive) !== expected) throw new Error('Archive SHA-256 mismatch');
-  const names = execFileSync('tar', ['-tzf', archive], { encoding: 'utf8' }).trim().split('\n').filter(Boolean); if (names.some((name) => name.startsWith('/') || name.split('/').includes('..'))) throw new Error('Archive has unsafe path');
-  const temp = mkdtempSync(join(tmpdir(), 'ocode-release-verify-'));
-  try {
-    execFileSync('tar', ['-xzf', archive, '-C', temp]); const root = join(temp, 'ocode-release');
-    const release = readReleaseIdentity(root), artifact = JSON.parse(readFileSync(join(root, 'ARTIFACT.json'), 'utf8'));
-    validateReleaseIdentity(release); if (artifact.schema_version !== ARTIFACT_SCHEMA_VERSION || artifact.format !== ARTIFACT_FORMAT) throw new Error('Artifact schema invalid');
-    if (artifact.release.version !== release.version || artifact.release.source_commit !== release.source_commit) throw new Error('Release/artifact identity mismatch');
-    const actual = list(root).filter((entry) => entry.path !== 'ARTIFACT.json'); assertSafeEntries(actual);
-    if (sha(JSON.stringify(actual)) !== artifact.payload.manifest_sha256 || JSON.stringify(actual) !== JSON.stringify(artifact.payload.files)) throw new Error('Artifact payload manifest mismatch');
-    const sdk = join(root, 'harness-runtime/node_modules/@opencode-ai/sdk/package.json'); if (!existsSync(sdk) || JSON.parse(readFileSync(sdk, 'utf8')).version !== artifact.runtime.sdk.version) throw new Error('Artifact SDK dependency mismatch');
-    for (const required of ['harness-runtime/bin/harness.mjs', 'harness-runtime/lib/deploy.mjs', 'orientation/bin/orient.mjs', 'agents/manifest.json', 'profiles/free.json', 'doctrine/policy-version.json', 'opencode-config/opencode.json']) if (!existsSync(join(root, required))) throw new Error(`Artifact missing ${required}`);
-    return { root, release, artifact, archive_sha256: expected };
-  } finally { rmSync(temp, { recursive: true, force: true }); }
+  const checksum = `${archive}.sha256`; if (!existsSync(checksum)) throw new Error('Detached archive checksum missing'); const expected = readFileSync(checksum, 'utf8').trim().split(/\s+/)[0]; if (!/^[0-9a-f]{64}$/.test(expected) || fileSHA(archive) !== expected) throw new Error('Archive SHA-256 mismatch');
+  const temp = mkdtempSync(join(tmpdir(), 'ocode-release-verify-')); try { const { root } = materializeVerifiedArtifact(archive, temp); const { release, artifact } = verifyMaterializedPayload(root); return { release, artifact, archive_sha256: expected }; } finally { rmSync(temp, { recursive: true, force: true }); }
 }

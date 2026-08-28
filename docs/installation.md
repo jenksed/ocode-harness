@@ -86,6 +86,14 @@ artifact manifest enumerates the payload and deliberately excludes itself to
 avoid a self-referential digest. Phase 3, not this phase, must make
 installation/update consume an already-built artifact atomically.
 
+The archive permits only directories and regular files: dependency links are
+dereferenced during assembly and generated `node_modules/.bin` shims are not
+shipped. Verification inspects archive headers before materializing anything,
+then reconstructs the payload through the same no-links policy. The build
+requires an empty output directory, validates the Phase-1 version mirrors
+itself, and carries the lockfile as build-input metadata so its declared hash
+is independently verifiable.
+
 ## Verify the installed release
 
 ```bash

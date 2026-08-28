@@ -4,7 +4,7 @@
     "opencode": "1.18.21",
     "sdk": "1.18.21"
   },
-  "observed_at": "2026-08-28T22:09:23.544Z",
+  "observed_at": "2026-08-28T23:05:12.671Z",
   "method": "local OpenAI-compatible non-inference fixture through installed SDK/server",
   "lifecycle": {
     "server_start": "SUPPORTED",
@@ -667,83 +667,6 @@
       "session_abort": "SUPPORTED"
     },
     {
-      "id": "orchestrator-git-add-denied",
-      "commands": [
-        "git add README.md"
-      ],
-      "rules": {
-        "*": "deny",
-        "git *": "deny",
-        "ls": "allow",
-        "ls *": "allow",
-        "pwd": "allow",
-        "rg": "allow",
-        "rg *": "allow",
-        "grep": "allow",
-        "grep *": "allow",
-        "find": "allow",
-        "find *": "allow",
-        "head": "allow",
-        "head *": "allow",
-        "tail": "allow",
-        "tail *": "allow",
-        "wc": "allow",
-        "wc *": "allow",
-        "file": "allow",
-        "file *": "allow",
-        "stat": "allow",
-        "stat *": "allow",
-        "tree": "allow",
-        "tree *": "allow",
-        "which": "allow",
-        "which *": "allow",
-        "command -v": "allow",
-        "command -v *": "allow",
-        "git status": "allow",
-        "git status *": "allow",
-        "git diff": "allow",
-        "git diff *": "allow",
-        "git log": "allow",
-        "git log *": "allow",
-        "git show": "allow",
-        "git show *": "allow",
-        "git rev-parse": "allow",
-        "git rev-parse *": "allow",
-        "git worktree list": "allow",
-        "git worktree list *": "allow",
-        "git branch --show-current": "allow",
-        "git branch --list": "allow",
-        "git branch --list *": "allow",
-        "git branch -a": "allow",
-        "git branch -r": "allow",
-        "git push": "deny",
-        "git push *": "deny",
-        "git reset --hard": "deny",
-        "git reset --hard *": "deny",
-        "git clean": "deny",
-        "git clean *": "deny",
-        "git add": "deny",
-        "git add *": "deny",
-        "git commit": "deny",
-        "git commit *": "deny",
-        "rm -rf *": "deny",
-        "*>*": "deny",
-        "*<*": "deny"
-      },
-      "reply": null,
-      "git_fixture": true,
-      "permission_request_count": 0,
-      "permission_reply": null,
-      "tool_states": [
-        "pending",
-        "running",
-        "error"
-      ],
-      "request_count": 2,
-      "marker_created": false,
-      "session_abort": "SUPPORTED"
-    },
-    {
       "id": "orchestrator-pipeline-write-probe",
       "commands": [
         "rg needle fixture.txt | tee marker.txt"
@@ -895,6 +818,2240 @@
       ],
       "request_count": 2,
       "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "orchestrator-safe-observation-matrix",
+      "commands": [
+        "pwd",
+        "ls",
+        "rg needle fixture.txt",
+        "grep needle fixture.txt",
+        "git status --short",
+        "git rev-parse HEAD",
+        "git branch --show-current",
+        "git worktree list"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "git push": "deny",
+        "git push *": "deny",
+        "git reset --hard": "deny",
+        "git reset --hard *": "deny",
+        "git clean": "deny",
+        "git clean *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "rm -rf *": "deny",
+        "find *": "deny",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "git_fixture": true,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed",
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed",
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed",
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed",
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed",
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed",
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed",
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "pwd",
+          "status": "running"
+        },
+        {
+          "command": "pwd",
+          "status": "running"
+        },
+        {
+          "command": "pwd",
+          "status": "running"
+        },
+        {
+          "command": "pwd",
+          "status": "completed"
+        },
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "ls",
+          "status": "running"
+        },
+        {
+          "command": "ls",
+          "status": "running"
+        },
+        {
+          "command": "ls",
+          "status": "running"
+        },
+        {
+          "command": "ls",
+          "status": "completed"
+        },
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "rg needle fixture.txt",
+          "status": "running"
+        },
+        {
+          "command": "rg needle fixture.txt",
+          "status": "running"
+        },
+        {
+          "command": "rg needle fixture.txt",
+          "status": "running"
+        },
+        {
+          "command": "rg needle fixture.txt",
+          "status": "completed"
+        },
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "grep needle fixture.txt",
+          "status": "running"
+        },
+        {
+          "command": "grep needle fixture.txt",
+          "status": "running"
+        },
+        {
+          "command": "grep needle fixture.txt",
+          "status": "running"
+        },
+        {
+          "command": "grep needle fixture.txt",
+          "status": "completed"
+        },
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "git status --short",
+          "status": "running"
+        },
+        {
+          "command": "git status --short",
+          "status": "running"
+        },
+        {
+          "command": "git status --short",
+          "status": "running"
+        },
+        {
+          "command": "git status --short",
+          "status": "completed"
+        },
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "git rev-parse HEAD",
+          "status": "running"
+        },
+        {
+          "command": "git rev-parse HEAD",
+          "status": "running"
+        },
+        {
+          "command": "git rev-parse HEAD",
+          "status": "running"
+        },
+        {
+          "command": "git rev-parse HEAD",
+          "status": "completed"
+        },
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "git branch --show-current",
+          "status": "running"
+        },
+        {
+          "command": "git branch --show-current",
+          "status": "running"
+        },
+        {
+          "command": "git branch --show-current",
+          "status": "running"
+        },
+        {
+          "command": "git branch --show-current",
+          "status": "completed"
+        },
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "git worktree list",
+          "status": "running"
+        },
+        {
+          "command": "git worktree list",
+          "status": "running"
+        },
+        {
+          "command": "git worktree list",
+          "status": "running"
+        },
+        {
+          "command": "git worktree list",
+          "status": "completed"
+        }
+      ],
+      "request_count": 9,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "orchestrator-pwd-observation",
+      "commands": [
+        "pwd"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "git push": "deny",
+        "git push *": "deny",
+        "git reset --hard": "deny",
+        "git reset --hard *": "deny",
+        "git clean": "deny",
+        "git clean *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "rm -rf *": "deny",
+        "find *": "deny",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "git_fixture": false,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "pwd",
+          "status": "running"
+        },
+        {
+          "command": "pwd",
+          "status": "running"
+        },
+        {
+          "command": "pwd",
+          "status": "running"
+        },
+        {
+          "command": "pwd",
+          "status": "completed"
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "orchestrator-ls-observation",
+      "commands": [
+        "ls"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "git push": "deny",
+        "git push *": "deny",
+        "git reset --hard": "deny",
+        "git reset --hard *": "deny",
+        "git clean": "deny",
+        "git clean *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "rm -rf *": "deny",
+        "find *": "deny",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "git_fixture": false,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "ls",
+          "status": "running"
+        },
+        {
+          "command": "ls",
+          "status": "running"
+        },
+        {
+          "command": "ls",
+          "status": "running"
+        },
+        {
+          "command": "ls",
+          "status": "completed"
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "orchestrator-rg-observation",
+      "commands": [
+        "rg needle fixture.txt"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "git push": "deny",
+        "git push *": "deny",
+        "git reset --hard": "deny",
+        "git reset --hard *": "deny",
+        "git clean": "deny",
+        "git clean *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "rm -rf *": "deny",
+        "find *": "deny",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "git_fixture": false,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "rg needle fixture.txt",
+          "status": "running"
+        },
+        {
+          "command": "rg needle fixture.txt",
+          "status": "running"
+        },
+        {
+          "command": "rg needle fixture.txt",
+          "status": "running"
+        },
+        {
+          "command": "rg needle fixture.txt",
+          "status": "completed"
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "orchestrator-grep-observation",
+      "commands": [
+        "grep needle fixture.txt"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "git push": "deny",
+        "git push *": "deny",
+        "git reset --hard": "deny",
+        "git reset --hard *": "deny",
+        "git clean": "deny",
+        "git clean *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "rm -rf *": "deny",
+        "find *": "deny",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "git_fixture": false,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "grep needle fixture.txt",
+          "status": "running"
+        },
+        {
+          "command": "grep needle fixture.txt",
+          "status": "running"
+        },
+        {
+          "command": "grep needle fixture.txt",
+          "status": "running"
+        },
+        {
+          "command": "grep needle fixture.txt",
+          "status": "completed"
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "orchestrator-rev-parse-observation",
+      "commands": [
+        "git rev-parse HEAD"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "git push": "deny",
+        "git push *": "deny",
+        "git reset --hard": "deny",
+        "git reset --hard *": "deny",
+        "git clean": "deny",
+        "git clean *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "rm -rf *": "deny",
+        "find *": "deny",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "git_fixture": true,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "git rev-parse HEAD",
+          "status": "running"
+        },
+        {
+          "command": "git rev-parse HEAD",
+          "status": "running"
+        },
+        {
+          "command": "git rev-parse HEAD",
+          "status": "running"
+        },
+        {
+          "command": "git rev-parse HEAD",
+          "status": "completed"
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "orchestrator-branch-observation",
+      "commands": [
+        "git branch --show-current"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "git push": "deny",
+        "git push *": "deny",
+        "git reset --hard": "deny",
+        "git reset --hard *": "deny",
+        "git clean": "deny",
+        "git clean *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "rm -rf *": "deny",
+        "find *": "deny",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "git_fixture": true,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "git branch --show-current",
+          "status": "running"
+        },
+        {
+          "command": "git branch --show-current",
+          "status": "running"
+        },
+        {
+          "command": "git branch --show-current",
+          "status": "running"
+        },
+        {
+          "command": "git branch --show-current",
+          "status": "completed"
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "orchestrator-worktree-observation",
+      "commands": [
+        "git worktree list"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "git push": "deny",
+        "git push *": "deny",
+        "git reset --hard": "deny",
+        "git reset --hard *": "deny",
+        "git clean": "deny",
+        "git clean *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "rm -rf *": "deny",
+        "find *": "deny",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "git_fixture": true,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "git worktree list",
+          "status": "running"
+        },
+        {
+          "command": "git worktree list",
+          "status": "running"
+        },
+        {
+          "command": "git worktree list",
+          "status": "running"
+        },
+        {
+          "command": "git worktree list",
+          "status": "completed"
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "orchestrator-git-show-output-denied",
+      "commands": [
+        "git show --output=marker.txt HEAD"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "git push": "deny",
+        "git push *": "deny",
+        "git reset --hard": "deny",
+        "git reset --hard *": "deny",
+        "git clean": "deny",
+        "git clean *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "rm -rf *": "deny",
+        "find *": "deny",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "git_fixture": true,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "git show --output=marker.txt HEAD",
+          "status": "running"
+        },
+        {
+          "command": "git show --output=marker.txt HEAD",
+          "status": "error"
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "orchestrator-git-diff-output-denied",
+      "commands": [
+        "git diff --output=marker.txt"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "git push": "deny",
+        "git push *": "deny",
+        "git reset --hard": "deny",
+        "git reset --hard *": "deny",
+        "git clean": "deny",
+        "git clean *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "rm -rf *": "deny",
+        "find *": "deny",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "git_fixture": true,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "git diff --output=marker.txt",
+          "status": "running"
+        },
+        {
+          "command": "git diff --output=marker.txt",
+          "status": "error"
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "orchestrator-git-log-output-denied",
+      "commands": [
+        "git log --output=marker.txt"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "git push": "deny",
+        "git push *": "deny",
+        "git reset --hard": "deny",
+        "git reset --hard *": "deny",
+        "git clean": "deny",
+        "git clean *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "rm -rf *": "deny",
+        "find *": "deny",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "git_fixture": true,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "git log --output=marker.txt",
+          "status": "running"
+        },
+        {
+          "command": "git log --output=marker.txt",
+          "status": "error"
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "orchestrator-tree-output-denied",
+      "commands": [
+        "tree -o marker.txt"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "git push": "deny",
+        "git push *": "deny",
+        "git reset --hard": "deny",
+        "git reset --hard *": "deny",
+        "git clean": "deny",
+        "git clean *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "rm -rf *": "deny",
+        "find *": "deny",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "git_fixture": false,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "tree -o marker.txt",
+          "status": "running"
+        },
+        {
+          "command": "tree -o marker.txt",
+          "status": "error"
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "orchestrator-find-delete-denied",
+      "commands": [
+        "find . -delete"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "git push": "deny",
+        "git push *": "deny",
+        "git reset --hard": "deny",
+        "git reset --hard *": "deny",
+        "git clean": "deny",
+        "git clean *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "rm -rf *": "deny",
+        "find *": "deny",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "git_fixture": false,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "find . -delete",
+          "status": "running"
+        },
+        {
+          "command": "find . -delete",
+          "status": "error"
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "fixture_file_exists": {
+        "fixture.txt": true
+      },
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "orchestrator-find-exec-denied",
+      "commands": [
+        "find . -exec touch marker.txt \\;"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "git push": "deny",
+        "git push *": "deny",
+        "git reset --hard": "deny",
+        "git reset --hard *": "deny",
+        "git clean": "deny",
+        "git clean *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "rm -rf *": "deny",
+        "find *": "deny",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "git_fixture": false,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "find . -exec touch marker.txt \\;",
+          "status": "running"
+        },
+        {
+          "command": "find . -exec touch marker.txt \\;",
+          "status": "error"
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "fixture_file_exists": {
+        "fixture.txt": true
+      },
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "orchestrator-redirection-denied",
+      "commands": [
+        "rg needle fixture.txt > marker.txt"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "git push": "deny",
+        "git push *": "deny",
+        "git reset --hard": "deny",
+        "git reset --hard *": "deny",
+        "git clean": "deny",
+        "git clean *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "rm -rf *": "deny",
+        "find *": "deny",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "git_fixture": false,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "rg needle fixture.txt > marker.txt",
+          "status": "running"
+        },
+        {
+          "command": "rg needle fixture.txt > marker.txt",
+          "status": "error"
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "fixture_file_exists": {
+        "fixture.txt": true
+      },
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "orchestrator-pwd-redirection-denied",
+      "commands": [
+        "pwd > marker.txt"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "git push": "deny",
+        "git push *": "deny",
+        "git reset --hard": "deny",
+        "git reset --hard *": "deny",
+        "git clean": "deny",
+        "git clean *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "rm -rf *": "deny",
+        "find *": "deny",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "git_fixture": false,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "pwd > marker.txt",
+          "status": "running"
+        },
+        {
+          "command": "pwd > marker.txt",
+          "status": "error"
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "fixture_file_exists": {},
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "orchestrator-git-add-denied",
+      "commands": [
+        "git add README.md"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "git push": "deny",
+        "git push *": "deny",
+        "git reset --hard": "deny",
+        "git reset --hard *": "deny",
+        "git clean": "deny",
+        "git clean *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "rm -rf *": "deny",
+        "find *": "deny",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "git_fixture": true,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "git add README.md",
+          "status": "running"
+        },
+        {
+          "command": "git add README.md",
+          "status": "error"
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "fixture_file_exists": {
+        "README.md": true
+      },
+      "effect_before": {
+        "index_entry": "100644 9741694d75caeb49d3b7c1f59451c0c56bf6216c 0\tREADME.md"
+      },
+      "effect_after": {
+        "index_entry": "100644 9741694d75caeb49d3b7c1f59451c0c56bf6216c 0\tREADME.md"
+      },
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "orchestrator-git-commit-denied",
+      "commands": [
+        "git commit -m denied"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "git push": "deny",
+        "git push *": "deny",
+        "git reset --hard": "deny",
+        "git reset --hard *": "deny",
+        "git clean": "deny",
+        "git clean *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "rm -rf *": "deny",
+        "find *": "deny",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "git_fixture": true,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "git commit -m denied",
+          "status": "running"
+        },
+        {
+          "command": "git commit -m denied",
+          "status": "error"
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "fixture_file_exists": {
+        "README.md": true
+      },
+      "effect_before": {
+        "head": "89e81f96e6136b1d58a974dfffa7688522688e56"
+      },
+      "effect_after": {
+        "head": "89e81f96e6136b1d58a974dfffa7688522688e56"
+      },
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "orchestrator-git-push-denied",
+      "commands": [
+        "git push origin main"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "git push": "deny",
+        "git push *": "deny",
+        "git reset --hard": "deny",
+        "git reset --hard *": "deny",
+        "git clean": "deny",
+        "git clean *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "rm -rf *": "deny",
+        "find *": "deny",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "git_fixture": true,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "git push origin main",
+          "status": "running"
+        },
+        {
+          "command": "git push origin main",
+          "status": "error"
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "fixture_file_exists": {
+        "README.md": true
+      },
+      "effect_before": {
+        "remote_main": "ee640a351092fee44d49dfecbd213f020140c36d"
+      },
+      "effect_after": {
+        "remote_main": "ee640a351092fee44d49dfecbd213f020140c36d"
+      },
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "orchestrator-git-reset-denied",
+      "commands": [
+        "git reset --hard"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "git push": "deny",
+        "git push *": "deny",
+        "git reset --hard": "deny",
+        "git reset --hard *": "deny",
+        "git clean": "deny",
+        "git clean *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "rm -rf *": "deny",
+        "find *": "deny",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "git_fixture": true,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "git reset --hard",
+          "status": "running"
+        },
+        {
+          "command": "git reset --hard",
+          "status": "error"
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "fixture_file_exists": {
+        "README.md": true
+      },
+      "effect_before": {
+        "readme": "# modified before denied reset\n"
+      },
+      "effect_after": {
+        "readme": "# modified before denied reset\n"
+      },
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "orchestrator-git-clean-denied",
+      "commands": [
+        "git clean -fd"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "git push": "deny",
+        "git push *": "deny",
+        "git reset --hard": "deny",
+        "git reset --hard *": "deny",
+        "git clean": "deny",
+        "git clean *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "rm -rf *": "deny",
+        "find *": "deny",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "git_fixture": true,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "git clean -fd",
+          "status": "running"
+        },
+        {
+          "command": "git clean -fd",
+          "status": "error"
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "fixture_file_exists": {
+        "README.md": true
+      },
+      "effect_before": {
+        "untracked_exists": true
+      },
+      "effect_after": {
+        "untracked_exists": true
+      },
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "orchestrator-unknown-command-denied",
+      "commands": [
+        "uname -a"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "git push": "deny",
+        "git push *": "deny",
+        "git reset --hard": "deny",
+        "git reset --hard *": "deny",
+        "git clean": "deny",
+        "git clean *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "rm -rf *": "deny",
+        "find *": "deny",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "git_fixture": false,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "uname -a",
+          "status": "running"
+        },
+        {
+          "command": "uname -a",
+          "status": "error"
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "fixture_file_exists": {},
+      "effect_before": null,
+      "effect_after": null,
       "session_abort": "SUPPORTED"
     }
   ]

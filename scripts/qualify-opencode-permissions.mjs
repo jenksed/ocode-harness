@@ -71,10 +71,68 @@ function initializeGitFixture(fixture) {
   git(['add', '--', '.']); git(['commit', '-m', 'fixture']); git(['branch', '-M', 'main']);
 }
 
-async function runScenario({ id, command, commands = [command], rules, reply = null, files = {}, git = false }) {
+function gitOutput(fixture, args) {
+  return execFileSync('git', args, { cwd: fixture, encoding: 'utf8' }).trim();
+}
+
+// These are deliberately narrow, scenario-specific aftermath probes.  They
+// distinguish a native permission denial from a Git command that merely
+// happened to fail for unrelated fixture reasons.
+const governedGitEffectProbes = {
+  add: {
+    prepare(fixture) {
+      writeFileSync(join(fixture, 'README.md'), '# modified but unstaged\n');
+      return { index_entry: gitOutput(fixture, ['ls-files', '--stage', '--', 'README.md']) };
+    },
+    observe(fixture) { return { index_entry: gitOutput(fixture, ['ls-files', '--stage', '--', 'README.md']) }; },
+  },
+  commit: {
+    prepare(fixture) {
+      writeFileSync(join(fixture, 'README.md'), '# staged for denied commit\n');
+      gitOutput(fixture, ['add', '--', 'README.md']);
+      return { head: gitOutput(fixture, ['rev-parse', 'HEAD']) };
+    },
+    observe(fixture) { return { head: gitOutput(fixture, ['rev-parse', 'HEAD']) }; },
+  },
+  push: {
+    prepare(fixture) {
+      const remote = join(fixture, 'remote.git');
+      mkdirSync(remote);
+      execFileSync('git', ['init', '--bare', remote], { encoding: 'utf8' });
+      gitOutput(fixture, ['remote', 'add', 'origin', remote]);
+      gitOutput(fixture, ['push', '-u', 'origin', 'main']);
+      writeFileSync(join(fixture, 'README.md'), '# local-only commit\n');
+      gitOutput(fixture, ['add', '--', 'README.md']);
+      gitOutput(fixture, ['commit', '-m', 'local-only']);
+      return { remote_main: execFileSync('git', ['--git-dir', remote, 'rev-parse', 'refs/heads/main'], { encoding: 'utf8' }).trim() };
+    },
+    observe(fixture) {
+      const remote = join(fixture, 'remote.git');
+      return { remote_main: execFileSync('git', ['--git-dir', remote, 'rev-parse', 'refs/heads/main'], { encoding: 'utf8' }).trim() };
+    },
+  },
+  reset: {
+    prepare(fixture) {
+      const content = '# modified before denied reset\n';
+      writeFileSync(join(fixture, 'README.md'), content);
+      return { readme: content };
+    },
+    observe(fixture) { return { readme: readFileSync(join(fixture, 'README.md'), 'utf8') }; },
+  },
+  clean: {
+    prepare(fixture) {
+      writeFileSync(join(fixture, 'untracked.txt'), 'must survive denied clean\n');
+      return { untracked_exists: true };
+    },
+    observe(fixture) { return { untracked_exists: existsSync(join(fixture, 'untracked.txt')) }; },
+  },
+};
+
+async function runScenario({ id, command, commands = [command], rules, reply = null, files = {}, git = false, effectProbe = null }) {
   const fixture = mkdtempSync(join(tmpdir(), `ocode-permission-${id}-`));
   for (const [path, content] of Object.entries(files)) writeFileSync(join(fixture, path), content);
   if (git) initializeGitFixture(fixture);
+  const effect_before = effectProbe?.prepare(fixture) ?? null;
   const xdg = join(fixture, '.xdg');
   for (const name of ['config', 'data', 'state', 'cache']) mkdirSync(join(xdg, name), { recursive: true });
   const provider = await startMockProvider(commands);
@@ -122,7 +180,15 @@ async function runScenario({ id, command, commands = [command], rules, reply = n
     abort.abort();
     const permissionEvents = events.filter((event) => event.type === 'permission.updated' || event.type === 'permission.asked');
     const toolParts = events.filter((event) => event.type === 'message.part.updated' && event.properties?.part?.type === 'tool').map((event) => event.properties.part);
-    return { id, commands, rules, reply, git_fixture: git, permission_request_count: permissionEvents.length, permission_reply: permissionReply, tool_states: toolParts.map((part) => part.state?.status).filter(Boolean), request_count: provider.requests.length, marker_created: existsSync(join(fixture, 'marker.txt')), session_abort: 'SUPPORTED' };
+    const tool_results = toolParts
+      .filter((part) => part.state?.status)
+      .map((part) => ({ command: part.state?.input?.command ?? null, status: part.state.status }));
+    // Preserve observable fixture state as well as the permission decision.  In
+    // particular, a denied `find . -delete` must leave its pre-existing file
+    // in place; absence of only a marker would not prove that.
+    const fixture_file_exists = Object.fromEntries(Object.keys(files).map((path) => [path, existsSync(join(fixture, path))]));
+    const effect_after = effectProbe?.observe(fixture) ?? null;
+    return { id, commands, rules, reply, git_fixture: git, permission_request_count: permissionEvents.length, permission_reply: permissionReply, tool_states: tool_results.map((entry) => entry.status), tool_results, request_count: provider.requests.length, marker_created: existsSync(join(fixture, 'marker.txt')), fixture_file_exists, effect_before, effect_after, session_abort: 'SUPPORTED' };
   } finally {
     await opencode?.close?.();
     await new Promise((resolveClose) => provider.server.close(resolveClose));
@@ -173,11 +239,34 @@ for (const scenario of [
     git: true,
     files: { 'README.md': '# fixture\n', 'fixture.txt': 'needle\n' },
   },
-  { id: 'orchestrator-git-add-denied', command: 'git add README.md', rules: orchestratorRules, git: true, files: { 'README.md': '# fixture\n' } },
+  { id: 'orchestrator-git-add-denied', command: 'git add README.md', rules: orchestratorRules, git: true, files: { 'README.md': '# fixture\n' }, effectProbe: governedGitEffectProbes.add },
   { id: 'orchestrator-git-status-observation', command: 'git status --short', rules: orchestratorRules, git: true, files: { 'README.md': '# fixture\n' } },
   { id: 'orchestrator-pipeline-write-probe', command: 'rg needle fixture.txt | tee marker.txt', rules: orchestratorRules, files: { 'fixture.txt': 'needle\n' } },
   { id: 'orchestrator-and-write-probe', command: 'git status --short && touch marker.txt', rules: orchestratorRules, git: true, files: { 'README.md': '# fixture\n' } },
   { id: 'orchestrator-semicolon-write-probe', command: 'find . -maxdepth 1; touch marker.txt', rules: orchestratorRules, files: { 'fixture.txt': 'needle\n' } },
+  { id: 'orchestrator-safe-observation-matrix', commands: ['pwd', 'ls', 'rg needle fixture.txt', 'grep needle fixture.txt', 'git status --short', 'git rev-parse HEAD', 'git branch --show-current', 'git worktree list'], rules: orchestratorRules, git: true, files: { 'README.md': '# fixture\n', 'fixture.txt': 'needle\n' } },
+  ...[
+    ['orchestrator-pwd-observation', 'pwd', false, {}],
+    ['orchestrator-ls-observation', 'ls', false, { 'fixture.txt': 'needle\n' }],
+    ['orchestrator-rg-observation', 'rg needle fixture.txt', false, { 'fixture.txt': 'needle\n' }],
+    ['orchestrator-grep-observation', 'grep needle fixture.txt', false, { 'fixture.txt': 'needle\n' }],
+    ['orchestrator-rev-parse-observation', 'git rev-parse HEAD', true, { 'README.md': '# fixture\n' }],
+    ['orchestrator-branch-observation', 'git branch --show-current', true, { 'README.md': '# fixture\n' }],
+    ['orchestrator-worktree-observation', 'git worktree list', true, { 'README.md': '# fixture\n' }],
+    ['orchestrator-git-show-output-denied', 'git show --output=marker.txt HEAD', true, { 'README.md': '# fixture\n' }],
+    ['orchestrator-git-diff-output-denied', 'git diff --output=marker.txt', true, { 'README.md': '# fixture\n' }],
+    ['orchestrator-git-log-output-denied', 'git log --output=marker.txt', true, { 'README.md': '# fixture\n' }],
+    ['orchestrator-find-delete-denied', 'find . -delete', false, { 'fixture.txt': 'needle\n' }],
+    ['orchestrator-find-exec-denied', 'find . -exec touch marker.txt \\;', false, { 'fixture.txt': 'needle\n' }],
+    ['orchestrator-tree-output-denied', 'tree -o marker.txt', false, { 'fixture.txt': 'needle\n' }],
+    ['orchestrator-redirection-denied', 'rg needle fixture.txt > marker.txt', false, { 'fixture.txt': 'needle\n' }],
+    ['orchestrator-pwd-redirection-denied', 'pwd > marker.txt', false, {}],
+    ['orchestrator-git-commit-denied', 'git commit -m denied', true, { 'README.md': '# fixture\n' }, governedGitEffectProbes.commit],
+    ['orchestrator-git-push-denied', 'git push origin main', true, { 'README.md': '# fixture\n' }, governedGitEffectProbes.push],
+    ['orchestrator-git-reset-denied', 'git reset --hard', true, { 'README.md': '# fixture\n' }, governedGitEffectProbes.reset],
+    ['orchestrator-git-clean-denied', 'git clean -fd', true, { 'README.md': '# fixture\n' }, governedGitEffectProbes.clean],
+    ['orchestrator-unknown-command-denied', 'uname -a', false, {}],
+  ].map(([id, command, git, files, effectProbe]) => ({ id, command, rules: orchestratorRules, git, files, effectProbe })),
 ]) {
   if (!requestedScenarios.size || requestedScenarios.has(scenario.id)) scenarios.push(await runScenario(scenario));
 }

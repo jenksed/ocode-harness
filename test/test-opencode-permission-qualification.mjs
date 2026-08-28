@@ -34,8 +34,28 @@ assert.equal(scenario('low-interruption-loop').tool_states.filter((state) => sta
 
 const runtimeParity = [
   ['orchestrator-git-status-observation', 'git status --short', 'ALLOW', 'completed'],
+  ['orchestrator-pwd-observation', 'pwd', 'ALLOW', 'completed'],
+  ['orchestrator-ls-observation', 'ls', 'ALLOW', 'completed'],
+  ['orchestrator-rg-observation', 'rg needle fixture.txt', 'ALLOW', 'completed'],
+  ['orchestrator-grep-observation', 'grep needle fixture.txt', 'ALLOW', 'completed'],
+  ['orchestrator-rev-parse-observation', 'git rev-parse HEAD', 'ALLOW', 'completed'],
+  ['orchestrator-branch-observation', 'git branch --show-current', 'ALLOW', 'completed'],
+  ['orchestrator-worktree-observation', 'git worktree list', 'ALLOW', 'completed'],
   ['orchestrator-git-add-denied', 'git add README.md', 'DENY', 'error'],
+  ['orchestrator-git-commit-denied', 'git commit -m denied', 'DENY', 'error'],
+  ['orchestrator-git-push-denied', 'git push origin main', 'DENY', 'error'],
+  ['orchestrator-git-reset-denied', 'git reset --hard', 'DENY', 'error'],
+  ['orchestrator-git-clean-denied', 'git clean -fd', 'DENY', 'error'],
+  ['orchestrator-git-show-output-denied', 'git show --output=marker.txt HEAD', 'DENY', 'error'],
+  ['orchestrator-git-diff-output-denied', 'git diff --output=marker.txt', 'DENY', 'error'],
+  ['orchestrator-git-log-output-denied', 'git log --output=marker.txt', 'DENY', 'error'],
+  ['orchestrator-find-delete-denied', 'find . -delete', 'DENY', 'error'],
+  ['orchestrator-find-exec-denied', 'find . -exec touch marker.txt \\;', 'DENY', 'error'],
+  ['orchestrator-tree-output-denied', 'tree -o marker.txt', 'DENY', 'error'],
+  ['orchestrator-redirection-denied', 'rg needle fixture.txt > marker.txt', 'DENY', 'error'],
+  ['orchestrator-pwd-redirection-denied', 'pwd > marker.txt', 'DENY', 'error'],
   ['orchestrator-pipeline-write-probe', 'rg needle fixture.txt | tee marker.txt', 'DENY', 'error'],
+  ['orchestrator-unknown-command-denied', 'uname -a', 'DENY', 'error'],
 ];
 for (const [id, command, expected, terminal] of runtimeParity) {
   const observed = scenario(id);
@@ -43,6 +63,10 @@ for (const [id, command, expected, terminal] of runtimeParity) {
   assert.equal(observed.tool_states.at(-1), terminal, `${id} native terminal state`);
   assert.equal(observed.marker_created, false, `${id} did not create a fixture marker`);
   assert.equal(projectBashCommand(observed.rules, command).state, expected, `${id} internal matcher equals actual OpenCode result`);
+}
+for (const id of ['orchestrator-git-add-denied', 'orchestrator-git-commit-denied', 'orchestrator-git-push-denied', 'orchestrator-git-reset-denied', 'orchestrator-git-clean-denied']) {
+  const observed = scenario(id);
+  assert.deepEqual(observed.effect_after, observed.effect_before, `${id} protected fixture state unchanged`);
 }
 const generatedOrder = Object.keys(scenario('orchestrator-git-status-observation').rules);
 assert.ok(generatedOrder.indexOf('git *') < generatedOrder.indexOf('git status'));

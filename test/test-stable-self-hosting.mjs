@@ -17,6 +17,7 @@ try {
   execFileSync('git', ['worktree', 'add', '--detach', b, sha], { cwd: repo, stdio: 'pipe' });
   writeFileSync(join(b, 'test', 'fixtures', 'self-hosting-candidate-b.txt'), 'candidate B\n');
   execFileSync('git', ['add', 'test/fixtures/self-hosting-candidate-b.txt'], { cwd: b }); execFileSync('git', ['-c', 'user.name=Ocode E2E Fixture', '-c', 'user.email=ocode-e2e@example.invalid', 'commit', '-m', 'test fixture: candidate B'], { cwd: b });
+  execFileSync('npm', ['ci'], { cwd: b, stdio: 'pipe' });
   const aSha = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: a, encoding: 'utf8' }).trim(), bSha = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: b, encoding: 'utf8' }).trim(); assert.notEqual(aSha, bSha);
   run(a, process.execPath, [join(a, 'installer', 'install.mjs')]); const aInfo = JSON.parse(cli(root, 'version', '--json')); const aId = aInfo.logical_release_id; assert.equal(aInfo.installed_sha, aSha);
   const before = pointers(); assert.equal(before.current, aId); assert.equal(before.previous, null);

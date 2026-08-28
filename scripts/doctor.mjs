@@ -35,9 +35,9 @@ const __dirname = dirname(__filename);
 
 const CONFIG = {
   agentsDir: join(homedir(), '.config', 'opencode', 'agents'),
-  orientationDir: join(homedir(), '.local', 'share', 'ocode-harness', 'orientation'),
-  harnessRoot: join(homedir(), '.local', 'share', 'ocode-harness'),
-  harnessRuntimeDir: join(homedir(), '.local', 'share', 'ocode-harness', 'harness-runtime'),
+  orientationDir: DEPLOY_CONFIG.orientationDir,
+  harnessRoot: DEPLOY_CONFIG.currentRelease,
+  harnessRuntimeDir: DEPLOY_CONFIG.harnessRuntimeDir,
   opencodeConfig: join(homedir(), '.config', 'opencode', 'opencode.json'),
   machineConfig: DEPLOY_CONFIG.machineConfig,
 };

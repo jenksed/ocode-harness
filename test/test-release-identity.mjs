@@ -38,6 +38,7 @@ try {
   assert.equal(first.source_commit, git(source, 'rev-parse', 'HEAD'));
   assert.equal(first.source_dirty, false);
   assert.doesNotThrow(() => assertPromotableSourceIdentity(first));
+  assert.throws(() => inspectSourceIdentity(source, '0.2.0'), /OCODE_PRODUCT_VERSION_MISMATCH/);
 
   writeReleaseIdentity(installed, first);
   assert.deepEqual(readReleaseIdentity(installed), first);

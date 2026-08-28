@@ -471,7 +471,7 @@ export function installLaunchers(targetDir) {
   const ocodeScript = `#!/bin/sh
 set -eu
 case "\${1:-}" in
-  version|update|rollback)
+  version|update|rollback|release)
     exec node "${harnessBin}" "\$@"
     ;;
   --version|-V)
@@ -484,6 +484,24 @@ esac
 `;
   publishLauncher(ocodeLauncher, ocodeScript);
   console.log(`  ✓ ocode -> ${ocodeLauncher}`);
+
+  const devLauncher = join(binDir, 'ocode-dev');
+  publishLauncher(devLauncher, `#!/bin/sh
+set -eu
+root="$PWD"
+while [ "$root" != / ]; do
+  if [ -f "$root/VERSION" ] && [ -f "$root/packages/harness-runtime/bin/ocode.mjs" ]; then
+    if [ "\${1:-}" = release ] && [ "\${2:-}" = build ]; then
+      out="$root/.ocode-release/$(date +%s)"; mkdir -p "$out"; exec node "$root/scripts/build-release-artifact.mjs" --output "$out"
+    fi
+    exec node "$root/packages/harness-runtime/bin/ocode.mjs" "\$@"
+  fi
+  root=$(dirname "$root")
+done
+echo "ocode-dev must be run from inside an ocode-harness development checkout" >&2
+exit 1
+`);
+  console.log(`  ✓ ocode-dev -> ${devLauncher}`);
 
   const harnessLauncher = join(binDir, 'harness');
   publishLauncher(harnessLauncher, `#!/bin/sh\nset -eu\nexec node "${harnessBin}" "\${@}"\n`);

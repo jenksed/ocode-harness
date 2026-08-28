@@ -269,6 +269,32 @@ program
     }
   });
 
+program.command('release list').description('List immutable installed releases').action(() => {
+  for (const release of listInstalledReleases(CONFIG.installStoreRoot)) {
+    const state = release.current ? 'CURRENT ' : release.previous ? 'PREVIOUS' : '        ';
+    console.log(`${state} ${release.id} ${release.version} ${release.source_commit.slice(0, 7)}`);
+  }
+});
+program.command('release current').description('Show current immutable release').action(() => {
+  const current = resolveReleasePointer(CONFIG.currentRelease, CONFIG.installStoreRoot);
+  if (!current) throw new Error('No active immutable release');
+  console.log(JSON.stringify({ id: current.id, version: current.release.version, source_commit: current.release.source_commit, payload_manifest_sha256: current.artifact.payload.manifest_sha256, path: current.path }, null, 2));
+});
+program.command('release install').description('Install, without promoting, a verified artifact').option('--artifact <path>', 'Artifact path').action((options) => {
+  const artifact = options.artifact || process.argv[4]; if (!artifact) throw new Error('Usage: ocode release install <artifact>');
+  const release = installVerifiedArtifact({ archive: resolve(artifact), installStore: CONFIG.installStoreRoot });
+  console.log(`INSTALLED ${release.id}`);
+});
+program.command('release promote').description('Promote an installed immutable release').option('--id <id>', 'Release ID').action((options) => {
+  const id = options.id || process.argv[4]; if (!id) throw new Error('Usage: ocode release promote <release-id>');
+  const result = activateRelease(id, CONFIG.installStoreRoot); console.log(`PROMOTED ${result.current.id}`);
+});
+program.command('release run').description('Run an installed candidate without promotion').option('--id <id>', 'Release ID').action((options) => {
+  const id = options.id || process.argv[4]; if (!id) throw new Error('Usage: ocode release run <release-id> [args...]'); const index = process.argv.indexOf(id); const args = index < 0 ? [] : process.argv.slice(index + 1);
+  const child = spawnSync('node', [releaseEntrypoint(id, CONFIG.installStoreRoot), ...args], { stdio: 'inherit', env: process.env });
+  if (child.status !== 0) process.exit(child.status || 1);
+});
+
 program
   .command('ledger append')
   .description('Append a validated record to the run ledger')

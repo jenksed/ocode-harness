@@ -15,6 +15,7 @@ const __dirname = dirname(__filename);
 
 const testDir = join(tmpdir(), `ocode-harness-closeout-test-${Date.now()}`);
 const harnessRuntimeDir = join(__dirname, '..', 'packages', 'harness-runtime');
+const missingRemote = `file://${join(testDir, 'missing-remote.git')}`;
 
 console.log('=== Test Closeout Runtime ===\n');
 console.log(`Test directory: ${testDir}\n`);
@@ -24,7 +25,7 @@ mkdirSync(testDir, { recursive: true });
 execSync('git init', { cwd: testDir, stdio: 'ignore' });
 execSync('git config user.email "test@test.com"', { cwd: testDir, stdio: 'ignore' });
 execSync('git config user.name "Test User"', { cwd: testDir, stdio: 'ignore' });
-execSync('git remote add origin https://github.com/test/test.git', { cwd: testDir, stdio: 'ignore' });
+execSync(`git remote add origin ${missingRemote}`, { cwd: testDir, stdio: 'ignore' });
 execSync('git branch -M main', { cwd: testDir, stdio: 'ignore' });
 // Create initial commit
 writeFileSync(join(testDir, 'README.md'), '# Test Project\n', 'utf8');
@@ -194,7 +195,7 @@ try {
   assert(gates12.ok === false, 'No remote for push fails');
   assert(gates12.blockers.some(b => b.includes('No remote configured')), 'Blocker for no remote');
   // Re-add remote for subsequent tests
-  execSync('git remote add origin https://github.com/test/test.git', { cwd: testDir, stdio: 'ignore' });
+  execSync(`git remote add origin ${missingRemote}`, { cwd: testDir, stdio: 'ignore' });
 
   // Reset to clean state for executeCloseout tests
   execSync('git reset HEAD', { cwd: testDir, stdio: 'ignore' });

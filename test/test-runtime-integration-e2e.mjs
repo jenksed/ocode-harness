@@ -3,7 +3,7 @@ import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { classifyPhaseFailure, classifyProvider, createWorktree, parseArgs, safeEnv, summarizeActivity } from '../scripts/qualify-runtime-integration-e2e.mjs';
+import { classifyAutomatedFailure, classifyPhaseFailure, classifyProvider, createAutomatedEnvironment, createWorktree, parseArgs, safeEnv, summarizeActivity } from '../scripts/qualify-runtime-integration-e2e.mjs';
 
 assert.deepEqual(parseArgs(['--cleanup', '--worktree', '../qualification-worktree']), {
   remote: 'origin/review/runtime-integration-qualification',
@@ -26,12 +26,17 @@ assert.equal(classifyProvider({ ok: true, stdout: '', stderr: '' }), 'UNPROVEN')
 assert.equal(classifyPhaseFailure({ error: 'spawn failed' }), 'INFRASTRUCTURE_FAILURE');
 assert.equal(classifyPhaseFailure({ signal: 'SIGTERM' }), 'RUNTIME_FAILURE');
 assert.equal(classifyPhaseFailure({ status: 0 }), null);
+assert.equal(classifyAutomatedFailure({ status: 128, stderr: "fatal: could not read Username for 'https://github.com': terminal prompts disabled" }), 'GIT_CREDENTIALS_REQUIRED_NONINTERACTIVE');
 
 const env = safeEnv({ HOME: '/tmp/owned', PATH: '/bin', FREELLMAPI_API_KEY: 'secret', OTHER: 'omit' });
 assert.equal(env.HOME, '/tmp/owned');
 assert.equal(env.FREELLMAPI_API_KEY, '<present>');
 assert.equal(env.OTHER, undefined);
 assert.equal(JSON.stringify(env).includes('secret'), false);
+const automated = createAutomatedEnvironment({ HOME: '/tmp/isolated', GITHUB_TOKEN: undefined });
+assert.equal(automated.GIT_TERMINAL_PROMPT, '0');
+assert.equal(automated.HOME, '/tmp/isolated');
+assert.equal(automated.GITHUB_TOKEN, undefined);
 
 const activity = summarizeActivity([
   { event_type: 'EFFECT_REQUESTED', metadata: { operation_class: 'OBSERVE' } },

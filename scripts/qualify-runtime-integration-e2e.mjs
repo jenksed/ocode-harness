@@ -19,6 +19,11 @@ export const PHASES = Object.freeze([
   'OPERATOR_TUI', 'EVIDENCE', 'SUMMARY', 'CLEANUP',
 ]);
 
+/** Automated phases must never obtain credentials through a terminal prompt. */
+export function createAutomatedEnvironment(environment) {
+  return { ...environment, GIT_TERMINAL_PROMPT: '0' };
+}
+
 function sourceRoot() {
   return resolve(dirname(fileURLToPath(import.meta.url)), '..');
 }
@@ -84,6 +89,7 @@ async function runLogged(state, name, command, args, options = {}) {
   stdout.end();
   stderr.end();
   const record = { ...result, stdout_path: stdoutPath, stderr_path: stderrPath, ok: result.status === 0 && !result.error && !result.signal };
+  record.failure_classification = record.ok ? null : classifyAutomatedFailure(record);
   writeFileSync(join(state.evidenceDir, `${name}.result.json`), `${JSON.stringify({ ...record, stdout: undefined, stderr: undefined }, null, 2)}\n`);
   return record;
 }
@@ -149,6 +155,12 @@ export function classifyPhaseFailure(result, fallback = 'RUNTIME_FAILURE') {
   return result?.status === 0 ? null : fallback;
 }
 
+export function classifyAutomatedFailure(result) {
+  const text = `${result?.stdout || ''}\n${result?.stderr || ''}`;
+  if (/terminal prompts disabled|could not read Username|Authentication failed/i.test(text)) return 'GIT_CREDENTIALS_REQUIRED_NONINTERACTIVE';
+  return classifyPhaseFailure(result);
+}
+
 function makeFixture(runDir) {
   const fixture = join(runDir, 'fixture');
   mkdirSync(fixture, { recursive: true });
@@ -174,9 +186,9 @@ function stopActivityFollower(handle) {
 export async function createWorktree(state) {
   const target = state.options.worktree || join(state.runDir, 'worktree');
   if (existsSync(target)) {
-    const status = await run('git', ['status', '--short'], { cwd: target });
-    const head = await run('git', ['rev-parse', 'HEAD'], { cwd: target });
-    const remoteHead = await run('git', ['rev-parse', state.options.remote], { cwd: state.source });
+    const status = await run('git', ['status', '--short'], { cwd: target, env: state.automatedEnv });
+    const head = await run('git', ['rev-parse', 'HEAD'], { cwd: target, env: state.automatedEnv });
+    const remoteHead = await run('git', ['rev-parse', state.options.remote], { cwd: state.source, env: state.automatedEnv });
     if (!status.ok || status.stdout.trim() || !head.ok || !remoteHead.ok || head.stdout.trim() !== remoteHead.stdout.trim()) {
       throw new Error(`Existing qualification worktree is not clean at the requested checkpoint: ${target}`);
     }
@@ -184,7 +196,7 @@ export async function createWorktree(state) {
     state.worktree = target;
     return target;
   }
-  const result = await run('git', ['worktree', 'add', target, state.options.remote], { cwd: state.source });
+  const result = await run('git', ['worktree', 'add', target, state.options.remote], { cwd: state.source, env: state.automatedEnv });
   if (!result.ok) throw new Error(`WORKTREE_CREATE_FAILED:${result.stderr || result.error || result.status}`);
   state.worktreeOwned = true;
   state.worktree = target;
@@ -219,17 +231,18 @@ async function main(argv = process.argv.slice(2)) {
   };
   env.PATH = `${join(state.home, '.local', 'bin')}:${env.PATH}`;
   state.environment = env;
+  state.automatedEnv = createAutomatedEnvironment(env);
   writeFileSync(join(state.evidenceDir, 'environment.json'), `${JSON.stringify(safeEnv(env), null, 2)}\n`);
   let overall = 'PARTIAL_OPERATOR_EVIDENCE';
   try {
     phase(state, 'PREFLIGHT', 'START');
     const versions = {};
     for (const [name, command, args] of [['node', process.execPath, ['--version']], ['npm', 'npm', ['--version']], ['git', 'git', ['--version']], ['opencode', 'opencode', ['--version']]]) {
-      const result = await run(command, args, { cwd: state.source, env });
+      const result = await run(command, args, { cwd: state.source, env: state.automatedEnv });
       versions[name] = result.stdout.trim() || result.stderr.trim();
     }
     const sdk = JSON.parse(readFileSync(join(state.source, 'node_modules', '@opencode-ai', 'sdk', 'package.json'), 'utf8')).version;
-    const preflight = { source_repository: state.source, source_branch: (await run('git', ['branch', '--show-current'], { cwd: state.source })).stdout.trim(), source_sha: (await run('git', ['rev-parse', 'HEAD'], { cwd: state.source })).stdout.trim(), version: readFileSync(join(state.source, 'VERSION'), 'utf8').trim(), versions, sdk_version: sdk, platform: process.platform, architecture: process.arch };
+    const preflight = { source_repository: state.source, source_branch: (await run('git', ['branch', '--show-current'], { cwd: state.source, env: state.automatedEnv })).stdout.trim(), source_sha: (await run('git', ['rev-parse', 'HEAD'], { cwd: state.source, env: state.automatedEnv })).stdout.trim(), version: readFileSync(join(state.source, 'VERSION'), 'utf8').trim(), versions, sdk_version: sdk, platform: process.platform, architecture: process.arch };
     writeFileSync(join(state.evidenceDir, 'environment.json'), `${JSON.stringify({ ...preflight, environment: safeEnv(env) }, null, 2)}\n`);
     if (versions.opencode !== EXPECTED_OPENCODE || sdk !== EXPECTED_SDK) throw new Error(`RUNTIME_VERSION_MISMATCH: opencode=${versions.opencode}, sdk=${sdk}`);
     phase(state, 'PREFLIGHT', 'PASS', { message: `${versions.opencode} / SDK ${sdk}` });
@@ -239,20 +252,20 @@ async function main(argv = process.argv.slice(2)) {
       await createWorktree(state);
       phase(state, 'WORKTREE', 'PASS', { message: state.worktree });
       phase(state, 'DEPENDENCIES', 'START');
-      const ci = await runLogged(state, 'npm-ci', 'npm', ['ci'], { cwd: state.worktree, env });
+      const ci = await runLogged(state, 'npm-ci', 'npm', ['ci'], { cwd: state.worktree, env: state.automatedEnv });
       if (!ci.ok) throw new Error('DEPENDENCIES_FAILED');
       phase(state, 'DEPENDENCIES', 'PASS');
-      await installIsolated(state, env);
+      await installIsolated(state, state.automatedEnv);
       phase(state, 'DETERMINISTIC', 'START');
       const deterministicCommands = [['npm-test', 'npm', ['test']], ['runtime-evolution', 'npm', ['run', 'test:runtime-evolution']], ['permission-qualification', 'npm', ['run', 'qualify:opencode-permissions']], ['permission-contract', process.execPath, ['test/test-opencode-permission-contract.mjs']], ['runtime-qualification', process.execPath, ['test/test-opencode-runtime-qualification.mjs']], ['sdk-execution', process.execPath, ['test/test-opencode-sdk-execution.mjs']]];
       for (const [name, command, args] of deterministicCommands) {
-        const result = await runLogged(state, name, command, args, { cwd: state.worktree, env });
-        if (!result.ok) throw new Error(`DETERMINISTIC_FAILED:${name}`);
+        const result = await runLogged(state, name, command, args, { cwd: state.worktree, env: state.automatedEnv });
+        if (!result.ok) throw new Error(`DETERMINISTIC_FAILED:${name}:${command} ${args.join(' ')}:${result.failure_classification}`);
       }
       phase(state, 'DETERMINISTIC', 'PASS');
       phase(state, 'PERMISSIONS', 'PASS', { message: 'native qualification included in deterministic run' });
       phase(state, 'POLICY_CONSISTENCY', 'START');
-      const skills = await runLogged(state, 'skills-policy', process.execPath, ['test/test-skills.mjs'], { cwd: state.worktree, env });
+      const skills = await runLogged(state, 'skills-policy', process.execPath, ['test/test-skills.mjs'], { cwd: state.worktree, env: state.automatedEnv });
       if (!skills.ok) throw new Error('SKILLS_POLICY_FAILED');
       writeFileSync(join(state.evidenceDir, 'skills-policy-fingerprint.json'), `${JSON.stringify({ agent_contracts: 'see installed manifest', test_result: 'PASS', output_sha256: sha256(skills.stdout) }, null, 2)}\n`);
       phase(state, 'POLICY_CONSISTENCY', 'PASS');
@@ -265,7 +278,7 @@ async function main(argv = process.argv.slice(2)) {
     if (!options.operatorOnly && !options.skipProvider && !options.deterministicOnly) {
       phase(state, 'PROVIDER', 'START');
       const attempt = `e2e-${id}`;
-      const provider = await runLogged(state, 'provider-tdd-live', 'npm', ['run', 'qualify:tdd:live'], { cwd: state.worktree, env: { ...env, TDD_QUALIFICATION_ATTEMPT: attempt } });
+      const provider = await runLogged(state, 'provider-tdd-live', 'npm', ['run', 'qualify:tdd:live'], { cwd: state.worktree, env: { ...state.automatedEnv, TDD_QUALIFICATION_ATTEMPT: attempt } });
       state.provider = { classification: classifyProvider(provider), result: provider };
       phase(state, 'PROVIDER', state.provider.classification === 'LIVE_MODEL_QUALIFIED' ? 'PASS' : 'BLOCKED', { message: state.provider.classification });
     } else phase(state, 'PROVIDER', 'SKIPPED');
@@ -276,7 +289,7 @@ async function main(argv = process.argv.slice(2)) {
       console.log(card);
       phase(state, 'OPERATOR_TUI', 'START');
       const activityLog = join(state.evidenceDir, 'activity-follow.log');
-      const activityHandle = spawn(state.installed?.ocode || 'ocode', ['activity', '--follow', '--trace'], { cwd: fixture, env, stdio: ['ignore', 'pipe', 'pipe'] });
+      const activityHandle = spawn(state.installed?.ocode || 'ocode', ['activity', '--follow', '--trace'], { cwd: fixture, env: state.automatedEnv, stdio: ['ignore', 'pipe', 'pipe'] });
       state.activity = activityHandle;
       const activityChunks = [];
       activityHandle.stdout.on('data', (chunk) => activityChunks.push(Buffer.from(chunk)));
@@ -288,10 +301,10 @@ async function main(argv = process.argv.slice(2)) {
       await stopActivityFollower(activityHandle);
     } else phase(state, 'OPERATOR_TUI', 'SKIPPED');
     phase(state, 'EVIDENCE', 'START');
-    const raw = await runLogged(state, 'activity-raw', state.installed?.ocode || 'ocode', ['activity', '--raw'], { cwd: state.fixture, env });
-    const trace = await runLogged(state, 'activity-trace', state.installed?.ocode || 'ocode', ['activity', '--trace'], { cwd: state.fixture, env });
-    const agents = await runLogged(state, 'agents', state.installed?.ocode || 'ocode', ['agents'], { cwd: state.fixture, env });
-    const gitStatus = await runLogged(state, 'git-status', 'git', ['status', '--short'], { cwd: state.fixture, env });
+    const raw = await runLogged(state, 'activity-raw', state.installed?.ocode || 'ocode', ['activity', '--raw'], { cwd: state.fixture, env: state.automatedEnv });
+    const trace = await runLogged(state, 'activity-trace', state.installed?.ocode || 'ocode', ['activity', '--trace'], { cwd: state.fixture, env: state.automatedEnv });
+    const agents = await runLogged(state, 'agents', state.installed?.ocode || 'ocode', ['agents'], { cwd: state.fixture, env: state.automatedEnv });
+    const gitStatus = await runLogged(state, 'git-status', 'git', ['status', '--short'], { cwd: state.fixture, env: state.automatedEnv });
     const ledgerPath = join(state.fixture, '.opencode', 'run-ledger.jsonl');
     if (existsSync(ledgerPath)) writeFileSync(join(state.evidenceDir, 'run-ledger.jsonl'), readFileSync(ledgerPath));
     const activity = summarizeActivity(raw.stdout);
@@ -327,7 +340,7 @@ async function main(argv = process.argv.slice(2)) {
     phase(state, 'CLEANUP', 'START');
     await stopActivityFollower(state.activity);
     if (options.cleanup) {
-      if (state.worktreeOwned && state.worktree && (await run('git', ['status', '--short'], { cwd: state.worktree })).stdout.trim() === '') await run('git', ['worktree', 'remove', state.worktree], { cwd: state.source });
+      if (state.worktreeOwned && state.worktree && (await run('git', ['status', '--short'], { cwd: state.worktree, env: state.automatedEnv })).stdout.trim() === '') await run('git', ['worktree', 'remove', state.worktree], { cwd: state.source, env: state.automatedEnv });
       if (state.worktreeOwned) state.worktree = null;
       rmSync(state.home, { recursive: true, force: true });
     }

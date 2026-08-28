@@ -12,7 +12,7 @@ const fileSHA = (path) => sha(readFileSync(path));
 const json = (value) => `${JSON.stringify(value, null, 2)}\n`;
 const toPosix = (path) => path.split('\\').join('/');
 
-function copy(source, target) { cpSync(source, target, { recursive: true, dereference: false, force: true }); }
+function copy(source, target, dereference = false) { cpSync(source, target, { recursive: true, dereference, force: true }); }
 function list(root, current = root, entries = []) {
   for (const name of readdirSync(current).sort()) {
     const absolute = join(current, name), rel = toPosix(relative(root, absolute)), info = lstatSync(absolute);
@@ -72,7 +72,7 @@ export function buildReleaseArtifact({ sourceRoot, outputDir }) {
     if (!existsSync(sdkPackage) || JSON.parse(readFileSync(sdkPackage, 'utf8')).version !== sdkVersion) throw new Error('Locked production SDK dependency is unavailable or mismatched');
     const root = join(temp, 'ocode-release'); mkdirSync(root);
     writeFileSync(join(root, 'VERSION'), `${version}\n`); writeReleaseIdentity(root, release);
-    const runtime = join(root, 'harness-runtime'); mkdirSync(runtime); copy(join(sourceRoot, 'packages/harness-runtime/bin'), join(runtime, 'bin')); copy(join(sourceRoot, 'packages/harness-runtime/lib'), join(runtime, 'lib')); writeFileSync(join(runtime, 'package.json'), json(sanitizedRuntimeManifest(join(sourceRoot, 'packages/harness-runtime/package.json'), version))); copy(join(dependencyRoot, 'node_modules'), join(runtime, 'node_modules'));
+    const runtime = join(root, 'harness-runtime'); mkdirSync(runtime); copy(join(sourceRoot, 'packages/harness-runtime/bin'), join(runtime, 'bin')); copy(join(sourceRoot, 'packages/harness-runtime/lib'), join(runtime, 'lib')); writeFileSync(join(runtime, 'package.json'), json(sanitizedRuntimeManifest(join(sourceRoot, 'packages/harness-runtime/package.json'), version))); copy(join(dependencyRoot, 'node_modules'), join(runtime, 'node_modules'), true);
     const orientation = join(root, 'orientation'); mkdirSync(orientation); copy(join(sourceRoot, 'packages/orientation/bin'), join(orientation, 'bin')); copy(join(sourceRoot, 'packages/orientation/lib'), join(orientation, 'lib')); copy(join(sourceRoot, 'packages/orientation/package.json'), join(orientation, 'package.json'));
     for (const dir of ['agents', 'profiles', 'doctrine', 'opencode-config']) copy(join(sourceRoot, dir), join(root, dir));
     copySkills(join(sourceRoot, 'skills'), join(root, 'skills'));

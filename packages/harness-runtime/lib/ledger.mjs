@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { generateTaskId, generateRunId } from './identity.mjs';
 import { LIFECYCLE_STATES } from './lifecycle.mjs';
+import { validateModelTelemetry } from './model-telemetry.mjs';
 
 const LEDGER_SCHEMA_VERSION = 1;
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -84,6 +85,9 @@ function validateRecord(record) {
       throw new Error('execution_provenance.effective_model must be a string or null');
     }
   }
+  if (record.model_telemetry !== null && record.model_telemetry !== undefined) {
+    validateModelTelemetry(record.model_telemetry);
+  }
 }
 
 export function createLedgerRecord(params) {
@@ -122,6 +126,9 @@ export function createLedgerRecord(params) {
     infrastructure_failures: params.infrastructure_failures || [],
     retry_counts: params.retry_counts || {},
     execution_provenance: params.execution_provenance || null,
+    // Additive version-1 extension. Old ledger rows remain readable and keep
+    // their original meaning; this is retained outcome evidence, not ratings.
+    model_telemetry: params.model_telemetry || null,
   };
   
   validateRecord(record);

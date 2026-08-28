@@ -81,6 +81,8 @@ copyFileSync(join(harnessRuntimeDir, 'package.json'), join(testSourceHarnessRunt
 copyFileSync(join(harnessRuntimeDir, 'lib', 'identity.mjs'), join(testSourceHarnessRuntimeDir, 'lib', 'identity.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'lib', 'lifecycle.mjs'), join(testSourceHarnessRuntimeDir, 'lib', 'lifecycle.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'lib', 'ledger.mjs'), join(testSourceHarnessRuntimeDir, 'lib', 'ledger.mjs'));
+copyFileSync(join(harnessRuntimeDir, 'lib', 'model-telemetry.mjs'), join(testSourceHarnessRuntimeDir, 'lib', 'model-telemetry.mjs'));
+for (const lib of ['command-admission.mjs', 'deterministic-staging.mjs', 'task-capsule.mjs', 'model-qualification.mjs', 'behavioral-adapters.mjs', 'capability-resolution.mjs', 'tool-loop-control.mjs']) copyFileSync(join(harnessRuntimeDir, 'lib', lib), join(testSourceHarnessRuntimeDir, 'lib', lib));
 copyFileSync(join(harnessRuntimeDir, 'lib', 'evidence.mjs'), join(testSourceHarnessRuntimeDir, 'lib', 'evidence.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'lib', 'composition.mjs'), join(testSourceHarnessRuntimeDir, 'lib', 'composition.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'lib', 'closeout.mjs'), join(testSourceHarnessRuntimeDir, 'lib', 'closeout.mjs'));
@@ -96,6 +98,8 @@ for (const lib of ['skill-contract.mjs', 'skill-capsules.mjs', 'skill-projection
 copyFileSync(join(harnessRuntimeDir, 'lib', 'deploy.mjs'), join(testSourceHarnessRuntimeDir, 'lib', 'deploy.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'bin', 'harness.mjs'), join(testSourceHarnessRuntimeDir, 'bin', 'harness.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'bin', 'ocode.mjs'), join(testSourceHarnessRuntimeDir, 'bin', 'ocode.mjs'));
+mkdirSync(join(testSourceHarnessRuntimeDir, 'bin', 'validation'), { recursive: true });
+copyFileSync(join(harnessRuntimeDir, 'bin', 'validation', 'npm'), join(testSourceHarnessRuntimeDir, 'bin', 'validation', 'npm'));
 
 // Copy doctrine
 copyFileSync(join(doctrineDir, 'agentic-agile.md'), join(testSourceDoctrineDir, 'agentic-agile.md'));
@@ -130,6 +134,7 @@ mkdirSync(join(testHarnessRoot, 'orientation', 'bin'), { recursive: true });
 mkdirSync(join(testHarnessRoot, 'harness-runtime'), { recursive: true });
 mkdirSync(join(testHarnessRoot, 'harness-runtime', 'lib'), { recursive: true });
 mkdirSync(join(testHarnessRoot, 'harness-runtime', 'bin'), { recursive: true });
+mkdirSync(join(testHarnessRoot, 'harness-runtime', 'bin', 'validation'), { recursive: true });
 mkdirSync(join(testHarnessRoot, 'doctrine'), { recursive: true });
 mkdirSync(join(testHarnessRoot, 'agents'), { recursive: true });
 mkdirSync(join(testHarnessRoot, 'opencode-config'), { recursive: true });
@@ -150,6 +155,8 @@ copyFileSync(join(testSourceHarnessRuntimeDir, 'package.json'), join(testHarness
 copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'identity.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'identity.mjs'));
 copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'lifecycle.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'lifecycle.mjs'));
 copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'ledger.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'ledger.mjs'));
+copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'model-telemetry.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'model-telemetry.mjs'));
+for (const lib of ['command-admission.mjs', 'deterministic-staging.mjs', 'task-capsule.mjs', 'model-qualification.mjs', 'behavioral-adapters.mjs', 'capability-resolution.mjs', 'tool-loop-control.mjs']) copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', lib), join(testHarnessRoot, 'harness-runtime', 'lib', lib));
 copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'evidence.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'evidence.mjs'));
 copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'composition.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'composition.mjs'));
 copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'closeout.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'closeout.mjs'));
@@ -165,6 +172,7 @@ for (const lib of ['skill-contract.mjs', 'skill-capsules.mjs', 'skill-projection
 copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'deploy.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'deploy.mjs'));
 copyFileSync(join(testSourceHarnessRuntimeDir, 'bin', 'harness.mjs'), join(testHarnessRoot, 'harness-runtime', 'bin', 'harness.mjs'));
 copyFileSync(join(testSourceHarnessRuntimeDir, 'bin', 'ocode.mjs'), join(testHarnessRoot, 'harness-runtime', 'bin', 'ocode.mjs'));
+copyFileSync(join(testSourceHarnessRuntimeDir, 'bin', 'validation', 'npm'), join(testHarnessRoot, 'harness-runtime', 'bin', 'validation', 'npm'));
 
 copyFileSync(join(testSourceDoctrineDir, 'agentic-agile.md'), join(testHarnessRoot, 'doctrine', 'agentic-agile.md'));
 copyFileSync(join(testSourceDoctrineDir, 'resource-policy.md'), join(testHarnessRoot, 'doctrine', 'resource-policy.md'));

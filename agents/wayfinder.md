@@ -39,6 +39,8 @@ permission:
     "git branch --list *": allow
     "git branch -a": allow
     "git branch -r": allow
+    "*>*": deny
+    "*<*": deny
 ---
 
 Assess whether the objective is sufficiently understood for responsible planning.

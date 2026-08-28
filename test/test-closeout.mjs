@@ -15,6 +15,7 @@ const __dirname = dirname(__filename);
 
 const testDir = join(tmpdir(), `ocode-harness-closeout-test-${Date.now()}`);
 const harnessRuntimeDir = join(__dirname, '..', 'packages', 'harness-runtime');
+const missingRemote = `file://${join(testDir, 'missing-remote.git')}`;
 
 console.log('=== Test Closeout Runtime ===\n');
 console.log(`Test directory: ${testDir}\n`);
@@ -24,7 +25,7 @@ mkdirSync(testDir, { recursive: true });
 execSync('git init', { cwd: testDir, stdio: 'ignore' });
 execSync('git config user.email "test@test.com"', { cwd: testDir, stdio: 'ignore' });
 execSync('git config user.name "Test User"', { cwd: testDir, stdio: 'ignore' });
-execSync('git remote add origin https://github.com/test/test.git', { cwd: testDir, stdio: 'ignore' });
+execSync(`git remote add origin ${missingRemote}`, { cwd: testDir, stdio: 'ignore' });
 execSync('git branch -M main', { cwd: testDir, stdio: 'ignore' });
 // Create initial commit
 writeFileSync(join(testDir, 'README.md'), '# Test Project\n', 'utf8');
@@ -51,6 +52,7 @@ function makeCommitContext(overrides = {}) {
     lifecycleState: 'CLOSEOUT_READY',
     workflow: 'QUICK',
     reviewerVerdict: 'ACCEPT',
+    taskCapsuleFingerprint: 'a'.repeat(64),
     validationEvidence: { status: 'PASS', commands: ['npm test'] },
     verifierResult: 'PASS', // legacy, for backward compatibility
     expectedPaths: ['feature.txt'],
@@ -71,6 +73,7 @@ try {
   const closeoutPath = join(harnessRuntimeDir, 'lib', 'closeout.mjs');
   const closeoutModule = await import(closeoutPath);
   const { evaluateGates, executeCloseout } = closeoutModule;
+  const { fingerprintWorktreeDiff } = await import(join(harnessRuntimeDir, 'lib', 'deterministic-staging.mjs'));
 
   console.log('Testing evaluateGates...\n');
 
@@ -192,7 +195,7 @@ try {
   assert(gates12.ok === false, 'No remote for push fails');
   assert(gates12.blockers.some(b => b.includes('No remote configured')), 'Blocker for no remote');
   // Re-add remote for subsequent tests
-  execSync('git remote add origin https://github.com/test/test.git', { cwd: testDir, stdio: 'ignore' });
+  execSync(`git remote add origin ${missingRemote}`, { cwd: testDir, stdio: 'ignore' });
 
   // Reset to clean state for executeCloseout tests
   execSync('git reset HEAD', { cwd: testDir, stdio: 'ignore' });
@@ -209,6 +212,7 @@ try {
     commitBody: 'Add feature2 implementation',
   });
   const gates13 = evaluateGates(context13);
+  context13.reviewerDiffFingerprint = fingerprintWorktreeDiff(testDir);
   console.log('  Debug gates13:', JSON.stringify(gates13, null, 2));
   const result13 = executeCloseout(context13);
   console.log('  Debug result13:', JSON.stringify(result13, null, 2));
@@ -246,6 +250,7 @@ try {
     remote: 'origin',
     branch: 'main',
   });
+  context16.reviewerDiffFingerprint = fingerprintWorktreeDiff(testDir);
   // Note: push will fail because remote doesn't actually exist, but we test the logic
   const result16 = executeCloseout(context16);
   // Since remote doesn't exist, push should fail or be blocked

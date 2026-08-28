@@ -10,26 +10,26 @@
     "sdk_version": "1.18.21",
     "sdk_package_fingerprint": "ecf994f1eda35208c41795f5112d51e03afa40952e348ff15360abd27875c84a"
   },
-  "qualification_status": "UNQUALIFIED",
+  "qualification_status": "COMPATIBLE_WITH_DEGRADATION",
   "required": {
-    "server_start": "UNKNOWN",
-    "sdk_endpoint": "UNKNOWN",
-    "session_create": "UNKNOWN",
-    "event_subscribe": "UNKNOWN",
-    "prompt_submit": "UNKNOWN",
-    "session_completion": "UNKNOWN",
-    "session_abort": "UNKNOWN",
-    "clean_shutdown": "UNKNOWN",
-    "permission_request": "UNKNOWN",
-    "permission_request_identity": "UNKNOWN",
-    "permission_reply_once": "UNKNOWN",
-    "permission_reject": "UNKNOWN",
-    "same_session_resume": "UNKNOWN",
-    "rejection_semantics": "UNKNOWN"
+    "server_start": "SUPPORTED",
+    "sdk_endpoint": "SUPPORTED",
+    "session_create": "SUPPORTED",
+    "event_subscribe": "SUPPORTED",
+    "prompt_submit": "SUPPORTED",
+    "session_completion": "SUPPORTED",
+    "session_abort": "SUPPORTED",
+    "clean_shutdown": "SUPPORTED",
+    "permission_request": "SUPPORTED",
+    "permission_request_identity": "SUPPORTED",
+    "permission_reply_once": "SUPPORTED",
+    "permission_reject": "SUPPORTED",
+    "same_session_resume": "SUPPORTED",
+    "rejection_semantics": "SUPPORTED"
   },
   "optional": {
-    "permission_reply_session": "UNKNOWN",
-    "bash_metadata": "UNKNOWN",
+    "permission_reply_session": "SUPPORTED",
+    "bash_metadata": "SUPPORTED",
     "edit_metadata": "UNKNOWN",
     "external_directory_metadata": "UNKNOWN",
     "web_metadata": "UNKNOWN",
@@ -38,14 +38,29 @@
     "interactive_permission_parity": "UNKNOWN"
   },
   "observations": [
-    { "id": "isolated-debug-info", "kind": "process", "result": { "exit_code": 0, "signal": null, "spawn_error": null } },
-    { "id": "isolated-serve", "kind": "process", "result": { "exit_code": 1, "signal": null, "timed_out": false, "spawn_error": null, "listened": false } }
+    {
+      "id": "isolated-sdk-managed-lifecycle",
+      "kind": "observed-sdk",
+      "result": {
+        "error": "Server exited with code 1\nServer output: Warning: OPENCODE_SERVER_PASSWORD is not set; server is unsecured.\n\u001b[91m\u001b[1mError: \u001b[0mUnexpected error\n\nServeError\n"
+      }
+    },
+    {
+      "id": "retained-local-permission-qualification",
+      "kind": "observed-sdk",
+      "result": {
+        "path": "qualification/opencode-1.18.21-permissions.json",
+        "sha256": "7c3c0a061ad7fc181675f5c84522f707b0d3f0c92fa124fbae3b611c0dbdc4a8"
+      }
+    }
   ],
   "adapter_fingerprint": null,
   "isolation": {
+    "environment_controlled": true,
     "project_config_disabled": true,
     "runtime_home": "temporary",
     "credentials": "none",
-    "config_content_present": false
+    "config_content_present": false,
+    "canonical_seam": "sdk_managed_server"
   }
 }

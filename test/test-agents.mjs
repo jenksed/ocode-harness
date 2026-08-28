@@ -233,6 +233,45 @@ for (const required of [
   }
 }
 
+console.log('\n=== Canonical Task Capsule ===\n');
+for (const required of [
+  '## Task capsule',
+  '`TASK CAPSULE`',
+  '`OBJECTIVE`',
+  '`AUTHORITATIVE_INPUTS`',
+  '`SCOPE`',
+  '`NON_GOALS`',
+  '`CONSTRAINTS`',
+  '`ACCEPTANCE_PROPERTIES`',
+  '`REQUIRED_EVIDENCE`',
+  '`STOP_CONDITIONS`',
+  'same success contract for coder, verifier, and reviewer',
+  'Do not silently rewrite acceptance criteria between roles',
+]) {
+  if (!orchestratorPolicy.includes(required)) {
+    console.error(`✗ orchestrator task capsule missing: ${required}`);
+    invalidAgents.push({ file: 'orchestrator.md', field: required });
+  } else {
+    console.log(`✓ orchestrator task capsule preserves ${required}`);
+  }
+}
+
+for (const required of [
+  '- QUICK: localized, low-risk, well-understood change -> coder -> reviewer.',
+  '- STANDARD: normal feature, meaningful bug fix, or multi-file behavior',
+  '- DEEP: architecture, unfamiliar subsystem, migration, security-sensitive work, or current external dependency',
+  'Any task that changes source or tests requires independent reviewer execution before completion is reported.',
+  'classify the task as DEEP and invoke researcher before implementation',
+  'Allow at most two implementation repair cycles.',
+]) {
+  if (!orchestratorPolicy.includes(required)) {
+    console.error(`✗ compressed orchestrator contract missing invariant: ${required}`);
+    invalidAgents.push({ file: 'orchestrator.md', field: required });
+  } else {
+    console.log(`✓ compressed orchestrator contract preserves invariant`);
+  }
+}
+
 // Summary
 console.log('\n=== Summary ===\n');
 

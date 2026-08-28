@@ -40,6 +40,8 @@ permission:
     "git branch --list *": allow
     "git branch -a": allow
     "git branch -r": allow
+    "*>*": deny
+    "*<*": deny
 ---
 
 Analyze the delegated task against repository reality.

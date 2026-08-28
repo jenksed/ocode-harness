@@ -19,7 +19,7 @@ The JSON stream yields a session ID and bounded execution/result events. Ocode c
 
 M3 applies this seam in the normal `ocode` launcher. It loads the machine default or `--profile` override, validates the manifest-complete profile and visible catalogs, merges only governed `agent.<role>.model` keys into any existing inline configuration, and then launches normal OpenCode interaction.
 
-**OBSERVED:** OpenCode 1.18.21 falls back to the configured primary agent when `opencode run --agent <subagent>` names a role whose canonical mode is `subagent`. M3 bounded governed execution adds an ephemeral `mode: primary` for only the explicitly invoked role. Sanitized export then records that role and its requested binding. Normal interactive launch and canonical agent source are unchanged.
+**OBSERVED:** OpenCode 1.18.21 falls back to the configured primary agent when `opencode run --agent <subagent>` names a role whose canonical mode is `subagent`. M3 bounded governed execution adds an ephemeral `mode: primary` for only the explicitly invoked role. Sanitized export then records that role and its requested binding. Normal interactive launch leaves canonical agent source unchanged while adding Ocode-owned model bindings and repository-fingerprinted native Bash permission rules.
 
 ## AGENT RESOLUTION
 
@@ -59,7 +59,7 @@ No broader precedence matrix is part of this contract.
 
 ## CONFIGURATION OWNERSHIP/ISOLATION
 
-- The normal interactive runtime overlay contains only Ocode-owned `agent.<role>.model` entries. Bounded direct role execution additionally owns the selected role's ephemeral `mode: primary` key for the OpenCode 1.18.21 behavior documented above.
+- The normal interactive runtime overlay contains Ocode-owned `agent.<role>.model` entries plus deterministic native Bash permission projections derived from canonical command admission and the frozen repository validation registry. Bounded direct role execution uses the same permission projection and additionally owns the selected role's ephemeral `mode: primary` key for the OpenCode 1.18.21 behavior documented above.
 - **OBSERVED:** M2 acceptance hashes `config.json`, `opencode.json`, and `opencode.jsonc` before and after real runs; all hashes remained unchanged.
 - Stable FreeLLMAPI provider definitions remain in `opencode-config/opencode.json` and use the existing ownership-aware persistent merge.
 - Authentication remains in OpenCode's credential store. M2 never reads, copies, exports, or clones credentials.
@@ -82,7 +82,7 @@ The raw stream alone does not identify the agent/provider/model. The supported s
 
 ## PERMISSIONS RELIED ON
 
-- Canonical agents continue to use their existing OpenCode frontmatter permissions.
+- Canonical agent frontmatter remains the semantic permission declaration. The runtime overlay narrows validation to exact registry-admitted commands, retains structural denials, and does not grant a role any capability absent from its canonical contract.
 - The M2 diagnostic uses `permission: { "*": "deny" }`, calls no tools, changes no files, and has no Git mutation authority.
 - M2 does not claim a complete permission catalog. Capability/permission/authority enforcement remains M4.
 

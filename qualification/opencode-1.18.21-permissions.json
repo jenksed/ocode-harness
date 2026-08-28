@@ -1,0 +1,591 @@
+{
+  "schema_version": 1,
+  "runtime": {
+    "opencode": "1.18.21",
+    "sdk": "1.18.21"
+  },
+  "observed_at": "2026-08-27T17:47:14.492Z",
+  "method": "local OpenAI-compatible non-inference fixture through installed SDK/server",
+  "lifecycle": {
+    "server_start": "SUPPORTED",
+    "sdk_endpoint": "SUPPORTED",
+    "session_create": "SUPPORTED",
+    "event_subscribe": "SUPPORTED",
+    "prompt_submit": "SUPPORTED",
+    "session_completion": "SUPPORTED",
+    "session_abort": "SUPPORTED",
+    "clean_shutdown": "SUPPORTED"
+  },
+  "scenarios": [
+    {
+      "id": "exact-allow",
+      "commands": [
+        "pwd"
+      ],
+      "rules": {
+        "*": "ask",
+        "pwd": "allow"
+      },
+      "reply": null,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed"
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "no-match-default",
+      "commands": [
+        "pwd"
+      ],
+      "rules": {
+        "git status": "allow"
+      },
+      "reply": null,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed"
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "explicit-no-match-ask",
+      "commands": [
+        "pwd"
+      ],
+      "rules": {
+        "*": "ask",
+        "git status": "allow"
+      },
+      "reply": "once",
+      "permission_request_count": 1,
+      "permission_reply": {
+        "id": "per_04454b788001BwlKmzszGjM3EP",
+        "response": "once",
+        "pattern": null,
+        "metadata": {
+          "command": "pwd"
+        }
+      },
+      "tool_states": [
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed"
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "wildcard-allow",
+      "commands": [
+        "pwd -P"
+      ],
+      "rules": {
+        "*": "ask",
+        "pwd *": "allow"
+      },
+      "reply": null,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed"
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "conflict-last-allow",
+      "commands": [
+        "pwd"
+      ],
+      "rules": {
+        "pwd": "deny",
+        "*": "allow"
+      },
+      "reply": null,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed"
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "conflict-last-deny",
+      "commands": [
+        "pwd"
+      ],
+      "rules": {
+        "*": "allow",
+        "pwd": "deny"
+      },
+      "reply": null,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "composition-and",
+      "commands": [
+        "pwd && printf composed"
+      ],
+      "rules": {
+        "*": "ask",
+        "pwd": "allow"
+      },
+      "reply": "reject",
+      "permission_request_count": 1,
+      "permission_reply": {
+        "id": "per_04454d63e001g83reJuaxrJ1OE",
+        "response": "reject",
+        "pattern": null,
+        "metadata": {
+          "command": "pwd && printf composed"
+        }
+      },
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "request_count": 1,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "composition-or",
+      "commands": [
+        "false || pwd"
+      ],
+      "rules": {
+        "*": "ask",
+        "pwd": "allow"
+      },
+      "reply": "reject",
+      "permission_request_count": 1,
+      "permission_reply": {
+        "id": "per_04454ddce001J8B0HM1oeDyGVc",
+        "response": "reject",
+        "pattern": null,
+        "metadata": {
+          "command": "false || pwd"
+        }
+      },
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "request_count": 1,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "composition-pipe",
+      "commands": [
+        "pwd | wc -c"
+      ],
+      "rules": {
+        "*": "ask",
+        "pwd": "allow"
+      },
+      "reply": "reject",
+      "permission_request_count": 1,
+      "permission_reply": {
+        "id": "per_04454e546001YdhXyDaUjCJrKm",
+        "response": "reject",
+        "pattern": null,
+        "metadata": {
+          "command": "pwd | wc -c"
+        }
+      },
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "request_count": 1,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "composition-redirection",
+      "commands": [
+        "pwd > marker.txt"
+      ],
+      "rules": {
+        "*": "ask",
+        "pwd": "allow"
+      },
+      "reply": "reject",
+      "permission_request_count": 1,
+      "permission_reply": {
+        "id": "per_04454ed0b001lFJrcEWouxjVhf",
+        "response": "reject",
+        "pattern": null,
+        "metadata": {
+          "command": "pwd > marker.txt"
+        }
+      },
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "request_count": 1,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "composition-substitution",
+      "commands": [
+        "printf $(pwd)"
+      ],
+      "rules": {
+        "*": "ask",
+        "pwd": "allow"
+      },
+      "reply": "reject",
+      "permission_request_count": 1,
+      "permission_reply": {
+        "id": "per_04454f482001v0QI2ZmI1BhEed",
+        "response": "reject",
+        "pattern": null,
+        "metadata": {
+          "command": "printf $(pwd)"
+        }
+      },
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "request_count": 1,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "composition-backticks",
+      "commands": [
+        "printf `pwd`"
+      ],
+      "rules": {
+        "*": "ask",
+        "pwd": "allow"
+      },
+      "reply": "reject",
+      "permission_request_count": 1,
+      "permission_reply": {
+        "id": "per_04454fbde001AdOwaAq4RLetLM",
+        "response": "reject",
+        "pattern": null,
+        "metadata": {
+          "command": "printf `pwd`"
+        }
+      },
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "request_count": 1,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "wildcard-composition-and",
+      "commands": [
+        "pwd -P && printf composed"
+      ],
+      "rules": {
+        "*": "ask",
+        "pwd *": "allow"
+      },
+      "reply": "reject",
+      "permission_request_count": 1,
+      "permission_reply": {
+        "id": "per_044550369001VZDVmpRil0mAVD",
+        "response": "reject",
+        "pattern": null,
+        "metadata": {
+          "command": "pwd -P && printf composed"
+        }
+      },
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "request_count": 1,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "wildcard-composition-redirection",
+      "commands": [
+        "pwd -P > marker.txt"
+      ],
+      "rules": {
+        "*": "ask",
+        "pwd *": "allow"
+      },
+      "reply": "reject",
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "running",
+        "completed"
+      ],
+      "request_count": 2,
+      "marker_created": true,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "wildcard-redirection-denied",
+      "commands": [
+        "pwd -P > marker.txt"
+      ],
+      "rules": {
+        "*": "ask",
+        "pwd *": "allow",
+        "*>*": "deny"
+      },
+      "reply": null,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "reply-once-scope",
+      "commands": [
+        "pwd",
+        "pwd"
+      ],
+      "rules": {
+        "*": "ask"
+      },
+      "reply": "once",
+      "permission_request_count": 2,
+      "permission_reply": {
+        "id": "per_044551b64001a3M1g5jsy8Rt4R",
+        "response": "once",
+        "pattern": null,
+        "metadata": {
+          "command": "pwd"
+        }
+      },
+      "tool_states": [
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed",
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed"
+      ],
+      "request_count": 3,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "reply-always-scope",
+      "commands": [
+        "pwd",
+        "pwd"
+      ],
+      "rules": {
+        "*": "ask"
+      },
+      "reply": "always",
+      "permission_request_count": 1,
+      "permission_reply": {
+        "id": "per_044552305001coksulfve9A2Z6",
+        "response": "always",
+        "pattern": null,
+        "metadata": {
+          "command": "pwd"
+        }
+      },
+      "tool_states": [
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed",
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed"
+      ],
+      "request_count": 3,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "reply-reject",
+      "commands": [
+        "pwd"
+      ],
+      "rules": {
+        "*": "ask"
+      },
+      "reply": "reject",
+      "permission_request_count": 1,
+      "permission_reply": {
+        "id": "per_044552b2600122JBswN7Civ4F3",
+        "response": "reject",
+        "pattern": null,
+        "metadata": {
+          "command": "pwd"
+        }
+      },
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "request_count": 1,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "admitted-validation",
+      "commands": [
+        "npm test"
+      ],
+      "rules": {
+        "*": "ask",
+        "npm test": "allow",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed"
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "remote-deny",
+      "commands": [
+        "git push origin fixture"
+      ],
+      "rules": {
+        "*": "ask",
+        "git push *": "deny"
+      },
+      "reply": null,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "low-interruption-loop",
+      "commands": [
+        "pwd",
+        "rg needle fixture.txt",
+        "npm test",
+        "npm test"
+      ],
+      "rules": {
+        "*": "ask",
+        "pwd": "allow",
+        "rg *": "allow",
+        "npm test": "allow",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed",
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed",
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed",
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed"
+      ],
+      "request_count": 5,
+      "marker_created": false,
+      "session_abort": "SUPPORTED"
+    }
+  ]
+}

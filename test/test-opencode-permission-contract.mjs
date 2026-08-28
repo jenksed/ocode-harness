@@ -13,8 +13,9 @@ assert.equal(sdkPackage.version, '1.18.21');
 assert.match(types, /export type Permission = \{/);
 assert.match(types, /type: "permission\.updated"/);
 assert.match(types, /response: "once" \| "always" \| "reject"/);
-assert.match(record, /CHARACTERIZATION SUFFICIENT: NO/);
-assert.match(record, /does not authorize the ASK governance implementation/i);
+assert.match(record, /CHARACTERIZATION SUFFICIENT: YES/);
+assert.match(record, /wildcard.*silently allow/is);
+assert.match(record, /trailing.*redirection.*denial/is);
 
 const version = execFileSync('opencode', ['--version'], { encoding: 'utf8' }).trim();
 const help = spawnSync('opencode', ['run', '--help'], { encoding: 'utf8' });

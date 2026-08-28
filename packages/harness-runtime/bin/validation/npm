@@ -1,0 +1,37 @@
+#!/usr/bin/env node
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { resolve } from 'node:path';
+
+const realNpm = process.env.OCODE_REAL_NPM;
+const projectDir = process.env.OCODE_VALIDATION_PROJECT;
+const serialized = process.env.OCODE_VALIDATION_REGISTRY;
+if (!realNpm || !projectDir || !serialized) {
+  console.error('OCODE_VALIDATION_WRAPPER_CONFIGURATION_MISSING');
+  process.exit(126);
+}
+
+let registry;
+try { registry = JSON.parse(serialized); } catch { registry = null; }
+const args = process.argv.slice(2);
+const command = args[0] === 'test' ? 'npm test' : args[0] === 'run' && args[1] ? `npm run ${args[1]}` : null;
+if (command && registry?.commands?.includes(command)) {
+  let source;
+  try { source = readFileSync(resolve(projectDir, registry.project_package)); } catch { source = null; }
+  const fingerprint = source ? createHash('sha256').update(source).digest('hex') : null;
+  if (fingerprint !== registry.package_fingerprint) {
+    console.error('OCODE_VALIDATION_REGISTRY_STALE: package.json changed after validation admission; restart Ocode to readmit validation.');
+    process.exit(125);
+  }
+}
+
+const environment = { ...process.env };
+if (environment.OCODE_VALIDATION_ORIGINAL_PATH) environment.PATH = environment.OCODE_VALIDATION_ORIGINAL_PATH;
+const result = spawnSync(realNpm, args, { cwd: process.cwd(), env: environment, stdio: 'inherit' });
+if (result.error) {
+  console.error(`OCODE_VALIDATION_EXECUTION_FAILED: ${result.error.message}`);
+  process.exit(126);
+}
+if (result.signal) process.kill(process.pid, result.signal);
+process.exit(result.status ?? 1);

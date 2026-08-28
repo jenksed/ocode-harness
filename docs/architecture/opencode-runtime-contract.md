@@ -19,7 +19,7 @@ The normalized schema and transition logic live in `packages/harness-runtime/lib
 
 ## Current installed-runtime observation
 
-The current 1.18.21 runtime is `UNQUALIFIED`. Its retained machine-readable result is [opencode-runtime-qualification-1.18.21.json](opencode-runtime-qualification-1.18.21.json). The historical artifact records the original synchronous CLI attempt. The canonical runner now instead invokes the production SDK-managed seam under a controlled temporary environment. That seam has not yet been repeatable: it can reach lifecycle operations in an individual attempt but repeatedly exits with `ServeError` before startup in fresh attempts. It is not classified `INCOMPATIBLE`: the cause could be an environmental/server seam fault rather than an observed missing runtime behavior.
+The current 1.18.21 runtime is `COMPATIBLE_WITH_DEGRADATION`. The earlier synchronous ServeError artifact remains historical evidence and is not reinterpreted. The canonical qualifier now consumes the version-matched credential-free local-provider record at `qualification/opencode-1.18.21-permissions.json`, which exercises server/session lifecycle, prompt completion, native permission request identity, once/resume, reject, session-wide approval, abort, and clean shutdown. Metadata for non-Bash tools and interactive/child parity remain `UNKNOWN`, producing the explicit degradation.
 
 The reusable qualification process must use an isolated HOME/XDG/config/project directory, actual installed executable, and a local deterministic provider or non-inference real permission trigger. It must record raw facts in sanitized structured observations, then populate this contract without branching its policy on a version number.
 

@@ -23,11 +23,14 @@ import {
   readVersion,
   findSourceRepo,
   writeVersion,
+  assertPromotableSourceIdentity,
+  inspectSourceIdentity,
+  isExactReleaseIdentity,
+  readReleaseIdentity,
+  sameReleaseIdentity,
+  writeReleaseIdentity,
   CONFIG,
 } from '../lib/deploy.mjs';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 function toCamelCase(flag) {
   return flag.replace(/^--/, '').replace(/-([a-z])/g, (_, char) => char.toUpperCase());
@@ -35,14 +38,8 @@ function toCamelCase(flag) {
 
 function parseOptionSpec(spec) {
   const flag = spec.split(/[ ,|]+/).find(part => part.startsWith('--'));
-  if (!flag) {
-    throw new Error(`Unsupported option spec: ${spec}`);
-  }
-  return {
-    flag,
-    name: toCamelCase(flag),
-    takesValue: spec.includes('<') || spec.includes('['),
-  };
+  if (!flag) throw new Error(`Unsupported option spec: ${spec}`);
+  return { flag, name: toCamelCase(flag), takesValue: spec.includes('<') || spec.includes('[') };
 }
 
 class MiniCommand {
@@ -51,21 +48,15 @@ class MiniCommand {
     this.optionSpecs = [];
     this.handler = null;
   }
-
-  description() {
-    return this;
-  }
-
+  description() { return this; }
   option(spec, _description, defaultValue) {
     this.optionSpecs.push({ ...parseOptionSpec(spec), required: false, defaultValue });
     return this;
   }
-
   requiredOption(spec, _description, defaultValue) {
     this.optionSpecs.push({ ...parseOptionSpec(spec), required: true, defaultValue });
     return this;
   }
-
   action(handler) {
     this.handler = handler;
     return this;
@@ -77,29 +68,19 @@ class MiniProgram {
     this.commands = [];
     this.versionValue = null;
   }
-
-  name() {
-    return this;
-  }
-
-  description() {
-    return this;
-  }
-
+  name() { return this; }
+  description() { return this; }
   version(value) {
     this.versionValue = value;
     return this;
   }
-
   command(name) {
     const command = new MiniCommand(name);
     this.commands.push(command);
     return command;
   }
-
   async parse(argv = process.argv) {
     const args = argv.slice(2);
-
     if (args.includes('--version') || args.includes('-V')) {
       console.log(this.versionValue || 'unknown');
       return;
@@ -109,7 +90,6 @@ class MiniProgram {
       .map(command => ({ command, parts: command.commandName.split(' ') }))
       .filter(({ parts }) => parts.every((part, index) => args[index] === part))
       .sort((a, b) => b.parts.length - a.parts.length)[0];
-
     if (!match) {
       console.error(`Unknown command: ${args.join(' ') || '(none)'}`);
       process.exit(1);
@@ -118,67 +98,39 @@ class MiniProgram {
     const optionArgs = args.slice(match.parts.length);
     const options = {};
     const specsByFlag = new Map(match.command.optionSpecs.map(spec => [spec.flag, spec]));
-
     for (const spec of match.command.optionSpecs) {
-      if (spec.defaultValue !== undefined) {
-        options[spec.name] = spec.defaultValue;
-      } else if (!spec.takesValue) {
-        options[spec.name] = false;
-      }
+      if (spec.defaultValue !== undefined) options[spec.name] = spec.defaultValue;
+      else if (!spec.takesValue) options[spec.name] = false;
     }
-
     for (let i = 0; i < optionArgs.length; i++) {
       const token = optionArgs[i];
-      if (!token.startsWith('--')) {
-        continue;
-      }
-
+      if (!token.startsWith('--')) continue;
       const [flag, inlineValue] = token.split(/=(.*)/s, 2);
       const spec = specsByFlag.get(flag);
-      if (!spec) {
-        throw new Error(`Unknown option for ${match.command.commandName}: ${flag}`);
-      }
-
+      if (!spec) throw new Error(`Unknown option for ${match.command.commandName}: ${flag}`);
       if (spec.takesValue) {
         const value = inlineValue !== undefined ? inlineValue : optionArgs[++i];
-        if (value === undefined || value.startsWith('--')) {
-          throw new Error(`Missing value for option ${flag}`);
-        }
+        if (value === undefined || value.startsWith('--')) throw new Error(`Missing value for option ${flag}`);
         options[spec.name] = value;
-      } else {
-        options[spec.name] = true;
-      }
+      } else options[spec.name] = true;
     }
-
     for (const spec of match.command.optionSpecs) {
       if (spec.required && (options[spec.name] === undefined || options[spec.name] === false)) {
         throw new Error(`Missing required option ${spec.flag}`);
       }
     }
-
-    if (!match.command.handler) {
-      throw new Error(`No handler registered for ${match.command.commandName}`);
-    }
-
+    if (!match.command.handler) throw new Error(`No handler registered for ${match.command.commandName}`);
     await match.command.handler(options);
   }
 }
 
 const program = new MiniProgram();
+program.name('harness').description('ocode-harness deterministic runtime').version('0.1.0');
 
-program
-  .name('harness')
-  .description('ocode-harness deterministic runtime')
-  .version('0.1.0');
-
-// Find project root
 function findProjectRoot(startDir) {
   let dir = resolve(startDir);
   while (true) {
-    const opencodeDir = resolve(dir, '.opencode');
-    if (existsSync(opencodeDir)) {
-      return dir;
-    }
+    if (existsSync(resolve(dir, '.opencode'))) return dir;
     const parent = dirname(dir);
     if (parent === dir) break;
     dir = parent;
@@ -186,153 +138,155 @@ function findProjectRoot(startDir) {
   return process.cwd();
 }
 
-// Get installed version info
 function getInstalledVersionInfo() {
   const harnessRoot = CONFIG.harnessRoot;
-  const versionPath = join(harnessRoot, 'VERSION');
-  const installedVersion = readVersion(versionPath);
+  const installedVersion = readVersion(join(harnessRoot, 'VERSION'));
+  const installedIdentity = readReleaseIdentity(harnessRoot);
 
-  // Get doctrine/policy version
   let doctrineVersion = null;
   const policyVersionPath = join(harnessRoot, 'doctrine', 'policy-version.json');
   if (existsSync(policyVersionPath)) {
     try {
       const manifest = JSON.parse(readFileSync(policyVersionPath, 'utf8'));
       doctrineVersion = manifest.policy_version || manifest.doctrine?.version;
-    } catch (err) {
-      // ignore
+    } catch {
+      // Optional doctrine metadata must not hide release identity.
     }
   }
 
-  // Try to find source repo and get source version
   let sourceVersion = null;
+  let sourceIdentity = null;
   let sourceDiffers = false;
   const sourceRoot = findSourceRepo(process.cwd());
   if (sourceRoot) {
-    const sourceVersionPath = join(sourceRoot, 'VERSION');
-    sourceVersion = readVersion(sourceVersionPath);
-    if (sourceVersion && installedVersion && sourceVersion !== installedVersion) {
-      sourceDiffers = true;
+    sourceVersion = readVersion(join(sourceRoot, 'VERSION'));
+    if (sourceVersion) sourceIdentity = inspectSourceIdentity(sourceRoot, sourceVersion);
+    if (sourceIdentity && installedIdentity
+        && isExactReleaseIdentity(sourceIdentity)
+        && isExactReleaseIdentity(installedIdentity)) {
+      sourceDiffers = !sameReleaseIdentity(installedIdentity, sourceIdentity);
+    } else if (sourceVersion && installedVersion) {
+      sourceDiffers = sourceVersion !== installedVersion;
     }
   }
 
   return {
     installed_version: installedVersion,
+    installed_sha: installedIdentity?.source_commit ?? null,
+    installed_ref: installedIdentity?.source_ref ?? null,
+    installed_identity_exact: isExactReleaseIdentity(installedIdentity),
     source_version: sourceVersion,
+    source_sha: sourceIdentity?.source_commit ?? null,
+    source_ref: sourceIdentity?.source_ref ?? null,
+    source_dirty: sourceIdentity?.source_dirty ?? null,
+    source_identity_exact: isExactReleaseIdentity(sourceIdentity),
     doctrine_version: doctrineVersion,
     source_differs: sourceDiffers,
     source_repo: sourceRoot,
   };
 }
 
-// VERSION SUBCOMMAND
 program
   .command('version')
-  .description('Report installed, source, and doctrine versions')
+  .description('Report exact installed and checkout release identity')
   .option('--json', 'Output as JSON')
   .action((options) => {
     const info = getInstalledVersionInfo();
-
     if (options.json) {
       console.log(JSON.stringify(info, null, 2));
     } else {
-      console.log('=== ocode-harness Version ===\n');
-      console.log(`Installed version: ${info.installed_version || 'not found'}`);
-      console.log(`Source version:    ${info.source_version || 'not detected'}`);
-      console.log(`Doctrine version:  ${info.doctrine_version || 'not found'}`);
-      if (info.source_repo) {
-        console.log(`Source repo:       ${info.source_repo}`);
-      }
-      if (info.source_differs) {
-        console.log('\n⚠ Source and installed versions differ');
-      } else if (info.installed_version && info.source_version) {
-        console.log('\n✓ Source and installed versions match');
-      }
+      console.log('=== Ocode Release Identity ===\n');
+      console.log('Installed:');
+      console.log(`  Version: ${info.installed_version || 'not found'}`);
+      console.log(`  SHA:     ${info.installed_sha || 'unavailable (legacy/non-Git release)'}`);
+      console.log(`  Ref:     ${info.installed_ref || 'detached/unknown'}`);
+      console.log('');
+      console.log('Checkout:');
+      console.log(`  Version: ${info.source_version || 'not detected'}`);
+      console.log(`  SHA:     ${info.source_sha || 'unavailable'}`);
+      console.log(`  Ref:     ${info.source_ref || 'detached/unknown'}`);
+      console.log(`  Dirty:   ${info.source_dirty === null ? 'unknown' : info.source_dirty ? 'yes' : 'no'}`);
+      console.log(`Doctrine:  ${info.doctrine_version || 'not found'}`);
+      if (info.source_repo) console.log(`Source:    ${info.source_repo}`);
+      if (info.source_differs) console.log('\nCheckout differs from installed release.');
+      else if (info.installed_identity_exact && info.source_identity_exact) console.log('\nCheckout matches installed release exactly.');
+      else if (info.installed_version && info.source_version) console.log('\nSemantic versions match; exact source identity is unavailable.');
     }
     process.exit(0);
   });
 
-// UPDATE SUBCOMMAND
 program
   .command('update')
-  .description('Update installation from source repository with staged promotion')
-  .option('--force', 'Force update even if versions match')
+  .description('Promote the current checkout into the isolated installed runtime')
+  .option('--force', 'Reinstall even when exact release identity already matches')
   .action(async (options) => {
-    console.log('=== ocode-harness Update ===\n');
-
+    console.log('=== Ocode Update ===\n');
+    let promotionAttempted = false;
     try {
-      // Find source repo
       const sourceRoot = findSourceRepo(process.cwd());
-      if (!sourceRoot) {
-        throw new Error('Could not find source repository. Run from within the ocode-harness repo or ensure VERSION, installer/install.mjs, agents/, packages/ exist.');
-      }
+      if (!sourceRoot) throw new Error('Could not find source repository. Run from within the ocode-harness checkout.');
       console.log(`Source repository: ${sourceRoot}`);
 
-      // Read source version
       const sourceVersion = readVersion(join(sourceRoot, 'VERSION'));
-      if (!sourceVersion) {
-        throw new Error('Could not read VERSION from source repository');
-      }
+      if (!sourceVersion) throw new Error('Could not read VERSION from source repository');
+      const sourceIdentity = assertPromotableSourceIdentity(inspectSourceIdentity(sourceRoot, sourceVersion));
       console.log(`Source version: ${sourceVersion}`);
+      console.log(`Source SHA: ${sourceIdentity.source_commit || 'unavailable'}`);
+      console.log(`Source ref: ${sourceIdentity.source_ref || 'detached/unknown'}`);
 
-      // Read installed version
       const installedVersion = readVersion(join(CONFIG.harnessRoot, 'VERSION'));
+      const installedIdentity = readReleaseIdentity(CONFIG.harnessRoot);
       console.log(`Installed version: ${installedVersion || 'none'}`);
+      console.log(`Installed SHA: ${installedIdentity?.source_commit || 'unavailable'}`);
 
-      // Check if update needed
-      if (!options.force && installedVersion === sourceVersion) {
-        console.log('\n✓ Already at latest version. Use --force to reinstall.');
+      if (!options.force && sameReleaseIdentity(installedIdentity, sourceIdentity)) {
+        console.log('\n✓ Installed runtime already matches this exact release. Use --force to reinstall.');
         process.exit(0);
       }
+      if (!options.force && installedVersion === sourceVersion) {
+        console.log('\nSemantic version matches, but source identity does not; promotion will continue.');
+      }
 
-      // Stage candidate
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const stagingDir = join(CONFIG.stagingDir, timestamp);
       console.log(`\nStaging candidate to ${stagingDir}...`);
       stageCandidate(sourceRoot, stagingDir, sourceVersion);
+      writeReleaseIdentity(stagingDir, sourceIdentity);
 
-      // Validate candidate
       console.log('\nValidating candidate...');
-      const isValid = validateCandidate(stagingDir);
-      if (!isValid) {
-        throw new Error('Candidate validation failed');
-      }
+      if (!validateCandidate(stagingDir)) throw new Error('Candidate validation failed');
 
-      // Promote candidate (with backup)
       console.log('\nPromoting candidate...');
+      promotionAttempted = true;
       const backupDir = promoteCandidate(stagingDir, CONFIG.harnessRoot, CONFIG.backupDir);
       console.log(`Backup preserved at: ${backupDir}`);
 
-      // Install launchers from promoted installation
       console.log('\nUpdating launchers...');
       installLaunchers(CONFIG.harnessRoot);
-
-      // Install agents
       console.log('\nUpdating agents...');
       installAgents(CONFIG.harnessRoot);
-
-      // Patch OpenCode config
       patchOpenCodeConfig(CONFIG.harnessRoot);
-
-      // Configure Git excludes
       configureGitExcludes();
 
-      // Post-promotion validation
       console.log('\nRunning post-promotion validation...');
       const postValid = validatePostPromotion(CONFIG.harnessRoot);
-
-      if (!postValid) {
-        throw new Error('Post-promotion validation failed');
+      const promotedIdentity = readReleaseIdentity(CONFIG.harnessRoot);
+      if (!postValid) throw new Error('Post-promotion validation failed');
+      if (isExactReleaseIdentity(sourceIdentity) && !sameReleaseIdentity(sourceIdentity, promotedIdentity)) {
+        throw new Error('Post-promotion release identity does not match source checkout');
       }
 
       console.log('\n✓ Update complete');
       console.log(`  Version: ${sourceVersion}`);
+      console.log(`  SHA: ${promotedIdentity?.source_commit || 'unavailable'}`);
       console.log(`  Backup: ${backupDir}`);
-
     } catch (error) {
       console.error('\n✗ Update failed:', error.message);
+      if (!promotionAttempted) {
+        console.error('Installed runtime unchanged; promotion was not attempted.');
+        process.exit(1);
+      }
       console.error('Attempting rollback...');
-
       try {
         const result = rollbackCandidate(CONFIG.backupDir, CONFIG.harnessRoot);
         console.log(`✓ Rollback complete, restored version: ${result.restoredVersion}`);
@@ -341,51 +295,34 @@ program
         console.error('✗ Rollback also failed:', rollbackErr.message);
         console.error('Installation may be in inconsistent state!');
       }
-
       process.exit(1);
     }
   });
 
-// ROLLBACK SUBCOMMAND
 program
   .command('rollback')
   .description('Rollback to previous installation from backup')
   .action(() => {
     console.log('=== ocode-harness Rollback ===\n');
-
     try {
       const result = rollbackCandidate(CONFIG.backupDir, CONFIG.harnessRoot);
-
-      // Reinstall launchers from restored installation
       console.log('\nReinstalling launchers...');
       installLaunchers(CONFIG.harnessRoot);
-
-      // Reinstall agents
       console.log('\nReinstalling agents...');
       installAgents(CONFIG.harnessRoot);
-
-      // Patch OpenCode config
       patchOpenCodeConfig(CONFIG.harnessRoot);
-
-      // Post-rollback validation
       console.log('\nRunning post-rollback validation...');
-      const postValid = validatePostPromotion(CONFIG.harnessRoot);
-
-      if (!postValid) {
-        throw new Error('Post-rollback validation failed');
-      }
-
+      if (!validatePostPromotion(CONFIG.harnessRoot)) throw new Error('Post-rollback validation failed');
       console.log('\n✓ Rollback complete');
       console.log(`  Restored version: ${result.restoredVersion}`);
+      console.log(`  Restored SHA: ${readReleaseIdentity(CONFIG.harnessRoot)?.source_commit || 'unavailable (legacy backup)'}`);
       console.log(`  From backup: ${result.backupUsed}`);
-
     } catch (error) {
       console.error('\n✗ Rollback failed:', error.message);
       process.exit(1);
     }
   });
 
-// LEDGER COMMANDS
 program
   .command('ledger append')
   .description('Append a validated record to the run ledger')
@@ -415,7 +352,6 @@ program
     try {
       const projectRoot = findProjectRoot(options.projectRoot);
       const ledgerPath = resolve(projectRoot, '.opencode', 'run-ledger.jsonl');
-
       const record = createLedgerRecord({
         task_id: options.taskId,
         run_id: options.runId,
@@ -442,7 +378,6 @@ program
           remote: options.remote || null
         }
       });
-
       appendRecord(ledgerPath, record);
       console.log('✓ Ledger record appended');
       console.log(`  Task ID: ${record.task_id}`);
@@ -461,14 +396,9 @@ program
   .action((options) => {
     try {
       const projectRoot = findProjectRoot(options.projectRoot);
-      const ledgerPath = resolve(projectRoot, '.opencode', 'run-ledger.jsonl');
-      const record = getLatestRecord(ledgerPath);
-
-      if (record) {
-        console.log(JSON.stringify(record, null, 2));
-      } else {
-        console.log('No records found');
-      }
+      const record = getLatestRecord(resolve(projectRoot, '.opencode', 'run-ledger.jsonl'));
+      if (record) console.log(JSON.stringify(record, null, 2));
+      else console.log('No records found');
     } catch (err) {
       console.error('✗ Failed to read ledger:', err.message);
       process.exit(1);
@@ -483,9 +413,7 @@ program
   .action((options) => {
     try {
       const projectRoot = findProjectRoot(options.projectRoot);
-      const ledgerPath = resolve(projectRoot, '.opencode', 'run-ledger.jsonl');
-      const records = getRecentRecords(ledgerPath, parseInt(options.count, 10));
-
+      const records = getRecentRecords(resolve(projectRoot, '.opencode', 'run-ledger.jsonl'), parseInt(options.count, 10));
       console.log(JSON.stringify(records, null, 2));
     } catch (err) {
       console.error('✗ Failed to read ledger:', err.message);
@@ -493,7 +421,6 @@ program
     }
   });
 
-// LIFECYCLE COMMANDS
 program
   .command('lifecycle transition')
   .description('Validate and perform a lifecycle state transition')
@@ -509,7 +436,6 @@ program
     }
   });
 
-// CLOSEOUT COMMANDS
 program
   .command('closeout')
   .description('Execute deterministic Git closeout')
@@ -519,6 +445,8 @@ program
   .requiredOption('--lifecycle-state <state>', 'Current lifecycle state')
   .requiredOption('--workflow <type>', 'Workflow type (QUICK|STANDARD|DEEP)')
   .requiredOption('--reviewer-verdict <verdict>', 'Reviewer verdict (ACCEPT|REJECT|NONE)')
+  .requiredOption('--task-capsule-fingerprint <sha256>', 'Canonical TaskCapsule fingerprint')
+  .requiredOption('--reviewer-diff-fingerprint <sha256>', 'Worktree fingerprint observed by the accepting reviewer')
   .option('--verifier-result <result>', 'Verifier result (PASS|FAIL|NONE)', 'NONE')
   .requiredOption('--commit-subject <subject>', 'Commit subject')
   .option('--commit-body <body>', 'Commit body')
@@ -529,16 +457,16 @@ program
   .action(async (options) => {
     try {
       const projectRoot = resolve(options.projectRoot);
-      const expectedPaths = options.expectedPaths ? options.expectedPaths.split(',') : [];
-
       const context = {
         taskId: options.taskId,
         runId: options.runId,
         lifecycleState: options.lifecycleState,
         workflow: options.workflow,
         reviewerVerdict: options.reviewerVerdict,
+        taskCapsuleFingerprint: options.taskCapsuleFingerprint,
+        reviewerDiffFingerprint: options.reviewerDiffFingerprint,
         verifierResult: options.verifierResult,
-        expectedPaths,
+        expectedPaths: options.expectedPaths ? options.expectedPaths.split(',') : [],
         projectRoot,
         commitSubject: options.commitSubject,
         commitBody: options.commitBody,
@@ -546,13 +474,9 @@ program
         remote: options.remote,
         branch: options.branch
       };
-
       const result = executeCloseout(context);
       console.log(JSON.stringify(result, null, 2));
-
-      if (result.status !== 'PASS') {
-        process.exit(1);
-      }
+      if (result.status !== 'PASS') process.exit(1);
     } catch (err) {
       console.error('✗ Closeout failed:', err.message);
       process.exit(1);
@@ -575,22 +499,18 @@ program
   .action((options) => {
     try {
       const projectRoot = resolve(options.projectRoot);
-      const expectedPaths = options.expectedPaths ? options.expectedPaths.split(',') : [];
-
-      const context = {
+      const result = evaluateGates({
         taskId: options.taskId,
         runId: options.runId,
         lifecycleState: options.lifecycleState,
         workflow: options.workflow,
         reviewerVerdict: options.reviewerVerdict,
         verifierResult: options.verifierResult,
-        expectedPaths,
+        expectedPaths: options.expectedPaths ? options.expectedPaths.split(',') : [],
         projectRoot,
         remote: options.remote,
         branch: options.branch
-      };
-
-      const result = evaluateGates(context);
+      });
       console.log(JSON.stringify(result, null, 2));
     } catch (err) {
       console.error('✗ Gate evaluation failed:', err.message);
@@ -598,23 +518,19 @@ program
     }
   });
 
-// EVIDENCE COMMANDS
 program
   .command('evidence collect')
   .description('Collect deterministic evidence from repository')
   .option('--project-root <path>', 'Project root path', process.cwd())
   .action((options) => {
     try {
-      const projectRoot = resolve(options.projectRoot);
-      const evidence = collectEvidence(projectRoot);
-      console.log(JSON.stringify(evidence, null, 2));
+      console.log(JSON.stringify(collectEvidence(resolve(options.projectRoot)), null, 2));
     } catch (err) {
       console.error('✗ Evidence collection failed:', err.message);
       process.exit(1);
     }
   });
 
-// VERIFY COMMANDS
 program
   .command('verify')
   .description('Run deterministic validation commands (test, build, lint, typecheck, verify)')

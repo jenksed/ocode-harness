@@ -49,6 +49,8 @@ permission:
     "git clean": deny
     "git clean *": deny
     "rm -rf *": deny
+    "*>*": deny
+    "*<*": deny
 ---
 
 Implement only the delegated scope.

@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { collectEvidence, getChangedPaths, reconcilePaths } from './evidence.mjs';
 import { LIFECYCLE_STATES } from './lifecycle.mjs';
+import { createStagingAuthorization, executeDeterministicStaging } from './deterministic-staging.mjs';
 
 const SENSITIVE_PATTERNS = [
   /^\.env($|\.)/,
@@ -108,13 +109,6 @@ function evaluateCloseoutGates(context) {
   };
 }
 
-function stageFiles(projectRoot, paths) {
-  const absoluteRoot = resolve(projectRoot);
-  for (const path of paths) {
-    execFileSync('git', ['add', path], { cwd: absoluteRoot, encoding: 'utf8' });
-  }
-}
-
 function createCommit(projectRoot, subject, body) {
   const absoluteRoot = resolve(projectRoot);
   const args = ['commit', '-m', subject];
@@ -138,7 +132,7 @@ export function evaluateGates(context) {
 }
 
 export function executeCloseout(context) {
-  const { projectRoot, commitSubject, commitBody, expectedPaths, push = false } = context;
+  const { projectRoot, commitSubject, commitBody, expectedPaths, push = false, taskCapsuleFingerprint, reviewerDiffFingerprint } = context;
   
   // Evaluate gates first
   const gateResult = evaluateCloseoutGates(context);
@@ -165,7 +159,16 @@ export function executeCloseout(context) {
   }
   
   try {
-    stageFiles(projectRoot, pathsToStage);
+    const stagingAuthorization = createStagingAuthorization({
+      projectRoot,
+      accepted_paths: pathsToStage,
+      reviewer_verdict: context.reviewerVerdict,
+      lifecycle_state: context.lifecycleState,
+      validation_status: context.validationEvidence?.status ?? context.verifierResult,
+      task_capsule_fingerprint: taskCapsuleFingerprint,
+      reviewer_diff_fingerprint: reviewerDiffFingerprint,
+    });
+    const staging = executeDeterministicStaging({ projectRoot, authorization: stagingAuthorization });
     
     // Commit
     const commitSha = createCommit(projectRoot, commitSubject, commitBody);
@@ -203,6 +206,8 @@ export function executeCloseout(context) {
       branch: gateResult.evidence.git_branch,
       remote: gateResult.evidence.git_remote,
       pushed,
+      staged_paths: staging.staged_paths,
+      staging_authorization_fingerprint: staging.authorization_fingerprint,
       blockers: [],
       unexpected_paths: []
     };

@@ -139,6 +139,8 @@ Depends on: M4, M6.
 
 Native approval architecture: [native OpenCode approval](docs/architecture/approval-first-execution.md) keeps interactive permission presentation and execution in OpenCode. M7 may not treat plan authorization as runtime operation approval.
 
+TaskCapsule v1, validation admission, deterministic staging, telemetry, qualification, adapters, and capability-resolution primitives are additive runtime prerequisites under review; they do not compile plans, schedule work, or change M7's PLANNED status. Their authority and migration boundaries are documented in [open-weight runtime evolution](docs/architecture/open-weight-runtime-evolution.md).
+
 ### M8 Deterministic Task Runner — PLANNED
 
 Purpose: execute compiled plans through lifecycle, ledger, evidence, validation, review, and closeout gates.

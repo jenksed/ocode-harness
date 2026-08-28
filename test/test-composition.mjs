@@ -228,15 +228,17 @@ try {
   // Test 18: Coder has edit allow
   assert(ROLE_REGISTRY.coder.frontmatter.includes('edit: allow'), 'Coder has edit: allow');
 
-  // Test 19: Verifier has test/build commands allowed
+  // Test 19: Validation is admitted dynamically from repository authority.
   const verifierFm = ROLE_REGISTRY.verifier.frontmatter;
-  assert(verifierFm.includes('npm test'), 'Verifier allows npm test');
-  assert(verifierFm.includes('npm run build'), 'Verifier allows npm run build');
+  assert(verifierFm.includes('"npm test": allow'), 'Verifier semantic contract projects test.execute');
+  assert(!verifierFm.includes('"npm test *": allow'), 'Verifier has no broad static npm allowance');
+  assert(verifierFm.includes('"*>*": deny'), 'Verifier blocks observation redirection');
 
-  // Test 20: Reviewer has read-only git and test commands
+  // Test 20: Reviewer remains read-only; validation arrives via runtime projection.
   const reviewerFm = ROLE_REGISTRY.reviewer.frontmatter;
   assert(reviewerFm.includes('edit: deny'), 'Reviewer has edit: deny');
-  assert(reviewerFm.includes('npm test'), 'Reviewer allows npm test');
+  assert(reviewerFm.includes('"npm test": allow'), 'Reviewer semantic contract projects test.execute');
+  assert(!reviewerFm.includes('"npm test *": allow'), 'Reviewer has no broad static npm allowance');
   assert(reviewerFm.includes('git diff'), 'Reviewer allows git diff');
 
   // Test 21: Committer semantics do not own deployment model policy

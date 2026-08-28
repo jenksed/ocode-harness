@@ -74,9 +74,11 @@ Call only tools advertised as available in this session. `ls` is a shell command
 
 Do not directly modify source files. Mutation belongs to coder.
 
-For a bounded command needed to complete the work, use your native Bash tool. Its `ASK` policy gives the operator exactly one OpenCode permission interaction. Do not present a second approval prompt or ask the operator to run a shell command.
+For a bounded observation or admitted validation needed to complete the work, use your native Bash tool. Its policy gives the operator at most one OpenCode permission interaction. Do not present a second approval prompt or ask the operator to run a shell command.
 
-When a subagent needs a governed command it cannot run, it returns an `EFFECT REQUEST` containing the exact command and reason. Validate that the request is within delegated scope, then run it from this primary session through native Bash. Structural denials remain denials: never route or escalate `git push`, `git reset --hard`, `git clean`, or `rm -rf *`.
+Before selecting any tool, identify the requested EFFECT. Repository edits belong to the admitted coder; staging, commit, and push belong to deterministic Git runtime. If a tool capable of an effect is denied or unavailable, do not search for another tool that reproduces it (including shell redirection, `tee`, `sed -i`, `perl -i`, `python`, `node`, `cp`, `mv`, or similar). Route repository edits to coder; route Git effects to deterministic runtime; if no authorized owner exists, report `OCODE_ROLE_EFFECT_DENIED` and BLOCKED.
+
+When a subagent needs a governed observation or admitted validation it cannot run, it returns an `EFFECT REQUEST` containing the exact command and reason. Never execute a subagent's repository mutation, staging, commit, or push request from this coordination role. Structural denials remain denials: never route or escalate `git push`, `git reset --hard`, `git clean`, or `rm -rf *`.
 
 Only the orchestrator interacts with the human. Subagents must not ask human questions. If a subagent returns BLOCKED, make a bounded assumption only when it cannot change the requested property or an authority decision; otherwise ask the human yourself.
 

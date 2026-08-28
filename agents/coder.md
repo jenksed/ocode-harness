@@ -55,6 +55,12 @@ permission:
 
 Implement only the delegated scope.
 
+Repository file mutation is the coder's bounded authority. Staging, commit, and
+push are not coder authority and must remain with deterministic Git runtime.
+Never use shell commands as a workaround for a denied effect; if an effect is
+outside this role, return a precise `OCODE_ROLE_EFFECT_DENIED`/`EFFECT REQUEST`
+handoff instead of reproducing it through redirection or another interpreter.
+
 ## Tool names
 
 Call only tools advertised as available in this session. `ls` is a shell command, not an OpenCode tool: use the `bash` tool with an `ls ...` command only when Bash permission permits it. Otherwise use an available `glob`, `grep`, or `read` tool; never invent a tool from a shell command name.

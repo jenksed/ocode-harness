@@ -29,8 +29,21 @@ const NATIVE_STRUCTURAL_DENIES = Object.freeze({
   'git reset --hard *': 'deny',
   'git clean': 'deny',
   'git clean *': 'deny',
+  'git add': 'deny',
+  'git add *': 'deny',
+  'git commit': 'deny',
+  'git commit *': 'deny',
   'rm -rf *': 'deny',
 });
+
+const OBSERVATION_PATTERNS = new Set([
+  'ls', 'ls *', 'pwd', 'rg', 'rg *', 'grep', 'grep *', 'find', 'find *',
+  'head', 'head *', 'tail', 'tail *', 'git status', 'git status *',
+  'git diff', 'git diff *', 'git log', 'git log *', 'git show', 'git show *',
+  'git rev-parse', 'git rev-parse *', 'git worktree list', 'git worktree list *',
+  'git branch --show-current', 'git branch --list', 'git branch --list *',
+  'git branch -a', 'git branch -r',
+]);
 
 function ensureObject(value, label) { if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error(`${label} must be an object`); return value; }
 function ensureString(value, label) { if (typeof value !== 'string' || !value.trim()) throw new Error(`${label} must be a non-empty string`); return value; }
@@ -108,7 +121,7 @@ export function evaluateValidationRegistryFreshness(registry, { projectDir } = {
  * roles; structural denials are always appended last so broad observation
  * patterns cannot authorize redirection or a remote/destructive effect.
  */
-export function createNativeBashPermissionRules({ baseRules = {}, validationRegistry = null, roleCapabilities = [] } = {}) {
+export function createNativeBashPermissionRules({ baseRules = {}, validationRegistry = null, roleCapabilities = [], roleAuthority = null } = {}) {
   ensureObject(baseRules, 'baseRules');
   const rules = {};
   const validationPatterns = [];
@@ -117,11 +130,18 @@ export function createNativeBashPermissionRules({ baseRules = {}, validationRegi
     if (/^(?:npm test|npm run |pnpm |yarn |pytest|python -m pytest|go (?:test|build)|mix (?:test|compile)|cargo (?:test|build))/.test(pattern)) { validationPatterns.push(pattern); continue; }
     rules[pattern] = action;
   }
-  const unadmitted = baseRules['*'] === 'deny' ? 'deny' : 'ask';
+  const readOnly = roleAuthority && roleAuthority.may_edit === false;
+  const unadmitted = readOnly || baseRules['*'] === 'deny' ? 'deny' : 'ask';
+  if (readOnly) rules['*'] = 'deny';
   for (const pattern of validationPatterns) rules[pattern] = unadmitted;
   if (validationRegistry && roleCapabilities.includes('test.execute')) {
     const registry = validateValidationRegistry(validationRegistry);
     for (const command of registry.commands) rules[command] = 'allow';
+  }
+  if (readOnly) {
+    for (const [pattern, action] of Object.entries(baseRules)) {
+      if (OBSERVATION_PATTERNS.has(pattern)) rules[pattern] = action;
+    }
   }
   for (const [pattern, action] of Object.entries(NATIVE_STRUCTURAL_DENIES)) rules[pattern] = action;
   return rules;
@@ -140,6 +160,7 @@ export function createRuntimePermissionProjection({ contracts, projectDir } = {}
           baseRules: contract.permissions?.bash ?? {},
           validationRegistry,
           roleCapabilities: contract.capabilities?.provides ?? [],
+          roleAuthority: contract.authority,
         }),
       },
     };
@@ -162,12 +183,22 @@ export function createValidationWrapperEnvironment({ baseDir, projectDir, regist
   };
 }
 
-export function decideCommandAdmission({ command, role, roleCapabilities = [], validationRegistry = null, projectDir = null } = {}) {
+export function decideCommandAdmission({ command, role, roleCapabilities = [], roleAuthority = null, validationRegistry = null, projectDir = null } = {}) {
   ensureString(role, 'role');
   const classified = classifyCommand(command);
   const provenance = { classifier: 'OCODE_COMMAND_ADMISSION_V1', role, risk_class: classified.risk_class, reason: classified.reason };
   if (classified.risk_class === COMMAND_RISK_CLASSES.DESTRUCTIVE || classified.risk_class === COMMAND_RISK_CLASSES.REMOTE_EFFECT) return { decision: COMMAND_DECISIONS.DENY, ...provenance };
-  if (classified.risk_class === COMMAND_RISK_CLASSES.REPOSITORY_EFFECT) return { decision: COMMAND_DECISIONS.ASK, ...provenance };
+  if (classified.risk_class === COMMAND_RISK_CLASSES.REPOSITORY_EFFECT) {
+    const effect = /^(?:git add)\b/.test(classified.normalized) ? 'stage' : /^(?:git commit)\b/.test(classified.normalized) ? 'commit' : null;
+    if (effect && roleAuthority) return { ...decideEffectAdmission({ effect, role, authority: roleAuthority }), ...provenance };
+    return { decision: COMMAND_DECISIONS.ASK, ...provenance };
+  }
+  if (classified.risk_class === COMMAND_RISK_CLASSES.WORKSPACE_EFFECT && roleAuthority?.may_edit === false) {
+    return { ...decideEffectAdmission({ effect: 'repository.edit', role, authority: roleAuthority }), ...provenance };
+  }
+  if (classified.risk_class === COMMAND_RISK_CLASSES.UNKNOWN && roleAuthority?.may_edit === false) {
+    return { ...decideEffectAdmission({ effect: 'repository.edit', role, authority: roleAuthority }), ...provenance };
+  }
   if (classified.risk_class === COMMAND_RISK_CLASSES.OBSERVE) return { decision: COMMAND_DECISIONS.ALLOW, ...provenance };
   if (validationRegistry && validationRegistry.commands?.includes(classified.normalized) && roleCapabilities.includes('test.execute')) {
     const freshness = projectDir ? evaluateValidationRegistryFreshness(validationRegistry, { projectDir }) : { status: 'CURRENT' };
@@ -176,4 +207,24 @@ export function decideCommandAdmission({ command, role, roleCapabilities = [], v
       : { decision: COMMAND_DECISIONS.ASK, ...provenance, registry_fingerprint: validationRegistry.fingerprint, registry_status: freshness.status, reason: 'STALE_VALIDATION_REGISTRY' };
   }
   return { decision: COMMAND_DECISIONS.ASK, ...provenance };
+}
+
+/** Resolve an intended effect before selecting a tool. Permission cannot grant
+ * constitutional authority; denied effects identify their admitted owner. */
+export function decideEffectAdmission({ effect, role, authority = {}, owner = null } = {}) {
+  ensureString(effect, 'effect');
+  ensureString(role, 'role');
+  const authorityByEffect = { 'repository.edit': 'may_edit', stage: 'may_stage', commit: 'may_commit', push: 'may_push' };
+  const field = authorityByEffect[effect];
+  if (!field) return { decision: COMMAND_DECISIONS.ASK, effect, role, reason: 'EFFECT_NOT_CLASSIFIED' };
+  if (authority[field] === true) return { decision: COMMAND_DECISIONS.ALLOW, effect, role, reason: 'ROLE_AUTHORITY_GRANTED' };
+  return {
+    decision: COMMAND_DECISIONS.DENY,
+    code: 'OCODE_ROLE_EFFECT_DENIED',
+    effect,
+    role,
+    owner: owner || (effect === 'repository.edit' ? 'coder' : 'deterministic-runtime'),
+    action: effect === 'repository.edit' ? 'DELEGATE_TO_AUTHORIZED_OWNER' : 'ROUTE_TO_DETERMINISTIC_RUNTIME',
+    reason: 'ROLE_CONSTITUTIONAL_AUTHORITY_MISSING',
+  };
 }

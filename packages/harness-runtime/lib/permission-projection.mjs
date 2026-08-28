@@ -37,6 +37,8 @@ function normalizePermission(value) {
 
 function commandPatternMatches(pattern, command) {
   if (pattern === '*') return true;
+  if (pattern === '*>*') return command.includes('>');
+  if (pattern === '*<*') return command.includes('<');
   if (pattern.endsWith(' *')) return command.startsWith(pattern.slice(0, -1));
   return pattern === command;
 }

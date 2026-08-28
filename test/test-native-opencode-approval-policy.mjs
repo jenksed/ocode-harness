@@ -5,6 +5,7 @@ import { join, resolve } from 'node:path';
 import { loadAgentContracts } from '../packages/harness-runtime/lib/agent-contract.mjs';
 import { removeLegacyRequestEffectTools } from '../packages/harness-runtime/lib/deploy.mjs';
 import { projectBashCommand } from '../packages/harness-runtime/lib/permission-projection.mjs';
+import { createNativeBashPermissionRules, decideEffectAdmission, createRuntimePermissionProjection } from '../packages/harness-runtime/lib/command-admission.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const { contracts } = loadAgentContracts({ baseDir: root });
@@ -34,13 +35,25 @@ for (const [role, contract] of contracts) {
   }
 }
 
-assert.equal(projectBashCommand(orchestrator.permissions.bash, 'uname -a').state, 'ASK');
-assert.equal(projectBashCommand(orchestrator.permissions.bash, 'npm test').state, 'ASK');
-assert.equal(projectBashCommand(orchestrator.permissions.bash, 'git add test.txt').state, 'ASK');
+assert.equal(projectBashCommand(createNativeBashPermissionRules({ baseRules: orchestrator.permissions.bash, roleAuthority: orchestrator.authority }), 'uname -a').state, 'DENY');
+assert.equal(projectBashCommand(createNativeBashPermissionRules({ baseRules: orchestrator.permissions.bash, roleAuthority: orchestrator.authority }), 'npm test').state, 'DENY');
+assert.equal(projectBashCommand(createNativeBashPermissionRules({ baseRules: orchestrator.permissions.bash, roleAuthority: orchestrator.authority }), 'git add test.txt').state, 'DENY');
 for (const command of ['git push origin main', 'git reset --hard', 'git clean -fd', 'rm -rf tmp']) {
   assert.equal(projectBashCommand(orchestrator.permissions.bash, command).state, 'DENY', command);
 }
 assert.equal(projectBashCommand(coder.permissions.bash, 'git add test.txt').state, 'DENY');
+assert.equal(decideEffectAdmission({ effect: 'repository.edit', role: 'orchestrator', authority: orchestrator.authority }).code, 'OCODE_ROLE_EFFECT_DENIED');
+assert.equal(decideEffectAdmission({ effect: 'repository.edit', role: 'orchestrator', authority: orchestrator.authority }).owner, 'coder');
+assert.equal(decideEffectAdmission({ effect: 'repository.edit', role: 'coder', authority: coder.authority }).decision, 'ALLOW');
+const projected = createRuntimePermissionProjection({ contracts, projectDir: root });
+assert.equal(projectBashCommand(projected.agents.orchestrator.permission.bash, 'echo unsafe > file').state, 'DENY');
+assert.equal(projectBashCommand(projected.agents.orchestrator.permission.bash, 'git add file').state, 'DENY');
+assert.equal(projectBashCommand(projected.agents.orchestrator.permission.bash, 'git commit -m x').state, 'DENY');
+assert.equal(projectBashCommand(projected.agents.orchestrator.permission.bash, 'git push origin main').state, 'DENY');
+assert.equal(projectBashCommand(projected.agents.orchestrator.permission.bash, 'git status --short').state, 'ALLOW');
+assert.equal(projectBashCommand(projected.agents.coder.permission.bash, 'git add file').state, 'DENY');
+assert.equal(projectBashCommand(projected.agents.coder.permission.bash, 'git commit -m x').state, 'DENY');
+assert.equal(projectBashCommand(projected.agents.coder.permission.bash, 'git push origin main').state, 'DENY');
 assert.notEqual(projectBashCommand(orchestrator.permissions.bash, 'git branch -D stale').state, 'ALLOW');
 
 const orchestratorSource = readFileSync(resolve(root, 'agents/orchestrator.md'), 'utf8');

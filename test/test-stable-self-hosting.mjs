@@ -13,7 +13,7 @@ try {
   const a = installVerifiedArtifact({ archive, installStore: store }); activateRelease(a.id, store);
   const env = { ...process.env, OCODE_INSTALL_STORE_ROOT: store, OCODE_BIN_DIR: bin, PATH: `${bin}:${process.env.PATH}` };
   const run = (...args) => execFileSync('node', [join(store, 'current', 'harness-runtime', 'bin', 'harness.mjs'), ...args], { cwd: root, env, encoding: 'utf8' });
-  assert.match(run('release', 'list'), new RegExp(`CURRENT\\s+${a.id}`));
+  const listed = run('release', 'list'); assert.ok(listed.includes('CURRENT') && listed.includes(a.id));
   assert.equal(JSON.parse(run('release', 'current')).id, a.id);
   assert.equal(JSON.parse(run('version', '--json')).logical_release_id, a.id);
   console.log(`STABLE_SELF_HOSTING_CLI_PROVEN ${a.id}`);

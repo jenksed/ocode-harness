@@ -6,6 +6,10 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { inspectSourceIdentity, isExactReleaseIdentity, readReleaseIdentity, readVersion, validateReleaseIdentity, writeReleaseIdentity } from '../packages/harness-runtime/lib/deploy.mjs';
 import { checkVersionMirrors } from './version-authority.mjs';
+import { inspectArtifactArchive as runtimeInspectArtifactArchive, materializeVerifiedArtifact as runtimeMaterializeVerifiedArtifact, verifyMaterializedPayload as runtimeVerifyMaterializedPayload, verifyReleaseArtifact as runtimeVerifyReleaseArtifact } from '../packages/harness-runtime/lib/artifact.mjs';
+
+// Phase-2 and installed runtime deliberately share this authority.
+export { runtimeInspectArtifactArchive as inspectArtifactArchive, runtimeMaterializeVerifiedArtifact as materializeVerifiedArtifact, runtimeVerifyMaterializedPayload as verifyMaterializedPayload };
 
 export const ARTIFACT_SCHEMA_VERSION = 1;
 export const ARTIFACT_FORMAT = 'ocode-release-artifact-v1';
@@ -64,7 +68,7 @@ function archivePath(name) {
 }
 
 /** Inspect untrusted bytes before any filesystem materialization. Only directories and regular files are accepted. */
-export function inspectArtifactArchive(archive) {
+function legacyInspectArtifactArchive(archive) {
   const bytes = gunzipSync(readFileSync(archive)); const entries = []; const names = new Set(); let offset = 0;
   while (offset < bytes.length) {
     const header = bytes.subarray(offset, offset + 512); if (header.length !== 512) throw new Error('Truncated tar header'); if (zeroBlock(header)) break;
@@ -83,7 +87,7 @@ export function inspectArtifactArchive(archive) {
 }
 
 /** Safe reusable materializer: it never invokes a generic extractor on untrusted archive bytes. */
-export function materializeVerifiedArtifact(archive, candidateRoot) {
+function legacyMaterializeVerifiedArtifact(archive, candidateRoot) {
   const rootPath = resolve(candidateRoot), parent = dirname(rootPath);
   try { lstatSync(rootPath); throw new Error('Artifact candidate root must not already exist'); } catch (error) { if (error?.code !== 'ENOENT') throw error; }
   const parentInfo = lstatSync(parent);
@@ -104,7 +108,7 @@ function validateArtifactMetadata(root, release, artifact) {
   if (!/^[0-9a-f]{64}$/.test(artifact.build_inputs?.package_lock_sha256 || '') || fileSHA(join(root, 'package-lock.json')) !== artifact.build_inputs.package_lock_sha256) throw new Error('Artifact lockfile identity mismatch');
   if (artifact.runtime?.sdk?.package !== '@opencode-ai/sdk' || typeof artifact.runtime.sdk.version !== 'string') throw new Error('Artifact SDK metadata invalid');
 }
-export function verifyMaterializedPayload(root) {
+function legacyVerifyMaterializedPayload(root) {
   const release = readReleaseIdentity(root), artifact = JSON.parse(readFileSync(join(root, 'ARTIFACT.json'), 'utf8')); validateArtifactMetadata(root, release, artifact);
   const actual = list(root).filter((entry) => entry.path !== 'ARTIFACT.json');
   if (sha(JSON.stringify(actual)) !== artifact.payload?.manifest_sha256 || JSON.stringify(actual) !== JSON.stringify(artifact.payload.files)) throw new Error('Artifact payload manifest mismatch');
@@ -129,11 +133,10 @@ export function buildReleaseArtifact({ sourceRoot, outputDir }) {
     for (const dir of ['agents', 'profiles', 'doctrine', 'opencode-config']) copy(join(sourceRoot, dir), join(root, dir)); copySkills(join(sourceRoot, 'skills'), join(root, 'skills'));
     const artifact = createArtifactManifest(root, release, lockSHA, sdkVersion); writeFileSync(join(root, 'ARTIFACT.json'), json(artifact)); assertNoContamination(root, [resolve(sourceRoot), homedir(), temp]);
     mkdirSync(outputDir, { recursive: true }); const name = `ocode-${version}+${release.source_commit.slice(0, 7)}.tar.gz`, archive = join(outputDir, name), temporaryArchive = join(temp, name);
-    execFileSync('tar', ['--format', 'ustar', '-czf', temporaryArchive, '-C', temp, 'ocode-release'], { env: { ...process.env, COPYFILE_DISABLE: '1' } }); inspectArtifactArchive(temporaryArchive); publish(archive, readFileSync(temporaryArchive)); const archiveSHA = fileSHA(archive); publish(`${archive}.sha256`, `${archiveSHA}  ${name}\n`);
+    execFileSync('tar', ['--format', 'ustar', '-czf', temporaryArchive, '-C', temp, 'ocode-release'], { env: { ...process.env, COPYFILE_DISABLE: '1' } }); runtimeInspectArtifactArchive(temporaryArchive); publish(archive, readFileSync(temporaryArchive)); const archiveSHA = fileSHA(archive); publish(`${archive}.sha256`, `${archiveSHA}  ${name}\n`);
     return { archive, checksum: `${archive}.sha256`, archive_sha256: archiveSHA, artifact, release };
   } finally { rmSync(temp, { recursive: true, force: true }); }
 }
 export function verifyReleaseArtifact(archive) {
-  const checksum = `${archive}.sha256`; if (!existsSync(checksum)) throw new Error('Detached archive checksum missing'); const expected = readFileSync(checksum, 'utf8').trim().split(/\s+/)[0]; if (!/^[0-9a-f]{64}$/.test(expected) || fileSHA(archive) !== expected) throw new Error('Archive SHA-256 mismatch');
-  const temp = mkdtempSync(join(tmpdir(), 'ocode-release-verify-')); try { const { root } = materializeVerifiedArtifact(archive, join(temp, 'candidate')); const { release, artifact } = verifyMaterializedPayload(root); return { release, artifact, archive_sha256: expected }; } finally { rmSync(temp, { recursive: true, force: true }); }
+  return runtimeVerifyReleaseArtifact(archive);
 }

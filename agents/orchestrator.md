@@ -50,6 +50,8 @@ permission:
     "git clean": deny
     "git clean *": deny
     "rm -rf *": deny
+    "*>*": deny
+    "*<*": deny
   task:
     "*": deny
     planner: allow

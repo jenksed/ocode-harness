@@ -39,6 +39,8 @@ permission:
     "git branch --list *": allow
     "git branch -a": allow
     "git branch -r": allow
+    "*>*": deny
+    "*<*": deny
 ---
 
 You are the committer - a cheap, abundant model for semantic closeout preparation.

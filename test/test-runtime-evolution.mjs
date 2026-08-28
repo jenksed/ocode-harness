@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
-import { execFileSync } from 'node:child_process';
-import { join } from 'node:path';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
-import { classifyCommand, createValidationRegistry, decideCommandAdmission, evaluateValidationRegistryFreshness } from '../packages/harness-runtime/lib/command-admission.mjs';
+import { classifyCommand, createNativeBashPermissionRules, createValidationRegistry, createValidationWrapperEnvironment, decideCommandAdmission, evaluateValidationRegistryFreshness } from '../packages/harness-runtime/lib/command-admission.mjs';
 import { createStagingAuthorization, executeDeterministicStaging, fingerprintWorktreeDiff } from '../packages/harness-runtime/lib/deterministic-staging.mjs';
 import { createTaskCapsule, createTaskCapsuleRevision, assertTaskCapsuleHandoff, validateAcceptanceEvidence } from '../packages/harness-runtime/lib/task-capsule.mjs';
 import { createModelTelemetry, classifyExecutionFailure } from '../packages/harness-runtime/lib/model-telemetry.mjs';
@@ -17,7 +17,8 @@ const root = mkdtempSync(join(tmpdir(), 'ocode-runtime-evolution-'));
 const hex = (char) => char.repeat(64);
 const init = (args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' });
 try {
-  writeFileSync(join(root, 'package.json'), JSON.stringify({ scripts: { test: 'node test.mjs', 'test:unit': 'node test.mjs', build: 'node build.mjs' } }), 'utf8');
+  const packageSource = JSON.stringify({ scripts: { test: 'node test.mjs', 'test:unit': 'node test.mjs', build: 'node build.mjs', deploy: 'node deploy.mjs' } });
+  writeFileSync(join(root, 'package.json'), packageSource, 'utf8');
   writeFileSync(join(root, 'feature.txt'), 'before\n', 'utf8');
   init(['init']); init(['config', 'user.email', 'test@example.test']); init(['config', 'user.name', 'Test']); init(['add', '--', 'package.json', 'feature.txt']); init(['commit', '-m', 'initial']);
 
@@ -28,17 +29,26 @@ try {
   assert.equal(decideCommandAdmission({ command: 'unknown-command', role: 'coder' }).decision, 'ASK');
   assert.equal(decideCommandAdmission({ command: 'git push origin main', role: 'coder' }).decision, 'DENY');
   const registry = createValidationRegistry({ projectDir: root, commands: ['npm test', 'npm run test:unit'] });
+  assert.equal(createValidationRegistry({ projectDir: root }).commands.includes('npm run deploy'), false);
+  const nativeRules = createNativeBashPermissionRules({ baseRules: { '*': 'ask', 'rg *': 'allow' }, validationRegistry: registry, roleCapabilities: ['test.execute'] });
+  assert.equal(nativeRules['npm test'], 'allow'); assert.equal(Object.keys(nativeRules).at(-1), 'rm -rf *'); assert.equal(nativeRules['*>*'], 'deny');
   assert.equal(decideCommandAdmission({ command: 'npm test', role: 'coder', roleCapabilities: ['test.execute'], validationRegistry: registry, projectDir: root }).decision, 'ALLOW');
   writeFileSync(join(root, 'package.json'), JSON.stringify({ scripts: { test: 'changed' } }), 'utf8');
   assert.equal(evaluateValidationRegistryFreshness(registry, { projectDir: root }).status, 'STALE');
   assert.equal(decideCommandAdmission({ command: 'npm test', role: 'coder', roleCapabilities: ['test.execute'], validationRegistry: registry, projectDir: root }).decision, 'ASK');
-  writeFileSync(join(root, 'package.json'), JSON.stringify({ scripts: { test: 'node test.mjs', 'test:unit': 'node test.mjs', build: 'node build.mjs' } }), 'utf8');
+  writeFileSync(join(root, 'package.json'), packageSource, 'utf8');
+  const wrapperEnv = createValidationWrapperEnvironment({ baseDir: resolve('.'), projectDir: root, registry, environment: process.env, realNpm: '/usr/bin/true' });
+  const wrapper = resolve('packages/harness-runtime/bin/validation/npm');
+  assert.equal(spawnSync(wrapper, ['test'], { cwd: root, env: wrapperEnv }).status, 0);
+  writeFileSync(join(root, 'package.json'), JSON.stringify({ scripts: { test: 'changed' } }), 'utf8');
+  assert.equal(spawnSync(wrapper, ['test'], { cwd: root, env: wrapperEnv }).status, 125);
+  writeFileSync(join(root, 'package.json'), packageSource, 'utf8');
   console.log('✓ deterministic observation/validation classification preserves unknown ASK and stale-registry invalidation');
 
   const capsule = createTaskCapsule({ task_id: 'feature-task', revision: 1, parent_fingerprint: null, objective: 'Update feature behavior', authoritative_inputs: [{ id: 'spec', kind: 'PATH', reference: 'feature.txt', fingerprint: hex('a'), description: 'Current feature source' }], scope: { include_paths: ['feature.txt'], exclude_paths: ['.env'] }, non_goals: ['Do not alter configuration'], constraints: ['Keep public API stable'], acceptance: [{ id: 'feature-updated', requirement: 'Feature text changes', required_evidence: ['validation'] }], stop_conditions: ['Stop on unexpected path'], context: { path_refs: ['feature.txt'], evidence_refs: [], max_supplied_chars: 4096, max_expansions: 1 }, assumptions: ['No migration is needed'], provenance: { workflow_id: 'wf', run_id: 'run', session_id: 'session', role: 'coder' } });
   assertTaskCapsuleHandoff(capsule, capsule.fingerprint);
   assert.equal(bindTaskCapsuleToExecution({ taskCapsule: capsule, expectedTaskCapsuleFingerprint: capsule.fingerprint, role: 'coder', required: true }).fingerprint, capsule.fingerprint);
-  assert.throws(() => bindTaskCapsuleToExecution({ taskCapsule: capsule, role: 'reviewer', required: true }), /provenance role/);
+  assert.equal(bindTaskCapsuleToExecution({ taskCapsule: capsule, role: 'reviewer', required: true }).fingerprint, capsule.fingerprint);
   assert.throws(() => createTaskCapsule({ ...capsule, scope: { include_paths: ['../escape'], exclude_paths: [] } }), /repository-relative/);
   assert.throws(() => createTaskCapsule({ ...capsule, acceptance: [capsule.acceptance[0], capsule.acceptance[0]] }), /unique/);
   const revision = createTaskCapsuleRevision(capsule, { ...capsule, objective: 'Updated objective', authoritative_inputs: capsule.authoritative_inputs, scope: capsule.scope, non_goals: capsule.non_goals, constraints: capsule.constraints, acceptance: capsule.acceptance, stop_conditions: capsule.stop_conditions, context: capsule.context, assumptions: capsule.assumptions, provenance: capsule.provenance });

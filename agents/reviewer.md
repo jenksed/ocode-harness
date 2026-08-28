@@ -38,22 +38,8 @@ permission:
     "git branch -a": allow
     "git branch -r": allow
     "npm test": allow
-    "npm test *": allow
-    "npm run test": allow
-    "npm run test *": allow
-    "pnpm test": allow
-    "pnpm test *": allow
-    "yarn test": allow
-    "yarn test *": allow
-    "go test *": allow
-    "pytest": allow
-    "pytest *": allow
-    "python -m pytest": allow
-    "python -m pytest *": allow
-    "mix test": allow
-    "mix test *": allow
-    "cargo test": allow
-    "cargo test *": allow
+    "*>*": deny
+    "*<*": deny
 ---
 
 Independently determine whether the current repository state satisfies the delegated objective.

@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+import { delimiter, resolve } from 'node:path';
 import { canonicalJSONStringify } from './agent-contract.mjs';
 
 export const COMMAND_ADMISSION_SCHEMA_VERSION = 1;
@@ -20,6 +20,17 @@ const REMOTE = /^(?:git\s+push\b|git\s+fetch\b|git\s+pull\b|curl\b|wget\b|ssh\b|
 const REPOSITORY = /^(?:git\s+(?:add|commit|merge|rebase|checkout|switch|restore|cherry-pick)\b)/;
 const WORKSPACE = /^(?:mkdir|touch|cp|mv|sed\s+-i|perl\s+-i|npm\s+(?:install|ci)|pnpm\s+(?:install|add)|yarn\s+(?:add|install))\b/;
 const SHELL_COMPOSITION = /[\n\r;&|><`$\\]|\$\(|\)\s*\(/;
+const NATIVE_STRUCTURAL_DENIES = Object.freeze({
+  '*>*': 'deny',
+  '*<*': 'deny',
+  'git push': 'deny',
+  'git push *': 'deny',
+  'git reset --hard': 'deny',
+  'git reset --hard *': 'deny',
+  'git clean': 'deny',
+  'git clean *': 'deny',
+  'rm -rf *': 'deny',
+});
 
 function ensureObject(value, label) { if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error(`${label} must be an object`); return value; }
 function ensureString(value, label) { if (typeof value !== 'string' || !value.trim()) throw new Error(`${label} must be a non-empty string`); return value; }
@@ -52,11 +63,15 @@ function packageSnapshot(projectDir) {
   return { package_path: 'package.json', package_fingerprint: sha(source), scripts };
 }
 
+function isValidationScriptName(name) {
+  return /^(?:test|build|typecheck|lint)(?::[a-zA-Z0-9._-]+)*$/.test(name);
+}
+
 export function createValidationRegistry({ projectDir, commands = null } = {}) {
   const snapshot = packageSnapshot(projectDir);
   const admitted = new Set();
   if (snapshot.scripts.test) admitted.add('npm test');
-  for (const name of Object.keys(snapshot.scripts)) admitted.add(`npm run ${name}`);
+  for (const name of Object.keys(snapshot.scripts)) if (isValidationScriptName(name)) admitted.add(`npm run ${name}`);
   const selected = commands === null ? [...admitted].sort() : [...commands].map(normalizedCommand).sort();
   for (const command of selected) if (!admitted.has(command)) throw new Error(`Validation command is not repository-defined: ${command}`);
   const registry = { schema_version: COMMAND_ADMISSION_SCHEMA_VERSION, project_package: snapshot.package_path, package_fingerprint: snapshot.package_fingerprint, commands: selected, script_definitions: snapshot.scripts };
@@ -85,6 +100,66 @@ export function evaluateValidationRegistryFreshness(registry, { projectDir } = {
   } catch (error) {
     return { status: 'STALE', current_fingerprint: null, admitted_fingerprint: normalized.fingerprint, reason: error.message };
   }
+}
+
+/**
+ * Project the already-governed role policy into OpenCode's observed last-match
+ * rule order. Repository-defined validation is added only for test.execute
+ * roles; structural denials are always appended last so broad observation
+ * patterns cannot authorize redirection or a remote/destructive effect.
+ */
+export function createNativeBashPermissionRules({ baseRules = {}, validationRegistry = null, roleCapabilities = [] } = {}) {
+  ensureObject(baseRules, 'baseRules');
+  const rules = {};
+  const validationPatterns = [];
+  for (const [pattern, action] of Object.entries(baseRules)) {
+    if (typeof pattern !== 'string' || !pattern || !['allow', 'ask', 'deny'].includes(action)) throw new Error('baseRules contains an invalid native permission rule');
+    if (/^(?:npm test|npm run |pnpm |yarn |pytest|python -m pytest|go (?:test|build)|mix (?:test|compile)|cargo (?:test|build))/.test(pattern)) { validationPatterns.push(pattern); continue; }
+    rules[pattern] = action;
+  }
+  const unadmitted = baseRules['*'] === 'deny' ? 'deny' : 'ask';
+  for (const pattern of validationPatterns) rules[pattern] = unadmitted;
+  if (validationRegistry && roleCapabilities.includes('test.execute')) {
+    const registry = validateValidationRegistry(validationRegistry);
+    for (const command of registry.commands) rules[command] = 'allow';
+  }
+  for (const [pattern, action] of Object.entries(NATIVE_STRUCTURAL_DENIES)) rules[pattern] = action;
+  return rules;
+}
+
+export function createRuntimePermissionProjection({ contracts, projectDir } = {}) {
+  if (!(contracts instanceof Map)) throw new Error('contracts must be a Map');
+  const packagePath = resolve(projectDir, 'package.json');
+  const candidate = existsSync(packagePath) ? createValidationRegistry({ projectDir }) : null;
+  const validationRegistry = candidate?.commands.length ? candidate : null;
+  const agents = {};
+  for (const [role, contract] of contracts) {
+    agents[role] = {
+      permission: {
+        bash: createNativeBashPermissionRules({
+          baseRules: contract.permissions?.bash ?? {},
+          validationRegistry,
+          roleCapabilities: contract.capabilities?.provides ?? [],
+        }),
+      },
+    };
+  }
+  return { agents, validation_registry: validationRegistry };
+}
+
+export function createValidationWrapperEnvironment({ baseDir, projectDir, registry, environment = process.env, realNpm } = {}) {
+  if (!registry) return { ...environment };
+  validateValidationRegistry(registry);
+  ensureString(realNpm, 'realNpm');
+  const wrapperDir = resolve(baseDir, 'packages', 'harness-runtime', 'bin', 'validation');
+  return {
+    ...environment,
+    PATH: `${wrapperDir}${delimiter}${environment.PATH ?? ''}`,
+    OCODE_REAL_NPM: realNpm,
+    OCODE_VALIDATION_ORIGINAL_PATH: environment.PATH ?? '',
+    OCODE_VALIDATION_PROJECT: resolve(projectDir),
+    OCODE_VALIDATION_REGISTRY: JSON.stringify(registry),
+  };
 }
 
 export function decideCommandAdmission({ command, role, roleCapabilities = [], validationRegistry = null, projectDir = null } = {}) {

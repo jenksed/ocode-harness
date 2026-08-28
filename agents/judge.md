@@ -32,6 +32,8 @@ permission:
     "git branch --list *": allow
     "git branch -a": allow
     "git branch -r": allow
+    "*>*": deny
+    "*<*": deny
   external_directory: deny
   question: deny
   task: deny

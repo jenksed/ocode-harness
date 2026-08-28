@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import {
@@ -85,6 +86,33 @@ try {
   observations.push({ id: 'isolated-sdk-managed-lifecycle', kind: 'observed-sdk', result: lifecycle });
 } catch (error) {
   observations.push({ id: 'isolated-sdk-managed-lifecycle', kind: 'observed-sdk', result: { error: error?.message ?? String(error) } });
+}
+
+// The credential-free permission qualifier exercises the full lifecycle with a
+// deterministic local provider. Consume only a version-matched retained record
+// whose individual scenarios establish the required outcomes.
+const permissionEvidencePath = resolve(root, 'qualification', 'opencode-1.18.21-permissions.json');
+if (runtime && existsSync(permissionEvidencePath)) {
+  const source = readFileSync(permissionEvidencePath, 'utf8');
+  const retained = JSON.parse(source);
+  const scenario = (id) => retained.scenarios?.find((entry) => entry.id === id);
+  const lifecycleSupported = Object.values(retained.lifecycle ?? {}).length === 8
+    && Object.values(retained.lifecycle).every((value) => value === 'SUPPORTED');
+  const compatible = retained.runtime?.opencode === runtime.executable_version
+    && retained.runtime?.sdk === runtime.sdk_version
+    && lifecycleSupported
+    && scenario('explicit-no-match-ask')?.permission_request_count === 1
+    && scenario('explicit-no-match-ask')?.permission_reply?.id
+    && scenario('reply-once-scope')?.permission_request_count === 2
+    && scenario('reply-reject')?.tool_states?.at(-1) === 'error'
+    && scenario('low-interruption-loop')?.tool_states?.filter((state) => state === 'completed').length === 4
+    && retained.scenarios.every((entry) => entry.session_abort === 'SUPPORTED');
+  if (compatible) {
+    for (const name of REQUIRED_RUNTIME_CAPABILITIES) required[name] = RUNTIME_CAPABILITY_STATES.SUPPORTED;
+    optional.permission_reply_session = RUNTIME_CAPABILITY_STATES.SUPPORTED;
+    optional.bash_metadata = RUNTIME_CAPABILITY_STATES.SUPPORTED;
+    observations.push({ id: 'retained-local-permission-qualification', kind: 'observed-sdk', result: { path: 'qualification/opencode-1.18.21-permissions.json', sha256: createHash('sha256').update(source).digest('hex') } });
+  }
 }
 const qualification = runtime
   ? qualifyOpenCodeRuntime({ runtime, required, optional, observations })

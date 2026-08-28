@@ -13,6 +13,8 @@ import {
   validateProfileCompleteness,
 } from './opencode-integration.mjs';
 import { appendRecord, createLedgerRecord } from './ledger.mjs';
+import { generateRunId, generateTaskId } from './identity.mjs';
+import { createModelTelemetry, MODEL_FAILURE_CLASSES } from './model-telemetry.mjs';
 import { assertTaskCapsuleHandoff } from './task-capsule.mjs';
 import { runOpenCodeSdkSession } from './opencode-sdk-execution.mjs';
 import {
@@ -21,6 +23,26 @@ import {
   finishActivityExecution,
   startActivityExecution,
 } from './activity.mjs';
+import { createRuntimePermissionProjection, createValidationWrapperEnvironment } from './command-admission.mjs';
+
+function prepareLowInterruptionRuntime({ baseDir, projectDir, contracts, environment }) {
+  const projection = createRuntimePermissionProjection({ contracts, projectDir });
+  let env = { ...environment };
+  if (projection.validation_registry) {
+    const found = spawnSync('which', ['npm'], { encoding: 'utf8', env: environment });
+    if (found.status !== 0 || !found.stdout.trim()) throw new Error('OCODE_VALIDATION_NPM_NOT_FOUND');
+    env = createValidationWrapperEnvironment({ baseDir, projectDir, registry: projection.validation_registry, environment: env, realNpm: found.stdout.trim() });
+  }
+  return { ...projection, environment: env };
+}
+
+function applyRuntimePermissions(config, projectedAgents) {
+  config.agent = { ...(config.agent ?? {}) };
+  for (const [role, projected] of Object.entries(projectedAgents)) {
+    config.agent[role] = { ...(config.agent[role] ?? {}), permission: { ...(config.agent[role]?.permission ?? {}), ...projected.permission } };
+  }
+  return config;
+}
 
 function run(command, args, options = {}) {
   const started = Date.now();
@@ -187,7 +209,7 @@ export function createExecutionProvenance({ resolution, reconciliation, subjectR
   };
 }
 
-export function appendExecutionLedgerRecord({ ledgerPath, projectDir, resolution, reconciliation, subjectReconciliation, success, failureClassification, elapsedMs, modelTelemetry = null }) {
+export function appendExecutionLedgerRecord({ ledgerPath, projectDir, resolution, reconciliation, subjectReconciliation, success, failureClassification, elapsedMs, modelTelemetry = null, telemetryContext = null }) {
   const provenance = createExecutionProvenance({
     resolution,
     reconciliation,
@@ -195,7 +217,37 @@ export function appendExecutionLedgerRecord({ ledgerPath, projectDir, resolution
     success,
     failureClassification,
   });
+  const taskID = generateTaskId();
+  const runID = generateRunId();
+  let retainedTelemetry = modelTelemetry;
+  if (!retainedTelemetry && telemetryContext?.taskCapsule) {
+    const classified = MODEL_FAILURE_CLASSES.includes(failureClassification) ? failureClassification : failureClassification ? 'UNKNOWN' : null;
+    retainedTelemetry = createModelTelemetry({
+      run_id: runID,
+      task_capsule_fingerprint: telemetryContext.taskCapsule.fingerprint,
+      role: resolution.subject.role,
+      capability: telemetryContext.capability || 'role.execution',
+      requested_model: resolution.execution_policy.requested_model,
+      effective_model: reconciliation.effective,
+      effective_model_status: reconciliation.effective ? 'KNOWN' : 'UNKNOWN',
+      adapter_fingerprint: telemetryContext.adapter_fingerprint ?? null,
+      qualification_identity_fingerprint: telemetryContext.qualification_identity_fingerprint ?? null,
+      execution_profile: resolution.execution_policy.profile,
+      outcome: success ? 'SUCCESS' : 'FAILURE',
+      acceptance_result: telemetryContext.acceptance_result ?? 'UNRESOLVED',
+      reviewer_verdict: telemetryContext.reviewer_verdict ?? 'NONE',
+      repair_cycles: telemetryContext.repair_cycles ?? 0,
+      validation_results: telemetryContext.validation_results ?? [],
+      failure_classification: classified,
+      failure_attribution: ['INFRASTRUCTURE_FAILURE', 'PROVIDER_FAILURE'].includes(classified) ? 'NON_MODEL' : 'UNATTRIBUTED',
+      elapsed_ms: elapsedMs,
+      token_count: null,
+      cost: null,
+    });
+  }
   const record = createLedgerRecord({
+    task_id: taskID,
+    run_id: runID,
     project_name: projectDir.split('/').filter(Boolean).at(-1) || 'unknown',
     project_root: projectDir,
     workflow: 'QUICK',
@@ -206,7 +258,7 @@ export function appendExecutionLedgerRecord({ ledgerPath, projectDir, resolution
       ? [{ role: resolution.subject.role, requested_model: resolution.execution_policy.requested_model }]
       : [],
     execution_provenance: provenance,
-    model_telemetry: modelTelemetry,
+    model_telemetry: retainedTelemetry,
   });
   appendRecord(ledgerPath, record);
   return record;
@@ -256,9 +308,7 @@ export function bindTaskCapsuleToExecution({ taskCapsule, expectedTaskCapsuleFin
     return null;
   }
   const capsule = assertTaskCapsuleHandoff(taskCapsule, expectedTaskCapsuleFingerprint || taskCapsule.fingerprint);
-  if (capsule.provenance.role !== null && capsule.provenance.role !== role) {
-    throw new BindingError('TaskCapsule provenance role does not match execution role');
-  }
+  if (typeof role !== 'string' || !role) throw new BindingError('TaskCapsule execution role is required');
   return capsule;
 }
 
@@ -273,7 +323,7 @@ export function executeGovernedRole(options) {
   if (options.streaming === true) return executeGovernedRoleStreaming(options);
   const baseDir = resolve(options.baseDir);
   const projectDir = resolve(options.projectDir);
-  bindTaskCapsuleToExecution({ taskCapsule: options.taskCapsule, expectedTaskCapsuleFingerprint: options.taskCapsuleFingerprint, role: options.role, required: options.requireTaskCapsule === true });
+  const taskCapsule = bindTaskCapsuleToExecution({ taskCapsule: options.taskCapsule, expectedTaskCapsuleFingerprint: options.taskCapsuleFingerprint, role: options.role, required: options.requireTaskCapsule === true });
   const { manifest, contracts } = loadAgentContracts({ baseDir });
   const loaded = options.profile
     ? { profile: options.profile, source: options.bindingSource || `profiles/${options.profile.name}.json` }
@@ -299,11 +349,13 @@ export function executeGovernedRole(options) {
     models: options.models,
   });
 
-  const overlay = serializeGovernedExecutionOverlay(
+  const runtime = prepareLowInterruptionRuntime({ baseDir, projectDir, contracts, environment: options.env || process.env });
+  const overlayConfig = applyRuntimePermissions(JSON.parse(serializeGovernedExecutionOverlay(
     loaded.profile,
     options.role,
     (options.env || process.env).OPENCODE_CONFIG_CONTENT,
-  );
+  )), runtime.agents);
+  const overlay = JSON.stringify(overlayConfig);
   const args = ['run'];
   if (options.pure !== false) args.push('--pure');
   args.push(
@@ -320,7 +372,7 @@ export function executeGovernedRole(options) {
   startActivityExecution(activity);
   const execution = run(options.opencode || 'opencode', args, {
     cwd: projectDir,
-    env: { ...(options.env || process.env), OPENCODE_CONFIG_CONTENT: overlay },
+    env: { ...runtime.environment, OPENCODE_CONFIG_CONTENT: overlay },
     timeout: options.timeout || 120_000,
   });
   const events = parseOpenCodeEvents(execution.stdout);
@@ -332,7 +384,7 @@ export function executeGovernedRole(options) {
   if (sessionID) {
     exportResult = run(options.opencode || 'opencode', ['export', sessionID, '--sanitize'], {
       cwd: projectDir,
-      env: options.env || process.env,
+      env: runtime.environment,
       timeout: 30_000,
     });
     if (!exportResult.spawn_error && !exportResult.signal && exportResult.exit_code === 0) {
@@ -359,6 +411,7 @@ export function executeGovernedRole(options) {
     success,
     failureClassification,
     elapsedMs: execution.duration_ms,
+    telemetryContext: taskCapsule ? { taskCapsule, capability: options.capability, adapter_fingerprint: options.adapterFingerprint, qualification_identity_fingerprint: options.qualificationIdentityFingerprint, acceptance_result: options.acceptanceResult, reviewer_verdict: options.reviewerVerdict, repair_cycles: options.repairCycles, validation_results: options.validationResults } : null,
   });
   finishActivityExecution(activity, { success, session_id: sessionID, failure_classification: failureClassification });
 
@@ -384,7 +437,7 @@ export function executeGovernedRole(options) {
 export async function executeGovernedRoleSdk(options) {
   const baseDir = resolve(options.baseDir);
   const projectDir = resolve(options.projectDir);
-  bindTaskCapsuleToExecution({ taskCapsule: options.taskCapsule, expectedTaskCapsuleFingerprint: options.taskCapsuleFingerprint, role: options.role, required: options.requireTaskCapsule === true });
+  const taskCapsule = bindTaskCapsuleToExecution({ taskCapsule: options.taskCapsule, expectedTaskCapsuleFingerprint: options.taskCapsuleFingerprint, role: options.role, required: options.requireTaskCapsule === true });
   const { manifest, contracts } = loadAgentContracts({ baseDir });
   const loaded = options.profile
     ? { profile: options.profile, source: options.bindingSource || `profiles/${options.profile.name}.json` }
@@ -407,11 +460,12 @@ export async function executeGovernedRoleSdk(options) {
     models: options.models,
   });
 
-  const config = JSON.parse(serializeGovernedExecutionOverlay(
+  const runtime = prepareLowInterruptionRuntime({ baseDir, projectDir, contracts, environment: options.env || process.env });
+  const config = applyRuntimePermissions(JSON.parse(serializeGovernedExecutionOverlay(
     loaded.profile,
     options.role,
     (options.env || process.env).OPENCODE_CONFIG_CONTENT,
-  ));
+  )), runtime.agents);
   const { provider, model } = splitModelReference(resolution.execution_policy.requested_model);
   const activity = createActivityExecutionContext(options, { projectDir, role: options.role });
   const projectRuntimeEvent = createRuntimeActivityProjector(activity);
@@ -423,7 +477,7 @@ export async function executeGovernedRoleSdk(options) {
     modelID: model,
     prompt: options.prompt,
     config,
-    env: options.env || process.env,
+    env: runtime.environment,
     timeout: options.timeout || 120_000,
     tools: options.sdkTools,
     sdk: options.sdk,
@@ -454,6 +508,9 @@ export async function executeGovernedRoleSdk(options) {
     reconciliation,
     subjectReconciliation,
   });
+  const sdkFailureClassification = !acceptance.success && /(?:APIError|PROVIDER|chat\/completions|statusCode[^0-9]{0,12}(?:401|403|429|5\d\d))/i.test(execution.spawn_error ?? '')
+    ? 'PROVIDER_FAILURE'
+    : acceptance.failure_classification;
   const ledgerPath = options.ledgerPath || resolve(projectDir, '.opencode', 'run-ledger.jsonl');
   const record = appendExecutionLedgerRecord({
     ledgerPath,
@@ -462,13 +519,14 @@ export async function executeGovernedRoleSdk(options) {
     reconciliation,
     subjectReconciliation,
     success: acceptance.success,
-    failureClassification: acceptance.failure_classification,
+    failureClassification: sdkFailureClassification,
     elapsedMs: execution.duration_ms,
+    telemetryContext: taskCapsule ? { taskCapsule, capability: options.capability, adapter_fingerprint: options.adapterFingerprint, qualification_identity_fingerprint: options.qualificationIdentityFingerprint, acceptance_result: options.acceptanceResult, reviewer_verdict: options.reviewerVerdict, repair_cycles: options.repairCycles, validation_results: options.validationResults } : null,
   });
   finishActivityExecution(activity, {
     success: acceptance.success,
     session_id: execution.session_id,
-    failure_classification: acceptance.failure_classification,
+    failure_classification: sdkFailureClassification,
   });
   return {
     resolution,
@@ -484,7 +542,7 @@ export async function executeGovernedRoleSdk(options) {
     admitted_subject: admittedSubject,
     admission_decision: admissionDecision,
     success: acceptance.success,
-    failure_classification: acceptance.failure_classification,
+    failure_classification: sdkFailureClassification,
     ledger_record: record,
     transport: 'OPENCODE_SDK',
     completion_source: execution.completion_source,
@@ -493,7 +551,7 @@ export async function executeGovernedRoleSdk(options) {
 
 export async function executeGovernedRoleStreaming(options) {
   const baseDir = resolve(options.baseDir), projectDir = resolve(options.projectDir);
-  bindTaskCapsuleToExecution({ taskCapsule: options.taskCapsule, expectedTaskCapsuleFingerprint: options.taskCapsuleFingerprint, role: options.role, required: options.requireTaskCapsule === true });
+  const taskCapsule = bindTaskCapsuleToExecution({ taskCapsule: options.taskCapsule, expectedTaskCapsuleFingerprint: options.taskCapsuleFingerprint, role: options.role, required: options.requireTaskCapsule === true });
   const { manifest, contracts } = loadAgentContracts({ baseDir });
   const loaded = options.profile ? { profile: options.profile, source: options.bindingSource || `profiles/${options.profile.name}.json` } : loadBindingProfile(options.profileName, { profilesDir: resolve(baseDir, 'profiles'), manifest });
   validateProfileCompleteness(loaded.profile, manifest);
@@ -501,22 +559,23 @@ export async function executeGovernedRoleStreaming(options) {
   const resolution = createExecutionResolution({ role: options.role, contract, profile: loaded.profile, bindingSource: options.bindingSource || `profiles/${loaded.profile.name}.json` });
   const admittedSubject = admittedSubjectForExecution(resolution, options.admissionDecision || null);
   validateResolutionAvailability(resolution, { opencode: options.opencode, cwd: projectDir, env: options.env || process.env, cache: options.catalogCache, models: options.models });
-  const overlay = serializeGovernedExecutionOverlay(loaded.profile, options.role, (options.env || process.env).OPENCODE_CONFIG_CONTENT);
+  const runtime = prepareLowInterruptionRuntime({ baseDir, projectDir, contracts, environment: options.env || process.env });
+  const overlay = JSON.stringify(applyRuntimePermissions(JSON.parse(serializeGovernedExecutionOverlay(loaded.profile, options.role, (options.env || process.env).OPENCODE_CONFIG_CONTENT)), runtime.agents));
   const args=['run']; if(options.pure!==false)args.push('--pure'); args.push('--agent',options.role,'--format','json','--dir',projectDir,options.prompt);
   const activity = createActivityExecutionContext(options, { projectDir, role: options.role });
   const projectRuntimeEvent = createRuntimeActivityProjector(activity);
   startActivityExecution(activity);
-  const execution = await runOpenCodeStreaming(options.opencode || 'opencode', args, { cwd:projectDir, env:{...(options.env||process.env),OPENCODE_CONFIG_CONTENT:overlay}, timeout:options.timeout||120000 });
+  const execution = await runOpenCodeStreaming(options.opencode || 'opencode', args, { cwd:projectDir, env:{...runtime.environment,OPENCODE_CONFIG_CONTENT:overlay}, timeout:options.timeout||120000 });
   const events=parseOpenCodeEvents(execution.stdout);
   events.forEach(projectRuntimeEvent);
   const sessionID=events.find((event)=>event.sessionID)?.sessionID||null;
   let exported=null, exportResult=null;
-  if(sessionID){ exportResult=run(options.opencode||'opencode',['export',sessionID,'--sanitize'],{cwd:projectDir,env:options.env||process.env,timeout:30000}); if(!exportResult.spawn_error&&!exportResult.signal&&exportResult.exit_code===0)exported=parseExport(exportResult.stdout); }
+  if(sessionID){ exportResult=run(options.opencode||'opencode',['export',sessionID,'--sanitize'],{cwd:projectDir,env:runtime.environment,timeout:30000}); if(!exportResult.spawn_error&&!exportResult.signal&&exportResult.exit_code===0)exported=parseExport(exportResult.stdout); }
   const reconciliation=reconcileExecutionBinding(resolution,exported), subjectReconciliation=reconcileExecutionSubject(admittedSubject,exported);
   const runtimeSucceeded=execution.termination==='NORMAL_EXIT'&&execution.exit_code===0;
   const acceptance=evaluateGovernedExecutionAcceptance({runtimeSucceeded,reconciliation,subjectReconciliation});
   const ledgerPath=options.ledgerPath||resolve(projectDir,'.opencode','run-ledger.jsonl');
-  const record=appendExecutionLedgerRecord({ledgerPath,projectDir,resolution,reconciliation,subjectReconciliation,success:acceptance.success,failureClassification:acceptance.failure_classification,elapsedMs:execution.duration_ms});
+  const record=appendExecutionLedgerRecord({ledgerPath,projectDir,resolution,reconciliation,subjectReconciliation,success:acceptance.success,failureClassification:acceptance.failure_classification,elapsedMs:execution.duration_ms,telemetryContext:taskCapsule?{taskCapsule,capability:options.capability,adapter_fingerprint:options.adapterFingerprint,qualification_identity_fingerprint:options.qualificationIdentityFingerprint,acceptance_result:options.acceptanceResult,reviewer_verdict:options.reviewerVerdict,repair_cycles:options.repairCycles,validation_results:options.validationResults}:null});
   finishActivityExecution(activity, { success: acceptance.success, session_id: sessionID, failure_classification: acceptance.failure_classification });
   return {resolution,execution,events,model_output:resolveAssistantModelOutput({events,exported}),session_id:sessionID,exported,export_result:exportResult,reconciliation,subject_reconciliation:subjectReconciliation,admitted_subject:admittedSubject,admission_decision:options.admissionDecision||null,success:acceptance.success,failure_classification:acceptance.failure_classification,ledger_record:record};
 }

@@ -32,6 +32,7 @@ import {
 } from '../lib/activity.mjs';
 import { runInteractiveOpenCode } from '../lib/interactive-activity.mjs';
 import { renderActivityView, renderAgentsView, renderAnnouncement } from '../lib/work-view.mjs';
+import { createRuntimePermissionProjection, createValidationWrapperEnvironment } from '../lib/command-admission.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 
@@ -444,18 +445,36 @@ async function main() {
   });
   const projectRoot = orientProject();
   const overlayConfig = JSON.parse(serializeOpenCodeRuntimeOverlay(context.profile, process.env.OPENCODE_CONFIG_CONTENT));
+  const runtimePermissions = createRuntimePermissionProjection({ contracts: context.contracts, projectDir: projectRoot });
+  for (const [role, projected] of Object.entries(runtimePermissions.agents)) {
+    overlayConfig.agent[role] = {
+      ...overlayConfig.agent[role],
+      permission: { ...(overlayConfig.agent[role]?.permission ?? {}), ...projected.permission },
+    };
+  }
   const overlay = JSON.stringify(overlayConfig);
   console.log(`=== EXECUTION PROFILE: ${context.profile.name} (${short(fingerprintBindingProfile(context.profile))}) ===\n`);
   const interactiveActivity = createActivityExecutionContext({ activity_store_path: activityStorePath(projectRoot) }, { projectDir: projectRoot, role: 'orchestrator' });
   console.log('WORK — ◇ Orchestrator · active\n');
   let result;
   try {
-    const environment = {
+    let environment = {
       ...process.env,
       OPENCODE_ENABLE_EXA: '1',
       OCODE_HARNESS_ROOT: context.harnessRoot,
       OPENCODE_CONFIG_CONTENT: overlay,
     };
+    if (runtimePermissions.validation_registry) {
+      const foundNpm = spawnSync('which', ['npm'], { encoding: 'utf8', env: process.env });
+      if (foundNpm.status !== 0 || !foundNpm.stdout.trim()) throw new Error('OCODE_VALIDATION_NPM_NOT_FOUND');
+      environment = createValidationWrapperEnvironment({
+        baseDir: context.harnessRoot,
+        projectDir: projectRoot,
+        registry: runtimePermissions.validation_registry,
+        environment,
+        realNpm: foundNpm.stdout.trim(),
+      });
+    }
     // Test-only escape hatch for the launcher compatibility fixture. Normal
     // `ocode .` always owns a server and observes its native event stream.
     if (process.env.OCODE_DISABLE_INTERACTIVE_ACTIVITY_BRIDGE === '1') {

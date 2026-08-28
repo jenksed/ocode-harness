@@ -1,16 +1,19 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { executeGovernedRole } from '../packages/harness-runtime/lib/execution.mjs';
 import { checkpointQualificationExecution } from '../packages/harness-runtime/lib/skill-qualification.mjs';
 import { normalizeOpenCodeSdkEvent, runOpenCodeSdkSession } from '../packages/harness-runtime/lib/opencode-sdk-execution.mjs';
 import { activityStorePath, queryActivity } from '../packages/harness-runtime/lib/activity.mjs';
+import { createTaskCapsule } from '../packages/harness-runtime/lib/task-capsule.mjs';
 
 const root = resolve('.');
 const projectDir = mkdtempSync(join(tmpdir(), 'ocode-sdk-test-'));
+writeFileSync(join(projectDir, 'package.json'), '{"scripts":{"test":"node -e \\"process.exit(0)\\""}}');
 const profile = JSON.parse(await (await import('node:fs/promises')).readFile(resolve(root, 'profiles/free.json'), 'utf8'));
 const allow = { decision: 'ALLOW', subject: { role: 'coder' } };
+const taskCapsule = createTaskCapsule({ task_id: 'sdk-task', revision: 1, parent_fingerprint: null, objective: 'Exercise one governed SDK chain', authoritative_inputs: [{ id: 'fixture', kind: 'PATH', reference: 'fixture.txt', fingerprint: 'a'.repeat(64), description: 'Controlled fixture' }], scope: { include_paths: ['fixture.txt'], exclude_paths: [] }, non_goals: ['No unrelated work'], constraints: ['Preserve authority'], acceptance: [{ id: 'sdk-completes', requirement: 'Governed execution completes', required_evidence: ['sdk-event'] }], stop_conditions: ['Stop on runtime error'], context: { path_refs: ['fixture.txt'], evidence_refs: [], max_supplied_chars: 4096, max_expansions: 0 }, assumptions: [], provenance: { workflow_id: 'sdk-observable-workflow', run_id: null, session_id: null, role: 'orchestrator' } });
 
 function fakeSdk({ events = [], messages, status = { s1: { type: 'busy' } }, promptError = null } = {}) {
   const calls = [];
@@ -18,12 +21,14 @@ function fakeSdk({ events = [], messages, status = { s1: { type: 'busy' } }, pro
   const gate = new Promise((resolveGate) => { release = resolveGate; });
   let closed = 0;
   let aborted = 0;
+  let serverOptions = null;
   const assistantMessages = messages ?? [{
     info: { id: 'a1', sessionID: 's1', role: 'assistant', providerID: 'freellmapi', modelID: 'auto:coding', agent: 'coder' },
     parts: [{ id: 'p1', sessionID: 's1', messageID: 'a1', type: 'text', text: '{"ok":true}' }],
   }];
   const sdk = {
-    async createOpencodeServer() {
+    async createOpencodeServer(options) {
+      serverOptions = options;
       calls.push('server.start');
       return { url: 'http://sdk.invalid', close() { closed += 1; calls.push('server.close'); } };
     },
@@ -49,7 +54,7 @@ function fakeSdk({ events = [], messages, status = { s1: { type: 'busy' } }, pro
       };
     },
   };
-  return { sdk, calls, get closed() { return closed; }, get aborted() { return aborted; } };
+  return { sdk, calls, get closed() { return closed; }, get aborted() { return aborted; }, get serverOptions() { return serverOptions; } };
 }
 
 const rawTool = { type: 'message.part.updated', properties: { part: { type: 'tool', sessionID: 's1', tool: 'skill', state: { status: 'completed', input: { name: 'tdd' } } } } };
@@ -102,6 +107,22 @@ assert.equal(errored.aborted, 1);
 assert.equal(errored.closed, 1);
 console.log('✓ Matching session error wins over idle and cleanup always runs');
 
+const providerFailure = fakeSdk({ events: [
+  { type: 'session.error', properties: { sessionID: 's1', error: { name: 'APIError', statusCode: 401, message: 'Invalid API key', url: 'http://127.0.0.1:3001/v1/chat/completions' } } },
+] });
+const providerFailureResult = await executeGovernedRole({
+  transport: 'sdk', baseDir: root, projectDir, role: 'coder', profile,
+  bindingSource: 'test', admissionDecision: allow, prompt: 'bounded', models: ['freellmapi/auto:coding'],
+  sdk: providerFailure.sdk, timeout: 500,
+  taskCapsule, taskCapsuleFingerprint: taskCapsule.fingerprint, requireTaskCapsule: true,
+  capability: 'implementation.change', workflowId: 'sdk-provider-failure-workflow',
+});
+assert.equal(providerFailureResult.success, false);
+assert.equal(providerFailureResult.failure_classification, 'PROVIDER_FAILURE');
+assert.equal(providerFailureResult.ledger_record.model_telemetry.failure_classification, 'PROVIDER_FAILURE');
+assert.equal(providerFailureResult.ledger_record.model_telemetry.failure_attribution, 'NON_MODEL');
+console.log('✓ Provider API failures remain separate from model capability failures');
+
 const waiting = fakeSdk();
 const timeoutResult = await runOpenCodeSdkSession({ projectDir: root, role: 'coder', providerID: 'freellmapi', modelID: 'auto:coding', prompt: 'bounded', config: {}, sdk: waiting.sdk, timeout: 20 });
 assert.equal(timeoutResult.termination, 'PROCESS_TIMEOUT');
@@ -118,6 +139,7 @@ const governed = await executeGovernedRole({
   transport: 'sdk', baseDir: root, projectDir, role: 'coder', profile,
   bindingSource: 'test', admissionDecision: allow, prompt: 'bounded', models: ['freellmapi/auto:coding'],
   sdk: governedFake.sdk, timeout: 500,
+  taskCapsule, taskCapsuleFingerprint: taskCapsule.fingerprint, requireTaskCapsule: true, capability: 'implementation.change', validationResults: ['fixture:PASS'],
   workflowId: 'sdk-observable-workflow', parentAgentRole: 'orchestrator', parentSessionId: 'parent-session', delegationId: 'sdk-coder-delegation',
 });
 assert.equal(governed.transport, 'OPENCODE_SDK');
@@ -125,6 +147,11 @@ assert.equal(governed.reconciliation.state, 'MATCH');
 assert.equal(governed.subject_reconciliation.state, 'MATCH');
 assert.equal(governed.model_output, '{"ok":true}');
 assert.equal(governed.ledger_record.execution_provenance.binding_reconciliation, 'MATCH');
+assert.equal(governed.ledger_record.model_telemetry.task_capsule_fingerprint, taskCapsule.fingerprint);
+assert.equal(governed.ledger_record.model_telemetry.capability, 'implementation.change');
+assert.equal(governed.ledger_record.model_telemetry.acceptance_result, 'UNRESOLVED');
+assert.equal(governedFake.serverOptions.config.agent.coder.permission.bash['npm test'], 'allow');
+assert.equal(governedFake.serverOptions.config.agent.coder.permission.bash['*>*'], 'deny');
 const activity = queryActivity(activityStorePath(projectDir), { workflow_id: 'sdk-observable-workflow' });
 assert.equal(activity.events.some((event) => event.event_type === 'DELEGATION_CREATED'), true);
 assert.equal(activity.events.some((event) => event.event_type === 'AGENT_STARTED' && event.agent_role === 'coder'), true);
@@ -142,6 +169,7 @@ await executeGovernedRole({
   transport: 'sdk', baseDir: root, projectDir, role: 'reviewer', profile,
   bindingSource: 'test', admissionDecision: { decision: 'ALLOW', subject: { role: 'reviewer' } }, prompt: 'independent review', models: ['freellmapi/auto:review'], sdk: reviewerFake.sdk, timeout: 500,
   workflowId: 'sdk-observable-workflow', parentAgentRole: 'coder', parentSessionId: 's1', delegationId: 'sdk-review-delegation',
+  taskCapsule, taskCapsuleFingerprint: taskCapsule.fingerprint, requireTaskCapsule: true, capability: 'adversarial-review', reviewerVerdict: 'NONE',
 });
 const reviewActivity = queryActivity(activityStorePath(projectDir), { workflow_id: 'sdk-observable-workflow' });
 assert.equal(reviewActivity.events.some((event) => event.event_type === 'REVIEW_STARTED' && event.agent_role === 'reviewer'), true);

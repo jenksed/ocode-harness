@@ -51,6 +51,7 @@ function makeCommitContext(overrides = {}) {
     lifecycleState: 'CLOSEOUT_READY',
     workflow: 'QUICK',
     reviewerVerdict: 'ACCEPT',
+    taskCapsuleFingerprint: 'a'.repeat(64),
     validationEvidence: { status: 'PASS', commands: ['npm test'] },
     verifierResult: 'PASS', // legacy, for backward compatibility
     expectedPaths: ['feature.txt'],
@@ -71,6 +72,7 @@ try {
   const closeoutPath = join(harnessRuntimeDir, 'lib', 'closeout.mjs');
   const closeoutModule = await import(closeoutPath);
   const { evaluateGates, executeCloseout } = closeoutModule;
+  const { fingerprintWorktreeDiff } = await import(join(harnessRuntimeDir, 'lib', 'deterministic-staging.mjs'));
 
   console.log('Testing evaluateGates...\n');
 
@@ -209,6 +211,7 @@ try {
     commitBody: 'Add feature2 implementation',
   });
   const gates13 = evaluateGates(context13);
+  context13.reviewerDiffFingerprint = fingerprintWorktreeDiff(testDir);
   console.log('  Debug gates13:', JSON.stringify(gates13, null, 2));
   const result13 = executeCloseout(context13);
   console.log('  Debug result13:', JSON.stringify(result13, null, 2));
@@ -246,6 +249,7 @@ try {
     remote: 'origin',
     branch: 'main',
   });
+  context16.reviewerDiffFingerprint = fingerprintWorktreeDiff(testDir);
   // Note: push will fail because remote doesn't actually exist, but we test the logic
   const result16 = executeCloseout(context16);
   // Since remote doesn't exist, push should fail or be blocked

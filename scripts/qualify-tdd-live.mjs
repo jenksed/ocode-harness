@@ -28,12 +28,33 @@ const sha = (file) => createHash('sha256').update(readFileSync(file)).digest('he
 const hashes = (dir) => Object.fromEntries(fixturePaths.map((path) => [path, sha(join(dir, path))]));
 const changedPaths = (before, after) => Object.keys(before).filter((path) => before[path] !== after[path]);
 const command = (args, options) => spawnSync('opencode', args, { encoding: 'utf8', ...options });
+function parseDiagnosticJSON(result, label) {
+  if (result.error || result.signal || result.status !== 0) {
+    throw new Error(`${label}_FAILED:${JSON.stringify({ status: result.status, signal: result.signal, error: result.error?.message ?? null, stdout: result.stdout, stderr: result.stderr })}`);
+  }
+  if (typeof result.stdout !== 'string' || !result.stdout.trim()) {
+    throw new Error(`${label}_EMPTY:${JSON.stringify({ status: result.status, stderr: result.stderr })}`);
+  }
+  try {
+    return JSON.parse(result.stdout);
+  } catch (error) {
+    throw new Error(`${label}_UNPARSEABLE:${JSON.stringify({ parse_error: error.message, stdout: result.stdout, stderr: result.stderr })}`);
+  }
+}
+function compactFailure(error) {
+  if (!error) return null;
+  if (/APIError[\s\S]*statusCode[^0-9]{0,12}401/i.test(error)) return 'PROVIDER_API_ERROR_401';
+  if (/APIError[\s\S]*statusCode[^0-9]{0,12}403/i.test(error)) return 'PROVIDER_API_ERROR_403';
+  if (/APIError[\s\S]*statusCode[^0-9]{0,12}429/i.test(error)) return 'PROVIDER_API_ERROR_429';
+  if (/ServeError/.test(error)) return 'OPENCODE_SERVER_ERROR';
+  return String(error).split(':', 1)[0].slice(0, 160);
+}
 const compactExecution = (result) => ({
   command: result.execution.command, transport: result.transport ?? null,
   termination: result.execution.termination ?? null, completion_source: result.completion_source ?? null,
   exit_code: result.execution.exit_code, signal: result.execution.signal,
-  duration_ms: result.execution.duration_ms, spawn_error: result.execution.spawn_error,
-  export: { exit_code: result.export_result?.exit_code ?? null, spawn_error: result.export_result?.spawn_error ?? null },
+  duration_ms: result.execution.duration_ms, spawn_error: compactFailure(result.execution.spawn_error),
+  export: { exit_code: result.export_result?.exit_code ?? null, spawn_error: compactFailure(result.export_result?.spawn_error) },
 });
 const eventSummary = (events) => events.filter((event) => event?.type === 'tool_use').map((event) => ({
   type: event.type, part: event.part ?? event.properties?.part ?? null,
@@ -62,13 +83,11 @@ function assertPreflight({ fixture, env, admissionDecision }) {
   const drift = checkProjectionDrift({ skillsDir: join(root, 'skills'), runtimeSkillsDir: join(fixture, '.opencode', 'skills'), skillIds: ['tdd'] });
   if (!drift.ok) throw new Error('PROJECTION_DRIFT');
   const skill = command(['debug', 'skill', '--pure'], { cwd: fixture, env });
-  let discovered;
-  try { discovered = JSON.parse(skill.stdout); } catch { throw new Error('TDD_PROJECTION_DIAGNOSTIC_UNPARSEABLE'); }
+  const discovered = parseDiagnosticJSON(skill, 'TDD_PROJECTION_DIAGNOSTIC');
   const projectedSkill = realpathSync(join(fixture, '.opencode', 'skills', 'tdd', 'SKILL.md'));
   if (skill.status !== 0 || !Array.isArray(discovered) || !discovered.some((entry) => entry?.name === 'tdd' && entry.location === projectedSkill)) throw new Error('TDD_PROJECTION_NOT_DISCOVERABLE');
   const agent = command(['debug', 'agent', 'coder', '--pure'], { cwd: fixture, env });
-  let effectiveAgent;
-  try { effectiveAgent = JSON.parse(agent.stdout); } catch { throw new Error('CODER_PERMISSION_DIAGNOSTIC_UNPARSEABLE'); }
+  const effectiveAgent = parseDiagnosticJSON(agent, 'CODER_PERMISSION_DIAGNOSTIC');
   const permission = effectiveAgent?.permission ?? [];
   if (agent.status !== 0 || !permission.some((entry) => entry.permission === 'skill' && entry.pattern === '*' && entry.action === 'deny') || !permission.some((entry) => entry.permission === 'skill' && entry.pattern === 'tdd' && entry.action === 'allow')) throw new Error('CODER_TDD_PERMISSION_NOT_EFFECTIVE');
   if (admissionDecision.decision !== 'ALLOW') throw new Error('TDD_TO_CODER_ADMISSION_DENIED');
@@ -80,12 +99,22 @@ mkdirSync(evidenceDir, { recursive: true });
 if (existsSync(artifactPath)) renameSync(artifactPath, join(evidenceDir, `${expectedFingerprint}-live-pre-hardening-transient.json`));
 const fixture = mkdtempSync(join(tmpdir(), 'ocode-tdd-live-'));
 cpSync(join(root, 'test/fixtures/m6-tdd/live'), fixture, { recursive: true });
+const runtimeState = join(fixture, '.qualification', 'opencode-runtime');
+for (const directory of ['data', 'state', 'cache']) mkdirSync(join(runtimeState, directory), { recursive: true });
 mkdirSync(join(fixture, '.opencode', 'agents'), { recursive: true });
 cpSync(join(root, 'agents', 'coder.md'), join(fixture, '.opencode', 'agents', 'coder.md'));
 projectSkills({ skillsDir: join(root, 'skills'), runtimeSkillsDir: join(fixture, '.opencode', 'skills'), skillIds: ['tdd'] });
 const { contracts } = loadAgentContracts({ baseDir: root });
 const admissionDecision = evaluateAdmission({ contract: contracts.get('coder'), request: skillProtocolAdmissionRequest(source.protocol, 'coder') });
-const methodEnv = { ...process.env, OPENCODE_DISABLE_EXTERNAL_SKILLS: '1', OPENCODE_DISABLE_CLAUDE_CODE_SKILLS: '1', OPENCODE_CONFIG_CONTENT: JSON.stringify({ agent: { coder: { permission: { skill: { '*': 'deny', tdd: 'allow' } } } } }) };
+const methodEnv = {
+  ...process.env,
+  XDG_DATA_HOME: join(runtimeState, 'data'),
+  XDG_STATE_HOME: join(runtimeState, 'state'),
+  XDG_CACHE_HOME: join(runtimeState, 'cache'),
+  OPENCODE_DISABLE_EXTERNAL_SKILLS: '1',
+  OPENCODE_DISABLE_CLAUDE_CODE_SKILLS: '1',
+  OPENCODE_CONFIG_CONTENT: JSON.stringify({ agent: { coder: { permission: { skill: { '*': 'deny', tdd: 'allow' } } } } }),
+};
 assertPreflight({ fixture, env: methodEnv, admissionDecision });
 const initialHashes = hashes(fixture);
 const fixtureFp = fixtureFingerprint({ root: fixture, paths: fixturePaths, domain: source.protocol.skill_id });
@@ -93,7 +122,7 @@ let methodResult;
 let checkpoint;
 try {
   methodResult = await executeGovernedRole({ baseDir: root, projectDir: fixture, role: 'coder', profileName: 'free', admissionDecision, prompt: methodPrompt, env: methodEnv, transport: 'sdk' });
-  if (!methodResult.success || methodResult.transport !== 'OPENCODE_SDK' || !methodResult.completion_source) throw new Error(`INFRASTRUCTURE_FAILURE:${methodResult.failure_classification || 'SDK_COMPLETION_UNAVAILABLE'}`);
+  if (!methodResult.success || methodResult.transport !== 'OPENCODE_SDK' || !methodResult.completion_source) throw new Error(methodResult.failure_classification || 'INFRASTRUCTURE_FAILURE');
   const load = observeCompletedSkillLoad(methodResult.events, 'tdd');
   if (!load) throw new Error('OPENCODE_SKILL_EVENT_CONTRACT_MISMATCH');
   const finalHashes = hashes(fixture);
@@ -115,8 +144,7 @@ try {
     const correctionPermissions = { edit: 'deny', bash: 'deny', read: 'deny', glob: 'deny', grep: 'deny', list: 'deny', skill: 'deny', webfetch: 'deny', websearch: 'deny', task: 'deny', question: 'deny', external_directory: 'deny' };
     const correctionEnv = { ...process.env, OPENCODE_CONFIG_CONTENT: JSON.stringify({ agent: { coder: { permission: correctionPermissions } } }) };
     const correctionAgent = command(['debug', 'agent', 'coder', '--pure'], { cwd: correctionDir, env: correctionEnv });
-    let effectiveCorrection;
-    try { effectiveCorrection = JSON.parse(correctionAgent.stdout); } catch { throw new Error('REPORT_REPAIR_PERMISSION_DIAGNOSTIC_UNPARSEABLE'); }
+    const effectiveCorrection = parseDiagnosticJSON(correctionAgent, 'REPORT_REPAIR_PERMISSION_DIAGNOSTIC');
     const correctionRules = effectiveCorrection?.permission ?? [];
     if (correctionAgent.status !== 0 || !['edit', 'bash', 'skill', 'webfetch', 'websearch'].every((tool) => correctionRules.some((entry) => entry.permission === tool && entry.action === 'deny'))) throw new Error('REPORT_REPAIR_PERMISSION_NOT_EFFECTIVE');
     const catalog = immutable.runtime.runtime_evidence_ids.map((id) => `${id}: ${id === 'tdd-red' ? 'initial test failure' : id === 'tdd-change' ? 'authorized change' : id === 'tdd-green' ? 'post-change pass' : id === 'tdd-scope' ? 'scope/oracle preservation' : 'completed method load'}`).join('; ');

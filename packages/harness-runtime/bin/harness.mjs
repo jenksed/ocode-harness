@@ -445,6 +445,8 @@ program
   .requiredOption('--lifecycle-state <state>', 'Current lifecycle state')
   .requiredOption('--workflow <type>', 'Workflow type (QUICK|STANDARD|DEEP)')
   .requiredOption('--reviewer-verdict <verdict>', 'Reviewer verdict (ACCEPT|REJECT|NONE)')
+  .requiredOption('--task-capsule-fingerprint <sha256>', 'Canonical TaskCapsule fingerprint')
+  .requiredOption('--reviewer-diff-fingerprint <sha256>', 'Worktree fingerprint observed by the accepting reviewer')
   .option('--verifier-result <result>', 'Verifier result (PASS|FAIL|NONE)', 'NONE')
   .requiredOption('--commit-subject <subject>', 'Commit subject')
   .option('--commit-body <body>', 'Commit body')
@@ -461,6 +463,8 @@ program
         lifecycleState: options.lifecycleState,
         workflow: options.workflow,
         reviewerVerdict: options.reviewerVerdict,
+        taskCapsuleFingerprint: options.taskCapsuleFingerprint,
+        reviewerDiffFingerprint: options.reviewerDiffFingerprint,
         verifierResult: options.verifierResult,
         expectedPaths: options.expectedPaths ? options.expectedPaths.split(',') : [],
         projectRoot,

@@ -149,6 +149,8 @@ try {
   }
 
   // Check installation
+  const storeRoot = join(testShareDir, 'ocode-harness');
+  const currentRoot = join(storeRoot, 'current');
   const checks = [
     {
       name: 'orient binary',
@@ -168,11 +170,11 @@ try {
     },
     {
       name: 'orientation package',
-      path: join(testShareDir, 'ocode-harness', 'orientation'),
+      path: join(currentRoot, 'orientation'),
     },
     {
       name: 'harness-runtime package',
-      path: join(testShareDir, 'ocode-harness', 'harness-runtime'),
+      path: join(currentRoot, 'harness-runtime'),
     },
     {
       name: 'opencode configuration',
@@ -184,7 +186,7 @@ try {
     },
     {
       name: 'VERSION file',
-      path: join(testShareDir, 'ocode-harness', 'VERSION'),
+      path: join(currentRoot, 'VERSION'),
     },
   ];
 
@@ -225,7 +227,7 @@ try {
 
   console.log('\n=== Orientation Package Checks ===\n');
   for (const file of orientationFiles) {
-    const filePath = join(testShareDir, 'ocode-harness', 'orientation', file);
+    const filePath = join(currentRoot, 'orientation', file);
     if (existsSync(filePath)) {
       console.log(`✓ ${file}`);
     } else {
@@ -260,7 +262,7 @@ try {
 
   console.log('\n=== Harness Runtime Package Checks ===\n');
   for (const file of harnessRuntimeFiles) {
-    const filePath = join(testShareDir, 'ocode-harness', 'harness-runtime', file);
+    const filePath = join(currentRoot, 'harness-runtime', file);
     if (existsSync(filePath)) {
       console.log(`✓ ${file}`);
     } else {
@@ -307,8 +309,8 @@ try {
   }
 
   // Check VERSION file content
-  if (existsSync(join(testShareDir, 'ocode-harness', 'VERSION'))) {
-    const versionContent = readFileSync(join(testShareDir, 'ocode-harness', 'VERSION'), 'utf8').trim();
+  if (existsSync(join(currentRoot, 'VERSION'))) {
+    const versionContent = readFileSync(join(currentRoot, 'VERSION'), 'utf8').trim();
     const sourceVersion = readFileSync(join(sourceDir, 'VERSION'), 'utf8').trim();
     if (versionContent === sourceVersion) {
       console.log(`\n✓ VERSION file matches source: ${versionContent}`);
@@ -324,7 +326,7 @@ try {
   const ocodeLauncher = readFileSync(join(testBinDir, 'ocode'), 'utf8');
   const harnessLauncher = readFileSync(join(testBinDir, 'harness'), 'utf8');
 
-  if (orientLauncher.includes('.local/share/ocode-harness/orientation/bin/orient.mjs')) {
+  if (orientLauncher.includes('.local/share/ocode-harness/current/orientation/bin/orient.mjs')) {
     console.log('✓ orient launcher references installed path');
   } else {
     console.error('✗ orient launcher does not reference installed path');
@@ -338,7 +340,7 @@ try {
     allPassed = false;
   }
 
-  if (harnessLauncher.includes('.local/share/ocode-harness/harness-runtime/bin/harness.mjs')) {
+  if (harnessLauncher.includes('.local/share/ocode-harness/current/harness-runtime/bin/harness.mjs')) {
     console.log('✓ harness launcher references installed path');
   } else {
     console.error('✗ harness launcher does not reference installed path');

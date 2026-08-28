@@ -25,18 +25,19 @@ import { loadBindingProfile } from './opencode-integration.mjs';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+const installStoreRoot = env.OCODE_INSTALL_STORE_ROOT || join(homedir(), '.local', 'share', 'ocode-harness');
 export const CONFIG = {
-  harnessRoot: join(homedir(), '.local', 'share', 'ocode-harness'),
-  installStoreRoot: join(homedir(), '.local', 'share', 'ocode-harness'),
-  releasesRoot: join(homedir(), '.local', 'share', 'ocode-harness', 'releases'),
-  currentRelease: join(homedir(), '.local', 'share', 'ocode-harness', 'current'),
-  previousRelease: join(homedir(), '.local', 'share', 'ocode-harness', 'previous'),
-  binDir: join(homedir(), '.local', 'bin'),
+  harnessRoot: installStoreRoot,
+  installStoreRoot,
+  releasesRoot: join(installStoreRoot, 'releases'),
+  currentRelease: join(installStoreRoot, 'current'),
+  previousRelease: join(installStoreRoot, 'previous'),
+  binDir: env.OCODE_BIN_DIR || join(homedir(), '.local', 'bin'),
   agentsDir: join(homedir(), '.config', 'opencode', 'agents'),
   opencodeConfig: join(homedir(), '.config', 'opencode', 'opencode.json'),
   machineConfig: join(homedir(), '.config', 'ocode', 'config.json'),
-  orientationDir: join(homedir(), '.local', 'share', 'ocode-harness', 'current', 'orientation'),
-  harnessRuntimeDir: join(homedir(), '.local', 'share', 'ocode-harness', 'current', 'harness-runtime'),
+  orientationDir: join(installStoreRoot, 'current', 'orientation'),
+  harnessRuntimeDir: join(installStoreRoot, 'current', 'harness-runtime'),
   stagingDir: join(homedir(), '.local', 'share', 'ocode-harness-staging'),
   backupDir: join(homedir(), '.local', 'share', 'ocode-harness-backups'),
 };

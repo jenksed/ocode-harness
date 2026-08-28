@@ -2,7 +2,7 @@
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve, join } from 'node:path';
 import { existsSync, readFileSync, readdirSync, statSync, mkdtempSync, rmSync } from 'node:fs';
-import { execSync } from 'node:child_process';
+import { execSync, spawnSync } from 'node:child_process';
 import { homedir, tmpdir } from 'node:os';
 import { createLedgerRecord, appendRecord, readRecords, getLatestRecord, getRecentRecords, LEDGER_SCHEMA_VERSION } from '../lib/ledger.mjs';
 import { generateTaskId, generateRunId } from '../lib/identity.mjs';

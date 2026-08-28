@@ -55,6 +55,7 @@
     "acceptance:m6.2": "node scripts/acceptance-m6.2.mjs",
     "qualify:tdd:live": "node scripts/qualify-tdd-live.mjs",
     "qualify:opencode-permissions": "node scripts/qualify-opencode-permissions.mjs",
+    "qualify:runtime-integration:e2e": "node scripts/qualify-runtime-integration-e2e.mjs",
     "qualify:tdd:report-repair": "node scripts/repair-tdd-attempt-3-report.mjs",
     "test:m6.3-skills": "node test/test-m6.3-skills.mjs",
     "acceptance:m6.3": "node scripts/acceptance-m6.3.mjs",

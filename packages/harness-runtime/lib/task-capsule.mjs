@@ -1,7 +1,8 @@
 import { createHash } from 'node:crypto';
 import { canonicalJSONStringify } from './agent-contract.mjs';
+import { createRepositoryTaskContext } from './repository-snapshot.mjs';
 
-export const TASK_CAPSULE_SCHEMA_VERSION = 1;
+export const TASK_CAPSULE_SCHEMA_VERSION = 2;
 const HEX = /^[a-f0-9]{64}$/;
 const ID = /^[a-z][a-z0-9_-]{0,63}$/;
 const ACCEPTANCE_STATES = new Set(['SATISFIED', 'UNSATISFIED', 'UNRESOLVED']);
@@ -49,8 +50,9 @@ export function taskCapsuleFingerprint(capsule) {
 
 export function validateTaskCapsule(capsule, { requireFingerprint = true } = {}) {
   object(capsule, 'TaskCapsule');
-  fields(capsule, ['schema_version', 'task_id', 'revision', 'parent_fingerprint', 'objective', 'authoritative_inputs', 'scope', 'non_goals', 'constraints', 'acceptance', 'stop_conditions', 'context', 'assumptions', 'provenance', 'fingerprint'], 'TaskCapsule');
-  if (capsule.schema_version !== TASK_CAPSULE_SCHEMA_VERSION) throw new Error('TaskCapsule schema_version invalid');
+  fields(capsule, ['schema_version', 'task_id', 'revision', 'parent_fingerprint', 'objective', 'authoritative_inputs', 'scope', 'non_goals', 'constraints', 'acceptance', 'stop_conditions', 'context', 'assumptions', 'provenance', 'repository_context', 'fingerprint'], 'TaskCapsule');
+  if (![1, TASK_CAPSULE_SCHEMA_VERSION].includes(capsule.schema_version)) throw new Error('TaskCapsule schema_version invalid');
+  if (capsule.schema_version === 1 && capsule.repository_context !== undefined) throw new Error('TaskCapsule v1 cannot carry repository_context');
   if (!ID.test(capsule.task_id)) throw new Error('TaskCapsule task_id invalid');
   if (!Number.isInteger(capsule.revision) || capsule.revision < 1) throw new Error('TaskCapsule revision invalid');
   if (capsule.revision === 1 && capsule.parent_fingerprint !== null) throw new Error('Initial TaskCapsule must have null parent_fingerprint');
@@ -65,6 +67,15 @@ export function validateTaskCapsule(capsule, { requireFingerprint = true } = {})
     acceptance: normalizeAcceptance(capsule.acceptance), stop_conditions: uniqueStrings(capsule.stop_conditions, 'stop_conditions'), context: normalizeContext(capsule.context),
     assumptions: uniqueStrings(capsule.assumptions, 'assumptions'), provenance: (() => { object(capsule.provenance, 'provenance'); fields(capsule.provenance, ['workflow_id', 'run_id', 'session_id', 'role'], 'provenance'); const output = {}; for (const key of ['workflow_id', 'run_id', 'session_id', 'role']) { const value = capsule.provenance[key]; if (value !== null && value !== undefined) output[key] = string(value, `provenance.${key}`); else output[key] = null; } return output; })(),
   };
+  if (capsule.schema_version === TASK_CAPSULE_SCHEMA_VERSION) {
+    if (capsule.repository_context === undefined || capsule.repository_context === null) normalized.repository_context = null;
+    else {
+      object(capsule.repository_context, 'repository_context'); fields(capsule.repository_context, ['snapshot', 'verified_facts', 'decisions', 'evidence', 'observations', 'unknowns'], 'repository_context');
+      const context = createRepositoryTaskContext(capsule.repository_context.snapshot, { observations: capsule.repository_context.observations, unknowns: capsule.repository_context.unknowns });
+      if (capsule.repository_context.verified_facts !== undefined && canonicalJSONStringify(capsule.repository_context) !== canonicalJSONStringify(context)) throw new Error('repository_context does not match snapshot-derived facts');
+      normalized.repository_context = context;
+    }
+  }
   if (Buffer.byteLength(canonicalJSONStringify(normalized), 'utf8') > normalized.context.max_supplied_chars) throw new Error('TaskCapsule supplied context exceeds budget');
   const calculated = fingerprint(normalized);
   if (requireFingerprint && capsule.fingerprint !== calculated) throw new Error('TaskCapsule fingerprint mismatch');
@@ -72,14 +83,14 @@ export function validateTaskCapsule(capsule, { requireFingerprint = true } = {})
 }
 
 export function createTaskCapsule(input) {
-  const draft = { ...input, schema_version: TASK_CAPSULE_SCHEMA_VERSION, fingerprint: undefined };
+  const draft = { ...input, schema_version: input.schema_version ?? TASK_CAPSULE_SCHEMA_VERSION, fingerprint: undefined };
   const normalized = validateTaskCapsule(draft, { requireFingerprint: false });
   return Object.freeze({ ...normalized, fingerprint: taskCapsuleFingerprint(normalized) });
 }
 
 export function createTaskCapsuleRevision(previous, next) {
   const prior = validateTaskCapsule(previous);
-  const candidate = createTaskCapsule({ ...next, schema_version: TASK_CAPSULE_SCHEMA_VERSION, task_id: prior.task_id, revision: prior.revision + 1, parent_fingerprint: prior.fingerprint });
+  const candidate = createTaskCapsule({ ...next, schema_version: next.schema_version ?? TASK_CAPSULE_SCHEMA_VERSION, task_id: prior.task_id, revision: prior.revision + 1, parent_fingerprint: prior.fingerprint });
   return candidate;
 }
 

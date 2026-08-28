@@ -5,6 +5,7 @@ test-debug.mjs
 *.tmp
 *.temp
 coverage/
+dist/
 .nyc_output/
 .opencode/skills/
 .opencode/activity/

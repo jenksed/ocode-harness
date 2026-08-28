@@ -71,6 +71,21 @@ it validates its embedded schema and metadata without locating a checkout,
 not dependency closure, artifact bytes, or installed-artifact integrity; those
 remain Phase 2 concerns.
 
+## Closed release artifact
+
+Build, without installing or promoting anything:
+
+```bash
+npm run release:build
+npm run release:verify -- dist/ocode-<version>+<short-sha>.tar.gz
+```
+
+Phase 2 creates a dependency-closed `tar.gz`, a detached SHA-256 checksum, and
+an embedded `ARTIFACT.json`. `RELEASE.json` remains source provenance; the
+artifact manifest enumerates the payload and deliberately excludes itself to
+avoid a self-referential digest. Phase 3, not this phase, must make
+installation/update consume an already-built artifact atomically.
+
 ## Verify the installed release
 
 ```bash

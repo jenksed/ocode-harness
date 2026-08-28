@@ -135,5 +135,5 @@ export function buildReleaseArtifact({ sourceRoot, outputDir }) {
 }
 export function verifyReleaseArtifact(archive) {
   const checksum = `${archive}.sha256`; if (!existsSync(checksum)) throw new Error('Detached archive checksum missing'); const expected = readFileSync(checksum, 'utf8').trim().split(/\s+/)[0]; if (!/^[0-9a-f]{64}$/.test(expected) || fileSHA(archive) !== expected) throw new Error('Archive SHA-256 mismatch');
-  const temp = mkdtempSync(join(tmpdir(), 'ocode-release-verify-')); try { const { root } = materializeVerifiedArtifact(archive, temp); const { release, artifact } = verifyMaterializedPayload(root); return { release, artifact, archive_sha256: expected }; } finally { rmSync(temp, { recursive: true, force: true }); }
+  const temp = mkdtempSync(join(tmpdir(), 'ocode-release-verify-')); try { const { root } = materializeVerifiedArtifact(archive, join(temp, 'candidate')); const { release, artifact } = verifyMaterializedPayload(root); return { release, artifact, archive_sha256: expected }; } finally { rmSync(temp, { recursive: true, force: true }); }
 }

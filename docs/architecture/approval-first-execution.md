@@ -22,13 +22,13 @@ bash:
   "rm -rf *": deny
 ```
 
-`ASK` is not `ALLOW`: normal commands such as `uname -a`, bounded test/build commands, and `git add test.txt` reach OpenCode's native Bash permission interaction. The structural denials never escalate to an approval request.
+`ASK` is not `ALLOW`: unknown consequential commands may reach OpenCode's native Bash permission interaction only for a role that already owns the effect. Repository staging/commit/push are deterministic-runtime effects and never become authorized through an approval request. Structural denials never escalate to an approval request.
 
 ## Delegated effects
 
-OpenCode 1.18.21 child-session permission propagation is not qualified as a correctness dependency. A constrained subagent therefore returns an `EFFECT REQUEST` containing the exact bounded command and reason. The primary orchestrator validates the request against the delegated scope and performs it with its own native Bash tool.
+OpenCode 1.18.21 child-session permission propagation is not qualified as a correctness dependency. A constrained subagent may return an `EFFECT REQUEST` for an admitted observation or validation command. It must not request repository mutation or Git closeout effects; those route to the admitted coder or deterministic Git runtime.
 
-For example, after a coder creates `test.txt`, it returns `EFFECT REQUEST: git add test.txt`. The primary invokes native Bash; OpenCode asks once; on approval the command executes and the primary continues. A rejection leaves the command unexecuted and is returned to the workflow as a rejected effect.
+After a coder creates `test.txt`, staging is performed by deterministic closeout runtime, not by the primary's Bash session. A rejected or structurally denied effect remains unexecuted and is returned to the workflow as a rejected effect.
 
 ## Removed transport
 

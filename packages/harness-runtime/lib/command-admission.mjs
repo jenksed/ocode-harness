@@ -29,6 +29,9 @@ const NATIVE_STRUCTURAL_DENIES = Object.freeze({
   'git reset --hard *': 'deny',
   'git clean': 'deny',
   'git clean *': 'deny',
+  // Keep all Git subcommands closed by default. Explicit read-only patterns
+  // are restored after this block; redirection remains the final deny.
+  'git *': 'deny',
   'git add': 'deny',
   'git add *': 'deny',
   'git commit': 'deny',
@@ -50,6 +53,11 @@ function ensureString(value, label) { if (typeof value !== 'string' || !value.tr
 function sha(value) { return createHash('sha256').update(value).digest('hex'); }
 function normalizedCommand(command) { return ensureString(command, 'command').trim().replace(/\s+/g, ' '); }
 
+function gitEffect(command) {
+  const match = command.match(/^git\s+(?:(?:-[A-Za-z-]+(?:\s+|=)[^\s]+)\s+)*(add|commit|push|merge|rebase|cherry-pick|checkout|restore|switch)\b/);
+  return match?.[1] ?? null;
+}
+
 /**
  * A conservative lexical classifier. It deliberately rejects shell composition
  * rather than pretending OpenCode's unqualified prefix matcher parsed argv.
@@ -57,6 +65,9 @@ function normalizedCommand(command) { return ensureString(command, 'command').tr
 export function classifyCommand(command) {
   const normalized = normalizedCommand(command);
   if (SHELL_COMPOSITION.test(normalized)) return { risk_class: COMMAND_RISK_CLASSES.UNKNOWN, normalized, reason: 'SHELL_COMPOSITION_OR_EXPANSION' };
+  const effect = gitEffect(normalized);
+  if (effect === 'push') return { risk_class: COMMAND_RISK_CLASSES.REMOTE_EFFECT, normalized, git_effect: effect, reason: 'REMOTE_OR_NETWORK_PATTERN' };
+  if (effect) return { risk_class: COMMAND_RISK_CLASSES.REPOSITORY_EFFECT, normalized, git_effect: effect, reason: 'REPOSITORY_MUTATION_PATTERN' };
   if (DESTRUCTIVE.test(normalized)) return { risk_class: COMMAND_RISK_CLASSES.DESTRUCTIVE, normalized, reason: 'STRUCTURAL_DESTRUCTIVE_PATTERN' };
   if (REMOTE.test(normalized)) return { risk_class: COMMAND_RISK_CLASSES.REMOTE_EFFECT, normalized, reason: 'REMOTE_OR_NETWORK_PATTERN' };
   if (REPOSITORY.test(normalized)) return { risk_class: COMMAND_RISK_CLASSES.REPOSITORY_EFFECT, normalized, reason: 'REPOSITORY_MUTATION_PATTERN' };
@@ -138,12 +149,13 @@ export function createNativeBashPermissionRules({ baseRules = {}, validationRegi
     const registry = validateValidationRegistry(validationRegistry);
     for (const command of registry.commands) rules[command] = 'allow';
   }
-  if (readOnly) {
-    for (const [pattern, action] of Object.entries(baseRules)) {
-      if (OBSERVATION_PATTERNS.has(pattern)) rules[pattern] = action;
-    }
-  }
   for (const [pattern, action] of Object.entries(NATIVE_STRUCTURAL_DENIES)) rules[pattern] = action;
+  for (const [pattern, action] of Object.entries(baseRules)) {
+    if (OBSERVATION_PATTERNS.has(pattern)) rules[pattern] = action;
+  }
+  // These must remain last so an observation wildcard cannot authorize shell
+  // composition or redirection.
+  rules['*>*'] = 'deny'; rules['*<*'] = 'deny';
   return rules;
 }
 
@@ -189,7 +201,8 @@ export function decideCommandAdmission({ command, role, roleCapabilities = [], r
   const provenance = { classifier: 'OCODE_COMMAND_ADMISSION_V1', role, risk_class: classified.risk_class, reason: classified.reason };
   if (classified.risk_class === COMMAND_RISK_CLASSES.DESTRUCTIVE || classified.risk_class === COMMAND_RISK_CLASSES.REMOTE_EFFECT) return { decision: COMMAND_DECISIONS.DENY, ...provenance };
   if (classified.risk_class === COMMAND_RISK_CLASSES.REPOSITORY_EFFECT) {
-    const effect = /^(?:git add)\b/.test(classified.normalized) ? 'stage' : /^(?:git commit)\b/.test(classified.normalized) ? 'commit' : null;
+    const gitCommand = classified.git_effect;
+    const effect = gitCommand === 'add' ? 'stage' : ['commit', 'merge', 'rebase', 'cherry-pick'].includes(gitCommand) ? 'commit' : ['checkout', 'restore', 'switch'].includes(gitCommand) ? 'repository.edit' : gitCommand === 'push' ? 'push' : null;
     if (effect && roleAuthority) return { ...decideEffectAdmission({ effect, role, authority: roleAuthority }), ...provenance };
     return { decision: COMMAND_DECISIONS.ASK, ...provenance };
   }

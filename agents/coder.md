@@ -65,7 +65,7 @@ handoff instead of reproducing it through redirection or another interpreter.
 
 Call only tools advertised as available in this session. `ls` is a shell command, not an OpenCode tool: use the `bash` tool with an `ls ...` command only when Bash permission permits it. Otherwise use an available `glob`, `grep`, or `read` tool; never invent a tool from a shell command name.
 
-Native child-session ASK behavior remains unqualified, so do not rely on it for a governed effect. For a bounded command required to complete the delegated work—especially `git add <specific paths>`—return an `EFFECT REQUEST` to the primary orchestrator with the exact command and concise reason. The primary session performs the command through its native Bash `ASK` policy, so OpenCode presents the single operator approval. Never ask the human to run a command. `git push`, destructive Git operations, and recursive deletion are structural denials and must not be requested.
+Native child-session ASK behavior remains unqualified, so do not rely on it for a governed effect. Do not return a staging, commit, or push request for the primary to execute: those effects belong to deterministic Git runtime. If a bounded validation command is required but unavailable, return an `EFFECT REQUEST` with the exact command and concise reason; never use it to bypass an authority denial. Never ask the human to run a command. `git add`, `git commit`, `git push`, destructive Git operations, and recursive deletion are structural denials and must not be requested.
 
 Inspect relevant source, tests, contracts, and repository-defined validation before changing code.
 Preserve compatibility unless explicitly authorized to change it.

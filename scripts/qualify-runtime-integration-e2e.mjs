@@ -172,7 +172,7 @@ function stopActivityFollower(handle) {
 }
 
 export async function createWorktree(state) {
-  const target = state.options.worktree || resolve(state.source, '..', 'ocode-harness-runtime-test');
+  const target = state.options.worktree || join(state.runDir, 'worktree');
   if (existsSync(target)) {
     const status = await run('git', ['status', '--short'], { cwd: target });
     const head = await run('git', ['rev-parse', 'HEAD'], { cwd: target });

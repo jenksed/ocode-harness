@@ -6,12 +6,13 @@ import { tmpdir } from 'node:os';
 import { classifyCommand, createNativeBashPermissionRules, createValidationRegistry, createValidationWrapperEnvironment, decideCommandAdmission, evaluateValidationRegistryFreshness } from '../packages/harness-runtime/lib/command-admission.mjs';
 import { createStagingAuthorization, executeDeterministicStaging, fingerprintWorktreeDiff } from '../packages/harness-runtime/lib/deterministic-staging.mjs';
 import { createTaskCapsule, createTaskCapsuleRevision, assertTaskCapsuleHandoff, validateAcceptanceEvidence } from '../packages/harness-runtime/lib/task-capsule.mjs';
+import { createRepositorySnapshot } from '../packages/harness-runtime/lib/repository-snapshot.mjs';
 import { createModelTelemetry, classifyExecutionFailure } from '../packages/harness-runtime/lib/model-telemetry.mjs';
 import { deriveModelQualification, isQualificationCurrent, qualificationIdentity } from '../packages/harness-runtime/lib/model-qualification.mjs';
 import { createBehavioralAdapter, selectBehavioralAdapter } from '../packages/harness-runtime/lib/behavioral-adapters.mjs';
 import { resolveCapabilityExecution } from '../packages/harness-runtime/lib/capability-resolution.mjs';
 import { evaluateToolLoop } from '../packages/harness-runtime/lib/tool-loop-control.mjs';
-import { bindTaskCapsuleToExecution } from '../packages/harness-runtime/lib/execution.mjs';
+import { assertTaskCapsuleProjectRoot, bindTaskCapsuleToExecution } from '../packages/harness-runtime/lib/execution.mjs';
 
 const root = mkdtempSync(join(tmpdir(), 'ocode-runtime-evolution-'));
 const hex = (char) => char.repeat(64);
@@ -25,6 +26,9 @@ try {
   assert.equal(classifyCommand('rg task src').risk_class, 'OBSERVE');
   assert.equal(classifyCommand('git push origin main').risk_class, 'REMOTE_EFFECT');
   assert.equal(classifyCommand('rm -rf build').risk_class, 'DESTRUCTIVE');
+  for (const command of ['git show --output=marker.txt HEAD', 'git diff --output=marker.txt', 'git log --output=marker.txt', 'find . -delete', 'find . -exec touch marker.txt', 'tree -o marker.txt']) {
+    assert.equal(classifyCommand(command).risk_class, 'WORKSPACE_EFFECT', command);
+  }
   assert.equal(classifyCommand('rg x; rm -rf /').risk_class, 'UNKNOWN');
   assert.equal(decideCommandAdmission({ command: 'unknown-command', role: 'coder' }).decision, 'ASK');
   assert.equal(decideCommandAdmission({ command: 'git push origin main', role: 'coder' }).decision, 'DENY');
@@ -49,6 +53,18 @@ try {
   assertTaskCapsuleHandoff(capsule, capsule.fingerprint);
   assert.equal(bindTaskCapsuleToExecution({ taskCapsule: capsule, expectedTaskCapsuleFingerprint: capsule.fingerprint, role: 'coder', required: true }).fingerprint, capsule.fingerprint);
   assert.equal(bindTaskCapsuleToExecution({ taskCapsule: capsule, role: 'reviewer', required: true }).fingerprint, capsule.fingerprint);
+  const rootedCapsule = createTaskCapsule({ ...capsule, context: { ...capsule.context, max_supplied_chars: 100000 }, repository_context: { snapshot: createRepositorySnapshot({ repositoryRoot: root }).snapshot, observations: [], unknowns: [] } });
+  assert.equal(assertTaskCapsuleProjectRoot(rootedCapsule, root).fingerprint, rootedCapsule.fingerprint);
+  const otherRoot = mkdtempSync(join(tmpdir(), 'ocode-runtime-other-root-'));
+  try {
+    writeFileSync(join(otherRoot, 'package.json'), '{"name":"other"}\n', 'utf8');
+    execFileSync('git', ['init'], { cwd: otherRoot, encoding: 'utf8' });
+    execFileSync('git', ['config', 'user.email', 'other@example.test'], { cwd: otherRoot, encoding: 'utf8' });
+    execFileSync('git', ['config', 'user.name', 'Other'], { cwd: otherRoot, encoding: 'utf8' });
+    execFileSync('git', ['add', '--', 'package.json'], { cwd: otherRoot, encoding: 'utf8' });
+    execFileSync('git', ['commit', '-m', 'other'], { cwd: otherRoot, encoding: 'utf8' });
+    assert.throws(() => assertTaskCapsuleProjectRoot(rootedCapsule, otherRoot), /OCODE_PROJECT_ROOT_MISMATCH/);
+  } finally { rmSync(otherRoot, { recursive: true, force: true }); }
   assert.throws(() => createTaskCapsule({ ...capsule, scope: { include_paths: ['../escape'], exclude_paths: [] } }), /repository-relative/);
   assert.throws(() => createTaskCapsule({ ...capsule, acceptance: [capsule.acceptance[0], capsule.acceptance[0]] }), /unique/);
   const revision = createTaskCapsuleRevision(capsule, { ...capsule, objective: 'Updated objective', authoritative_inputs: capsule.authoritative_inputs, scope: capsule.scope, non_goals: capsule.non_goals, constraints: capsule.constraints, acceptance: capsule.acceptance, stop_conditions: capsule.stop_conditions, context: capsule.context, assumptions: capsule.assumptions, provenance: capsule.provenance });

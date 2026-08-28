@@ -43,7 +43,14 @@ export function matchesOpenCodeBashPattern(pattern, command) {
   if (pattern === '*') return true;
   if (pattern === '*>*') return command.includes('>');
   if (pattern === '*<*') return command.includes('<');
-  if (pattern.endsWith(' *')) return command.startsWith(pattern.slice(0, -1));
+  // OpenCode does not let the qualified trailing-space command wildcard cross
+  // a shell-composition boundary. Redirection is deliberately not included:
+  // native qualification shows it can match the wildcard, so the explicit
+  // final redirection denial remains required and decisive.
+  if (pattern.endsWith(' *')) {
+    if (/(?:&&|\|\||(?<!\|)\|(?!\|)|;|\$\(|`)/.test(command)) return false;
+    return command.startsWith(pattern.slice(0, -1));
+  }
   return pattern === command;
 }
 

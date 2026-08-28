@@ -32,7 +32,7 @@ try {
     chmodSync(path, 0o755);
   };
   writeExecutable('orient', 'mkdir -p "$1/.opencode"\nprintf "{\\\"project\\\":{\\\"root\\\":\\\"%s\\\"}}" "$1" > "$1/.opencode/orientation.json"\nprintf "orientation" > "$1/.opencode/orientation.md"');
-  writeExecutable('opencode', 'printf "%s\\n%s\\n" "$PWD" "$OCODE_PROJECT_ROOT" > "$OCODE_PROJECT_ROOT/opencode-root.log"\nif [ "$1" = "models" ]; then printf "%s\\n" freellmapi/auto:default freellmapi/auto:planning freellmapi/auto:coding freellmapi/auto:wayfinder freellmapi/auto:research freellmapi/auto:verification freellmapi/auto:review freellmapi/auto:reasoning freellmapi/auto:utility; fi\nexit 0');
+  writeExecutable('opencode', 'printf "%s\\n%s\\n%s\\n%s\\n" "$PWD" "$OCODE_PROJECT_ROOT" "$OCODE_REPOSITORY_ROOT" "$OCODE_INVOCATION_DIR" > "$OCODE_PROJECT_ROOT/opencode-root.log"\nif [ "$1" = "models" ]; then printf "%s\\n" freellmapi/auto:default freellmapi/auto:planning freellmapi/auto:coding freellmapi/auto:wayfinder freellmapi/auto:research freellmapi/auto:verification freellmapi/auto:review freellmapi/auto:reasoning freellmapi/auto:utility; fi\nexit 0');
   const result = spawnSync(process.execPath, [cli], {
     cwd: project,
     encoding: 'utf8',
@@ -47,7 +47,7 @@ try {
   assert.equal(activity.events.some((event) => event.event_type === 'WORKFLOW_STARTED' && event.agent_role === 'orchestrator'), true);
   assert.equal(activity.events.some((event) => event.event_type === 'AGENT_STARTED' && event.agent_role === 'orchestrator'), true);
   assert.equal(activity.events.some((event) => event.event_type === 'AGENT_COMPLETED' && event.agent_role === 'orchestrator'), true);
-  assert.deepEqual(readFileSync(join(project, 'opencode-root.log'), 'utf8').trim().split('\n'), [realpathSync(project), realpathSync(project)]);
+  assert.deepEqual(readFileSync(join(project, 'opencode-root.log'), 'utf8').trim().split('\n'), [realpathSync(project), realpathSync(project), realpathSync(project), realpathSync(project)]);
   console.log('✓ Normal ocode launcher emits runtime-owned primary workflow and orchestrator lifecycle activity');
 } finally {
   rmSync(project, { recursive: true, force: true });

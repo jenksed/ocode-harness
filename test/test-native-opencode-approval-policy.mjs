@@ -18,9 +18,9 @@ const readOnlyCommands = [
   'rg activity packages',
   'grep -R activity packages',
   'git status --short',
-  'git diff --check',
-  'git log --oneline -1',
-  'git show HEAD',
+  'git diff',
+  'git log',
+  'git show',
   'git rev-parse --show-toplevel',
   'git worktree list --porcelain',
   'git branch --show-current',
@@ -60,9 +60,13 @@ assert.equal(projectBashCommand(projected.agents.orchestrator.permission.bash, '
 assert.equal(projectBashCommand(projected.agents.orchestrator.permission.bash, 'git commit -m x').state, 'DENY');
 assert.equal(projectBashCommand(projected.agents.orchestrator.permission.bash, 'git push origin main').state, 'DENY');
 assert.equal(projectBashCommand(projected.agents.orchestrator.permission.bash, 'git status --short').state, 'ALLOW');
-assert.equal(projectBashCommand(projected.agents.orchestrator.permission.bash, 'git log --oneline -5').state, 'ALLOW');
-assert.equal(projectBashCommand(projected.agents.orchestrator.permission.bash, 'git show HEAD:README.md').state, 'ALLOW');
 assert.equal(projectBashCommand(projected.agents.orchestrator.permission.bash, 'git worktree list').state, 'ALLOW');
+for (const command of ['ls . && touch marker.txt', 'rg needle fixture.txt | tee marker.txt', 'git status --short && touch marker.txt', 'git diff | tee marker.txt', 'find . -maxdepth 1; touch marker.txt']) {
+  assert.equal(projectBashCommand(projected.agents.orchestrator.permission.bash, command).state, 'DENY', command);
+}
+for (const command of ['git show --output=marker.txt HEAD', 'git diff --output=marker.txt', 'git log --output=marker.txt', 'find . -delete', 'find . -exec touch marker.txt \\;', 'tree -o marker.txt']) {
+  assert.notEqual(projectBashCommand(projected.agents.orchestrator.permission.bash, command).state, 'ALLOW', command);
+}
 assert.equal(projectBashCommand(projected.agents.coder.permission.bash, 'git add file').state, 'DENY');
 assert.equal(projectBashCommand(projected.agents.coder.permission.bash, 'git commit -m x').state, 'DENY');
 assert.equal(projectBashCommand(projected.agents.coder.permission.bash, 'git push origin main').state, 'DENY');

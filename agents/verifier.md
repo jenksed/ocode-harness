@@ -20,7 +20,6 @@ permission:
     "grep": allow
     "grep *": allow
     "find": allow
-    "find *": allow
     "head": allow
     "head *": allow
     "tail": allow
@@ -32,7 +31,6 @@ permission:
     "stat": allow
     "stat *": allow
     "tree": allow
-    "tree *": allow
     "which": allow
     "which *": allow
     "command -v": allow
@@ -40,11 +38,8 @@ permission:
     "git status": allow
     "git status *": allow
     "git diff": allow
-    "git diff *": allow
     "git log": allow
-    "git log *": allow
     "git show": allow
-    "git show *": allow
     "git rev-parse": allow
     "git rev-parse *": allow
     "git worktree list": allow

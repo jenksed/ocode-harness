@@ -35,11 +35,13 @@ assert.equal(scenario('low-interruption-loop').tool_states.filter((state) => sta
 const runtimeParity = [
   ['orchestrator-git-status-observation', 'git status --short', 'ALLOW', 'completed'],
   ['orchestrator-git-add-denied', 'git add README.md', 'DENY', 'error'],
+  ['orchestrator-pipeline-write-probe', 'rg needle fixture.txt | tee marker.txt', 'DENY', 'error'],
 ];
 for (const [id, command, expected, terminal] of runtimeParity) {
   const observed = scenario(id);
   assert.equal(observed.permission_request_count, 0, `${id} does not prompt`);
   assert.equal(observed.tool_states.at(-1), terminal, `${id} native terminal state`);
+  assert.equal(observed.marker_created, false, `${id} did not create a fixture marker`);
   assert.equal(projectBashCommand(observed.rules, command).state, expected, `${id} internal matcher equals actual OpenCode result`);
 }
 const generatedOrder = Object.keys(scenario('orchestrator-git-status-observation').rules);

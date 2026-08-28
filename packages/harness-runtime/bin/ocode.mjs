@@ -386,10 +386,14 @@ function orientProject() {
       if (orientation?.project?.root !== current) {
         throw new Error(`OCODE_PROJECT_ROOT_MISMATCH: orientation root ${orientation?.project?.root ?? 'absent'} does not equal resolved project root ${current}`);
       }
+      const repositoryRoot = orientation?.git?.root ?? current;
+      if (typeof repositoryRoot !== 'string' || !repositoryRoot.startsWith('/')) {
+        throw new Error(`OCODE_PROJECT_ROOT_MISMATCH: orientation repository root ${repositoryRoot ?? 'absent'} is invalid`);
+      }
       console.log('=== ORIENTATION READY ===');
       console.log(`project root: ${current}`);
       console.log(`context:      ${resolve(current, '.opencode', 'orientation.md')}\n`);
-      return current;
+      return { invocation_dir: requested, project_root: current, repository_root: repositoryRoot };
     }
     const parent = dirname(current);
     if (parent === current) throw new Error('Orientation completed but no orientation artifact was found');
@@ -471,7 +475,8 @@ async function main() {
 
   assertRuntimeCompatibility(context.harnessRoot);
   validateProfileCompleteness(context.profile, context.manifest);
-  const projectRoot = orientProject();
+  const roots = orientProject();
+  const projectRoot = roots.project_root;
   validateProfileAvailability(context.profile, {
     cwd: projectRoot,
     env: process.env,
@@ -494,9 +499,12 @@ async function main() {
       ...process.env,
       OPENCODE_ENABLE_EXA: '1',
       OCODE_HARNESS_ROOT: context.harnessRoot,
-      // This is the one authoritative local root. The server, attach client,
-      // validation wrapper, and all child sessions inherit it with cwd below.
+      // These are runtime context, not a filesystem sandbox. The server,
+      // attach client, validation wrapper, and all child sessions use cwd at
+      // the selected project root below.
       OCODE_PROJECT_ROOT: projectRoot,
+      OCODE_REPOSITORY_ROOT: roots.repository_root,
+      OCODE_INVOCATION_DIR: roots.invocation_dir,
       OPENCODE_CONFIG_CONTENT: overlay,
     };
     if (runtimePermissions.validation_registry) {

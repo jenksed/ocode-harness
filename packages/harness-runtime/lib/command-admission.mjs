@@ -20,6 +20,7 @@ const REMOTE = /^(?:git\s+push\b|git\s+fetch\b|git\s+pull\b|curl\b|wget\b|ssh\b|
 const REPOSITORY = /^(?:git\s+(?:add|commit|merge|rebase|checkout|switch|restore|cherry-pick)\b)/;
 const WORKSPACE = /^(?:mkdir|touch|cp|mv|sed\s+-i|perl\s+-i|npm\s+(?:install|ci)|pnpm\s+(?:install|add)|yarn\s+(?:add|install))\b/;
 const SHELL_COMPOSITION = /[\n\r;&|><`$\\]|\$\(|\)\s*\(/;
+const OBSERVATION_SHAPED_MUTATION = /^(?:git\s+(?:show|diff|log)\b.*(?:--output(?:=|\s)|-o\s)|find\b.*\s-(?:delete|exec|execdir|ok|okdir)\b|tree\b.*\s(?:-o\s|--output(?:=|\s)))/;
 const NATIVE_STRUCTURAL_DENIES = Object.freeze({
   '*>*': 'deny',
   '*<*': 'deny',
@@ -34,14 +35,18 @@ const NATIVE_STRUCTURAL_DENIES = Object.freeze({
   'git commit': 'deny',
   'git commit *': 'deny',
   'rm -rf *': 'deny',
+  'find *': 'deny',
 });
 
 const OBSERVATION_PATTERNS = new Set([
-  'ls', 'ls *', 'pwd', 'rg', 'rg *', 'grep', 'grep *', 'find', 'find *',
+  // Native Bash ALLOW is deliberately narrower than semantic observation.
+  // Commands with command-native output/action options stay outside wildcard
+  // admission and receive the native policy's normal routing instead.
+  'ls', 'ls *', 'pwd', 'rg', 'rg *', 'grep', 'grep *', 'find',
   'head', 'head *', 'tail', 'tail *', 'wc', 'wc *', 'file', 'file *',
-  'stat', 'stat *', 'tree', 'tree *', 'which', 'which *', 'command -v', 'command -v *',
+  'stat', 'stat *', 'tree', 'which', 'which *', 'command -v', 'command -v *',
   'git status', 'git status *',
-  'git diff', 'git diff *', 'git log', 'git log *', 'git show', 'git show *',
+  'git diff', 'git log', 'git show',
   'git rev-parse', 'git rev-parse *', 'git worktree list', 'git worktree list *',
   'git branch --show-current', 'git branch --list', 'git branch --list *',
   'git branch -a', 'git branch -r',
@@ -64,6 +69,7 @@ function gitEffect(command) {
 export function classifyCommand(command) {
   const normalized = normalizedCommand(command);
   if (SHELL_COMPOSITION.test(normalized)) return { risk_class: COMMAND_RISK_CLASSES.UNKNOWN, normalized, reason: 'SHELL_COMPOSITION_OR_EXPANSION' };
+  if (OBSERVATION_SHAPED_MUTATION.test(normalized)) return { risk_class: COMMAND_RISK_CLASSES.WORKSPACE_EFFECT, normalized, reason: 'OBSERVATION_SHAPED_MUTATION_PATTERN' };
   const effect = gitEffect(normalized);
   if (effect === 'push') return { risk_class: COMMAND_RISK_CLASSES.REMOTE_EFFECT, normalized, git_effect: effect, reason: 'REMOTE_OR_NETWORK_PATTERN' };
   if (effect) return { risk_class: COMMAND_RISK_CLASSES.REPOSITORY_EFFECT, normalized, git_effect: effect, reason: 'REPOSITORY_MUTATION_PATTERN' };
@@ -148,6 +154,10 @@ export function createNativeBashPermissionRules({ baseRules = {}, validationRegi
     if (typeof pattern !== 'string' || !pattern || !['allow', 'ask', 'deny'].includes(action)) throw new Error('baseRules contains an invalid native permission rule');
     if (/^(?:npm test|npm run |pnpm |yarn |pytest|python -m pytest|go (?:test|build)|mix (?:test|compile)|cargo (?:test|build))/.test(pattern)) validationPatterns.add(pattern);
   }
+  // A role missing any governed Git closeout authority receives a native
+  // catch-all denial. This remains intentionally fail-closed until native
+  // matching of executable/environment-prefixed Git forms is qualified;
+  // otherwise an ASK could manufacture a missing stage/commit/push grant.
   const restricted = roleAuthority && (
     roleAuthority.may_edit === false
     || roleAuthority.may_stage === false

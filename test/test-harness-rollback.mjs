@@ -121,10 +121,10 @@ if (existsSync(rootNodeModules)) {
   cpSync(rootNodeModules, join(testSourceDir, 'node_modules'), { recursive: true });
 }
 
-// Write initial VERSION (v0.1.0)
-writeFileSync(join(testSourceDir, 'VERSION'), 'v0.1.0\n', 'utf8');
+// Write initial VERSION (0.1.0)
+writeFileSync(join(testSourceDir, 'VERSION'), '0.1.0\n', 'utf8');
 
-// Set up initial installation (v0.1.0)
+// Set up initial installation (0.1.0)
 mkdirSync(testBinDir, { recursive: true });
 mkdirSync(testConfigDir, { recursive: true });
 mkdirSync(testHarnessRoot, { recursive: true });
@@ -204,7 +204,7 @@ for (const agentFile of agentFiles) {
 }
 
 // Write initial VERSION
-writeFileSync(join(testHarnessRoot, 'VERSION'), 'v0.1.0\n', 'utf8');
+writeFileSync(join(testHarnessRoot, 'VERSION'), '0.1.0\n', 'utf8');
 
 // Create initial launchers
 const orientLauncher = `#!/bin/sh
@@ -247,21 +247,21 @@ try {
   let allPassed = true;
 
   // Test 1: Initial version
-  console.log('\n=== Test 1: Initial version v0.1.0 ===\n');
+  console.log('\n=== Test 1: Initial version 0.1.0 ===\n');
   let result = execSync(`harness version --json`, { encoding: 'utf8', env: { ...process.env }, cwd: testSourceDir });
   let output = JSON.parse(result.trim());
   console.log('Output:', JSON.stringify(output, null, 2));
 
-  if (output.installed_version === 'v0.1.0') {
-    console.log('✓ Initial version v0.1.0');
+  if (output.installed_version === '0.1.0') {
+    console.log('✓ Initial version 0.1.0');
   } else {
     console.error(`✗ Initial version mismatch: ${output.installed_version}`);
     allPassed = false;
   }
 
-  // Test 2: Update to v0.2.0
-  console.log('\n=== Test 2: Update to v0.2.0 ===\n');
-  writeFileSync(join(testSourceDir, 'VERSION'), 'v0.2.0\n', 'utf8');
+  // Test 2: Update to 0.2.0
+  console.log('\n=== Test 2: Update to 0.2.0 ===\n');
+  writeFileSync(join(testSourceDir, 'VERSION'), '0.2.0\n', 'utf8');
   const hrPkg = JSON.parse(readFileSync(join(testSourceHarnessRuntimeDir, 'package.json'), 'utf8'));
   hrPkg.version = '0.2.0';
   writeFileSync(join(testSourceHarnessRuntimeDir, 'package.json'), JSON.stringify(hrPkg, null, 2), 'utf8');
@@ -272,21 +272,21 @@ try {
   try {
     result = execSync(`harness update`, { encoding: 'utf8', env: { ...process.env, HOME: testHome }, cwd: testSourceDir });
     console.log('Output:\n', result);
-    console.log('✓ Update to v0.2.0 succeeded');
+    console.log('✓ Update to 0.2.0 succeeded');
   } catch (err) {
-    console.error('✗ Update to v0.2.0 failed:', err.message);
+    console.error('✗ Update to 0.2.0 failed:', err.message);
     allPassed = false;
   }
 
   // Modify file AFTER update succeeds so the modification persists
   const originalContent = readFileSync(testFile, 'utf8');
-  writeFileSync(testFile, originalContent + '\n// v0.2.0 MODIFICATION\n', 'utf8');
+  writeFileSync(testFile, originalContent + '\n// 0.2.0 MODIFICATION\n', 'utf8');
 
-  // Verify v0.2.0
+  // Verify 0.2.0
   result = execSync(`harness version --json`, { encoding: 'utf8', env: { ...process.env }, cwd: testSourceDir });
   output = JSON.parse(result.trim());
-  if (output.installed_version === 'v0.2.0') {
-    console.log('✓ Version updated to v0.2.0');
+  if (output.installed_version === '0.2.0') {
+    console.log('✓ Version updated to 0.2.0');
   } else {
     console.error(`✗ Version not updated: ${output.installed_version}`);
     allPassed = false;
@@ -294,44 +294,44 @@ try {
 
   // Verify modification exists
   const v020Content = readFileSync(testFile, 'utf8');
-  if (v020Content.includes('v0.2.0 MODIFICATION')) {
-    console.log('✓ v0.2.0 modification present');
+  if (v020Content.includes('0.2.0 MODIFICATION')) {
+    console.log('✓ 0.2.0 modification present');
   } else {
-    console.error('✗ v0.2.0 modification missing');
+    console.error('✗ 0.2.0 modification missing');
     allPassed = false;
   }
 
-  // Test 3: Update to v0.3.0 (creates another backup)
-  console.log('\n=== Test 3: Update to v0.3.0 (second update) ===\n');
-  writeFileSync(join(testSourceDir, 'VERSION'), 'v0.3.0\n', 'utf8');
+  // Test 3: Update to 0.3.0 (creates another backup)
+  console.log('\n=== Test 3: Update to 0.3.0 (second update) ===\n');
+  writeFileSync(join(testSourceDir, 'VERSION'), '0.3.0\n', 'utf8');
   hrPkg.version = '0.3.0';
   writeFileSync(join(testSourceHarnessRuntimeDir, 'package.json'), JSON.stringify(hrPkg, null, 2), 'utf8');
 
-  // Modify file again AFTER update so the v0.2.0 backup is clean
+  // Modify file again AFTER update so the 0.2.0 backup is clean
   try {
     result = execSync(`harness update`, { encoding: 'utf8', env: { ...process.env, HOME: testHome }, cwd: testSourceDir });
     console.log('Output:\n', result);
-    console.log('✓ Update to v0.3.0 succeeded');
+    console.log('✓ Update to 0.3.0 succeeded');
   } catch (err) {
-    console.error('✗ Update to v0.3.0 failed:', err.message);
+    console.error('✗ Update to 0.3.0 failed:', err.message);
     allPassed = false;
   }
 
   // Modify file again AFTER update succeeds
-  writeFileSync(testFile, originalContent + '\n// v0.3.0 MODIFICATION\n', 'utf8');
+  writeFileSync(testFile, originalContent + '\n// 0.3.0 MODIFICATION\n', 'utf8');
 
-  // Verify v0.3.0
+  // Verify 0.3.0
   result = execSync(`harness version --json`, { encoding: 'utf8', env: { ...process.env }, cwd: testSourceDir });
   output = JSON.parse(result.trim());
-  if (output.installed_version === 'v0.3.0') {
-    console.log('✓ Version updated to v0.3.0');
+  if (output.installed_version === '0.3.0') {
+    console.log('✓ Version updated to 0.3.0');
   } else {
     console.error(`✗ Version not updated: ${output.installed_version}`);
     allPassed = false;
   }
 
-  // Test 4: Rollback to v0.2.0
-  console.log('\n=== Test 4: Rollback to v0.2.0 ===\n');
+  // Test 4: Rollback to 0.2.0
+  console.log('\n=== Test 4: Rollback to 0.2.0 ===\n');
   try {
     result = execSync(`harness rollback`, { encoding: 'utf8', env: { ...process.env, HOME: testHome } });
     console.log('Output:\n', result);
@@ -341,24 +341,24 @@ try {
     allPassed = false;
   }
 
-  // Verify rolled back to v0.2.0
+  // Verify rolled back to 0.2.0
   result = execSync(`harness version --json`, { encoding: 'utf8', env: { ...process.env }, cwd: testSourceDir });
   output = JSON.parse(result.trim());
   console.log('Post-rollback version:', JSON.stringify(output, null, 2));
 
-  if (output.installed_version === 'v0.2.0') {
-    console.log('✓ Rolled back to v0.2.0');
+  if (output.installed_version === '0.2.0') {
+    console.log('✓ Rolled back to 0.2.0');
   } else {
     console.error(`✗ Version after rollback: ${output.installed_version}`);
     allPassed = false;
   }
 
-  // Verify v0.2.0 modification restored
+  // Verify 0.2.0 modification restored
   const rolledBackContent = readFileSync(testFile, 'utf8');
-  if (rolledBackContent.includes('v0.2.0 MODIFICATION')) {
-    console.log('✓ v0.2.0 modification restored');
-  } else if (rolledBackContent.includes('v0.3.0 MODIFICATION')) {
-    console.error('✗ v0.3.0 modification still present (rollback failed)');
+  if (rolledBackContent.includes('0.2.0 MODIFICATION')) {
+    console.log('✓ 0.2.0 modification restored');
+  } else if (rolledBackContent.includes('0.3.0 MODIFICATION')) {
+    console.error('✗ 0.3.0 modification still present (rollback failed)');
     allPassed = false;
   } else {
     console.error('✗ Neither modification present (file may be original)');
@@ -366,8 +366,8 @@ try {
     console.log('  (Original content restored - acceptable)');
   }
 
-  // Test 5: Rollback again to v0.1.0
-  console.log('\n=== Test 5: Rollback to v0.1.0 ===\n');
+  // Test 5: Rollback again to 0.1.0
+  console.log('\n=== Test 5: Rollback to 0.1.0 ===\n');
   try {
     result = execSync(`harness rollback`, { encoding: 'utf8', env: { ...process.env, HOME: testHome } });
     console.log('Output:\n', result);
@@ -377,13 +377,13 @@ try {
     allPassed = false;
   }
 
-  // Verify rolled back to v0.1.0
+  // Verify rolled back to 0.1.0
   result = execSync(`harness version --json`, { encoding: 'utf8', env: { ...process.env }, cwd: testSourceDir });
   output = JSON.parse(result.trim());
   console.log('Post-second-rollback version:', JSON.stringify(output, null, 2));
 
-  if (output.installed_version === 'v0.1.0') {
-    console.log('✓ Rolled back to v0.1.0');
+  if (output.installed_version === '0.1.0') {
+    console.log('✓ Rolled back to 0.1.0');
   } else {
     console.error(`✗ Version after second rollback: ${output.installed_version}`);
     allPassed = false;

@@ -44,6 +44,33 @@ and managed OpenCode agents under:
 
 The source checkout and the installed runtime are separate authorities. Editing the checkout does not alter the installed runtime.
 
+## Product version and source identity
+
+`VERSION` is Ocode's sole semantic product-version authority. It is UTF-8 text
+containing one bare SemVer value, with no `v` prefix or surrounding whitespace
+and with at most one final newline. Root `package.json`,
+`packages/harness-runtime/package.json`, and the root metadata in
+`package-lock.json` are product-version mirrors; the private orientation package
+does not participate in the Ocode product version.
+
+Change `VERSION`, then run:
+
+```bash
+npm run version:sync
+npm run version:check
+```
+
+The check fails on mirror drift and sync changes only those mirror fields.
+Source-side release identity reads `VERSION` directly, validates it, and pairs
+it with Git provenance. A clean Git source identity is exactly its canonical
+semantic version and full commit SHA; `source_ref` is diagnostic provenance and
+does not affect identity equality. A dirty checkout and a non-Git source are not
+exact source identities. `RELEASE.json` remains self-contained when installed:
+it validates its embedded schema and metadata without locating a checkout,
+`VERSION`, Git, or a branch. It proves semantic version plus source provenance,
+not dependency closure, artifact bytes, or installed-artifact integrity; those
+remain Phase 2 concerns.
+
 ## Verify the installed release
 
 ```bash

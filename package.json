@@ -5,7 +5,7 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "test": "node test/test-installer.mjs && node test/test-doctor.mjs && node test/test-agents.mjs && node test/test-orientation.mjs && node test/test-secrets.mjs && node test/test-ledger.mjs && node test/test-lifecycle.mjs && node test/test-evidence.mjs && node test/test-closeout.mjs && node test/test-committer.mjs && node test/test-composition.mjs && node test/test-verify.mjs && node test/test-activity.mjs && node test/test-work-view.mjs && node test/test-interactive-activity.mjs && node test/test-opencode-integration.mjs && node test/test-opencode-sdk-execution.mjs && node test/test-qualification-engine.mjs && node test/test-qualification-recovery.mjs && node test/test-execution-profiles.mjs && node test/test-governance-contracts.mjs && node test/test-admission.mjs && node test/test-permission-governance.mjs && node test/test-native-opencode-approval-policy.mjs && node test/test-subject-reconciliation.mjs && node test/test-govern-cli.mjs && node test/test-wayfinding.mjs && node test/test-skills.mjs && node test/test-m6.3-skills.mjs && node test/test-m6.4-skills.mjs && node test/test-m6.5-skills.mjs && node test/test-runtime-evolution.mjs && node test/test-release-identity.mjs && node test/test-harness-version.mjs && node test/test-harness-update.mjs && node test/test-harness-rollback.mjs",
+    "test": "node test/test-installer.mjs && node test/test-doctor.mjs && node test/test-agents.mjs && node test/test-orientation.mjs && node test/test-secrets.mjs && node test/test-ledger.mjs && node test/test-lifecycle.mjs && node test/test-evidence.mjs && node test/test-closeout.mjs && node test/test-committer.mjs && node test/test-composition.mjs && node test/test-verify.mjs && node test/test-activity.mjs && node test/test-work-view.mjs && node test/test-interactive-activity.mjs && node test/test-opencode-integration.mjs && node test/test-opencode-sdk-execution.mjs && node test/test-qualification-engine.mjs && node test/test-qualification-recovery.mjs && node test/test-execution-profiles.mjs && node test/test-governance-contracts.mjs && node test/test-admission.mjs && node test/test-permission-governance.mjs && node test/test-native-opencode-approval-policy.mjs && node test/test-subject-reconciliation.mjs && node test/test-govern-cli.mjs && node test/test-wayfinding.mjs && node test/test-skills.mjs && node test/test-m6.3-skills.mjs && node test/test-m6.4-skills.mjs && node test/test-m6.5-skills.mjs && node test/test-runtime-evolution.mjs && node test/test-version-authority.mjs && node test/test-release-identity.mjs && node test/test-harness-version.mjs && node test/test-harness-update.mjs && node test/test-harness-rollback.mjs",
     "test:runtime-evolution": "node test/test-runtime-evolution.mjs && node test/test-opencode-permission-qualification.mjs",
     "test:agents": "node test/test-agents.mjs",
     "test:closeout": "node test/test-closeout.mjs",
@@ -16,6 +16,8 @@
     "test:harness:version": "node test/test-harness-version.mjs",
     "test:harness:update": "node test/test-harness-update.mjs",
     "test:harness:rollback": "node test/test-harness-rollback.mjs",
+    "version:check": "node scripts/version-authority.mjs check",
+    "version:sync": "node scripts/version-authority.mjs sync",
     "test:installer": "node test/test-installer.mjs",
     "test:ledger": "node test/test-ledger.mjs",
     "test:lifecycle": "node test/test-lifecycle.mjs",

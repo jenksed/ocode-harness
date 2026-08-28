@@ -160,7 +160,7 @@ function getInstalledVersionInfo() {
   const sourceRoot = findSourceRepo(process.cwd());
   if (sourceRoot) {
     sourceVersion = readVersion(join(sourceRoot, 'VERSION'));
-    if (sourceVersion) sourceIdentity = inspectSourceIdentity(sourceRoot, sourceVersion);
+    if (sourceVersion) sourceIdentity = inspectSourceIdentity(sourceRoot);
     if (sourceIdentity && installedIdentity
         && isExactReleaseIdentity(sourceIdentity)
         && isExactReleaseIdentity(installedIdentity)) {
@@ -229,7 +229,7 @@ program
 
       const sourceVersion = readVersion(join(sourceRoot, 'VERSION'));
       if (!sourceVersion) throw new Error('Could not read VERSION from source repository');
-      const sourceIdentity = assertPromotableSourceIdentity(inspectSourceIdentity(sourceRoot, sourceVersion));
+      const sourceIdentity = assertPromotableSourceIdentity(inspectSourceIdentity(sourceRoot));
       console.log(`Source version: ${sourceVersion}`);
       console.log(`Source SHA: ${sourceIdentity.source_commit || 'unavailable'}`);
       console.log(`Source ref: ${sourceIdentity.source_ref || 'detached/unknown'}`);

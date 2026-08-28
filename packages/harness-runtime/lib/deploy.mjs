@@ -48,6 +48,7 @@ export const DEFAULT_MACHINE_CONFIG = {
 
 export const RELEASE_IDENTITY_SCHEMA_VERSION = 1;
 export const RELEASE_IDENTITY_FILENAME = 'RELEASE.json';
+export const PRODUCT_VERSION_PATTERN = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|\d*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
 
 const LEGACY_OCODE_FREELLMAPI_MODELS = [
   'auto:smart',
@@ -64,11 +65,22 @@ const LEGACY_OCODE_FREELLMAPI_MODELS = [
 
 export function readVersion(versionPath) {
   if (!existsSync(versionPath)) return null;
-  return readFileSync(versionPath, 'utf8').trim();
+  const source = readFileSync(versionPath, 'utf8');
+  if (!/^(?:[^\n\r]+)\n?$/.test(source)) {
+    throw new Error(`OCODE_PRODUCT_VERSION_INVALID: ${versionPath} must contain one bare SemVer value with at most one final newline`);
+  }
+  return validateProductVersion(source.endsWith('\n') ? source.slice(0, -1) : source);
 }
 
 export function writeVersion(targetDir, version) {
-  writeFileSync(join(targetDir, 'VERSION'), version + '\n', 'utf8');
+  writeFileSync(join(targetDir, 'VERSION'), `${validateProductVersion(version)}\n`, 'utf8');
+}
+
+export function validateProductVersion(version) {
+  if (typeof version !== 'string' || !PRODUCT_VERSION_PATTERN.test(version)) {
+    throw new Error('OCODE_PRODUCT_VERSION_INVALID: expected bare SemVer without a leading v or surrounding whitespace');
+  }
+  return version;
 }
 
 function runGit(sourceRoot, args) {
@@ -87,9 +99,7 @@ export function validateReleaseIdentity(identity) {
   if (identity.schema_version !== RELEASE_IDENTITY_SCHEMA_VERSION) {
     throw new Error(`Release identity schema_version must be ${RELEASE_IDENTITY_SCHEMA_VERSION}`);
   }
-  if (typeof identity.version !== 'string' || !identity.version) {
-    throw new Error('Release identity version must be a non-empty string');
-  }
+  try { validateProductVersion(identity.version); } catch { throw new Error('Release identity version must be canonical bare SemVer'); }
   if (identity.source_commit !== null
       && (typeof identity.source_commit !== 'string' || !/^[0-9a-f]{40}$/.test(identity.source_commit))) {
     throw new Error('Release identity source_commit must be a full lowercase Git SHA or null');
@@ -106,9 +116,11 @@ export function validateReleaseIdentity(identity) {
   return identity;
 }
 
-export function inspectSourceIdentity(sourceRoot, version) {
-  if (typeof version !== 'string' || !version) {
-    throw new Error('Cannot inspect release identity without a semantic version');
+export function inspectSourceIdentity(sourceRoot, legacyExpectedVersion = undefined) {
+  const version = readVersion(join(sourceRoot, 'VERSION'));
+  if (!version) throw new Error('Cannot inspect release identity without canonical source VERSION');
+  if (legacyExpectedVersion !== undefined && legacyExpectedVersion !== version) {
+    throw new Error('OCODE_PRODUCT_VERSION_MISMATCH: source identity derives its version from source VERSION');
   }
   const sourceCommit = runGit(sourceRoot, ['rev-parse', '--verify', 'HEAD']);
   if (!sourceCommit || !/^[0-9a-f]{40}$/.test(sourceCommit)) {

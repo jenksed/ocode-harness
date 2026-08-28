@@ -121,10 +121,10 @@ if (existsSync(rootNodeModules)) {
   cpSync(rootNodeModules, join(testSourceDir, 'node_modules'), { recursive: true });
 }
 
-// Write initial VERSION (v0.1.0)
-writeFileSync(join(testSourceDir, 'VERSION'), 'v0.1.0\n', 'utf8');
+// Write initial VERSION (0.1.0)
+writeFileSync(join(testSourceDir, 'VERSION'), '0.1.0\n', 'utf8');
 
-// Set up initial installation (v0.1.0)
+// Set up initial installation (0.1.0)
 mkdirSync(testBinDir, { recursive: true });
 mkdirSync(testConfigDir, { recursive: true });
 mkdirSync(testHarnessRoot, { recursive: true });
@@ -202,7 +202,7 @@ for (const agentFile of agentFiles) {
 }
 
 // Write initial VERSION
-writeFileSync(join(testHarnessRoot, 'VERSION'), 'v0.1.0\n', 'utf8');
+writeFileSync(join(testHarnessRoot, 'VERSION'), '0.1.0\n', 'utf8');
 
 // Create initial launchers
 const orientLauncher = `#!/bin/sh
@@ -250,8 +250,8 @@ try {
   let output = JSON.parse(result.trim());
   console.log('Output:', JSON.stringify(output, null, 2));
 
-  if (output.installed_version === 'v0.1.0') {
-    console.log('✓ Initial installed version is v0.1.0');
+  if (output.installed_version === '0.1.0') {
+    console.log('✓ Initial installed version is 0.1.0');
   } else {
     console.error(`✗ Initial version mismatch: ${output.installed_version}`);
     allPassed = false;
@@ -271,16 +271,16 @@ try {
   // Verify version unchanged
   result = execSync(`harness version --json`, { encoding: 'utf8', env: { ...process.env }, cwd: testSourceDir });
   output = JSON.parse(result.trim());
-  if (output.installed_version === 'v0.1.0') {
-    console.log('✓ Version still v0.1.0 after force update');
+  if (output.installed_version === '0.1.0') {
+    console.log('✓ Version still 0.1.0 after force update');
   } else {
     console.error(`✗ Version changed unexpectedly: ${output.installed_version}`);
     allPassed = false;
   }
 
-  // Test 3: Modify source repo to v0.2.0
-  console.log('\n=== Test 3: Update to new version (v0.2.0) ===\n');
-  writeFileSync(join(testSourceDir, 'VERSION'), 'v0.2.0\n', 'utf8');
+  // Test 3: Modify source repo to 0.2.0
+  console.log('\n=== Test 3: Update to new version (0.2.0) ===\n');
+  writeFileSync(join(testSourceDir, 'VERSION'), '0.2.0\n', 'utf8');
 
   // Also update the source harness-runtime package.json version for detection
   const hrPkg = JSON.parse(readFileSync(join(testSourceHarnessRuntimeDir, 'package.json'), 'utf8'));
@@ -290,9 +290,9 @@ try {
   try {
     result = execSync(`harness update`, { encoding: 'utf8', env: { ...process.env, HOME: testHome }, cwd: testSourceDir });
     console.log('Output:\n', result);
-    console.log('✓ Update to v0.2.0 succeeded');
+    console.log('✓ Update to 0.2.0 succeeded');
   } catch (err) {
-    console.error('✗ Update to v0.2.0 failed:', err.message);
+    console.error('✗ Update to 0.2.0 failed:', err.message);
     allPassed = false;
   }
 
@@ -301,14 +301,14 @@ try {
   output = JSON.parse(result.trim());
   console.log('Post-update version:', JSON.stringify(output, null, 2));
 
-  if (output.installed_version === 'v0.2.0') {
-    console.log('✓ Installed version updated to v0.2.0');
+  if (output.installed_version === '0.2.0') {
+    console.log('✓ Installed version updated to 0.2.0');
   } else {
     console.error(`✗ Installed version not updated: ${output.installed_version}`);
     allPassed = false;
   }
 
-  if (output.source_version === 'v0.2.0') {
+  if (output.source_version === '0.2.0') {
     console.log('✓ Source version matches');
   } else {
     console.error(`✗ Source version mismatch: ${output.source_version}`);
@@ -378,10 +378,10 @@ try {
     allPassed = false;
   }
 
-  // Version should still be v0.2.0
+  // Version should still be 0.2.0
   result = execSync(`harness version --json`, { encoding: 'utf8', env: { ...process.env }, cwd: testSourceDir });
   output = JSON.parse(result.trim());
-  if (output.installed_version === 'v0.2.0') {
+  if (output.installed_version === '0.2.0') {
     console.log('✓ Version stable after repeated update');
   } else {
     console.error(`✗ Version changed after repeated update: ${output.installed_version}`);

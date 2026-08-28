@@ -29,10 +29,11 @@ try {
   git(source, 'config', 'user.email', 'ocode-test@example.invalid');
   git(source, 'config', 'user.name', 'Ocode Test');
   writeFileSync(join(source, 'tracked.txt'), 'one\n');
-  git(source, 'add', 'tracked.txt');
+  writeFileSync(join(source, 'VERSION'), '0.1.0\n');
+  git(source, 'add', 'tracked.txt', 'VERSION');
   git(source, 'commit', '-q', '-m', 'initial');
 
-  const first = inspectSourceIdentity(source, 'v0.1.0');
+  const first = inspectSourceIdentity(source);
   assert.equal(isExactReleaseIdentity(first), true);
   assert.equal(first.source_commit, git(source, 'rev-parse', 'HEAD'));
   assert.equal(first.source_dirty, false);
@@ -43,24 +44,30 @@ try {
   assert.equal(sameReleaseIdentity(first, readReleaseIdentity(installed)), true);
 
   writeFileSync(join(source, 'tracked.txt'), 'two\n');
-  const dirty = inspectSourceIdentity(source, 'v0.1.0');
+  const dirty = inspectSourceIdentity(source);
   assert.equal(dirty.source_commit, first.source_commit);
   assert.equal(dirty.source_dirty, true);
   assert.throws(() => assertPromotableSourceIdentity(dirty), /OCODE_RELEASE_SOURCE_DIRTY/);
 
   git(source, 'add', 'tracked.txt');
   git(source, 'commit', '-q', '-m', 'second');
-  const second = inspectSourceIdentity(source, 'v0.1.0');
+  const second = inspectSourceIdentity(source);
   assert.equal(second.version, first.version);
   assert.notEqual(second.source_commit, first.source_commit);
   assert.equal(sameReleaseIdentity(first, second), false);
+  const alternateRef = { ...second, source_ref: 'cleanup/example' };
+  assert.equal(sameReleaseIdentity(second, alternateRef), true);
 
   const nonGit = join(root, 'not-git');
   mkdirSync(nonGit, { recursive: true });
-  const unavailable = inspectSourceIdentity(nonGit, 'v0.1.0');
+  writeFileSync(join(nonGit, 'VERSION'), '0.1.0\n');
+  const unavailable = inspectSourceIdentity(nonGit);
   assert.equal(unavailable.source_commit, null);
   assert.equal(isExactReleaseIdentity(unavailable), false);
   assert.doesNotThrow(() => assertPromotableSourceIdentity(unavailable));
+
+  rmSync(source, { recursive: true, force: true });
+  assert.deepEqual(readReleaseIdentity(installed), first);
 
   console.log('RELEASE_IDENTITY_PROVEN');
 } finally {

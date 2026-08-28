@@ -210,7 +210,7 @@ try {
   mkdirSync(join(fakeSourceDir, 'agents'), { recursive: true });
   mkdirSync(join(fakeSourceDir, 'packages', 'orientation'), { recursive: true });
   mkdirSync(join(fakeSourceDir, 'installer'), { recursive: true });
-  writeFileSync(join(fakeSourceDir, 'VERSION'), 'v9.9.9\n', 'utf8');
+  writeFileSync(join(fakeSourceDir, 'VERSION'), '9.9.9\n', 'utf8');
   writeFileSync(join(fakeSourceDir, 'installer', 'install.mjs'), '// fake', 'utf8');
   // Copy minimal agents/packages
   copyFileSync(join(agentsDir, 'orchestrator.md'), join(fakeSourceDir, 'agents', 'orchestrator.md'));
@@ -225,7 +225,7 @@ try {
     const output = JSON.parse(result.trim());
     console.log('Output:', JSON.stringify(output, null, 2));
 
-    if (output.source_version === 'v9.9.9') {
+    if (output.source_version === '9.9.9') {
       console.log('✓ source_version detected from fake source repo');
     } else {
       console.error(`✗ source_version not detected: ${output.source_version}`);
@@ -233,7 +233,7 @@ try {
     }
 
     if (output.source_differs === true) {
-      console.log('✓ source_differs correctly true (v9.9.9 vs installed v0.1.0)');
+      console.log('✓ source_differs correctly true (9.9.9 vs installed 0.1.0)');
     } else {
       console.error('✗ source_differs should be true');
       allPassed = false;

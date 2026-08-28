@@ -91,7 +91,7 @@ async function main() {
 
     const version = readVersion(resolve(sourceRoot, 'VERSION'));
     if (!version) throw new Error('Could not read VERSION from source repository');
-    const sourceIdentity = assertPromotableSourceIdentity(inspectSourceIdentity(sourceRoot, version));
+    const sourceIdentity = assertPromotableSourceIdentity(inspectSourceIdentity(sourceRoot));
     console.log(`Installing version: ${version}`);
     console.log(`Source SHA: ${sourceIdentity.source_commit || 'unavailable (non-Git source)'}`);
     console.log(`Source ref: ${sourceIdentity.source_ref || 'detached/unknown'}\n`);

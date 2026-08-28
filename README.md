@@ -2,6 +2,10 @@
 
 Ocode is a deterministic harness around OpenCode for governed coding-agent work. It keeps model routing, agent responsibility, execution permission, evidence, review, and release promotion separate enough that one mechanism does not silently become authority for another.
 
+Repository integration authority, including the canonical branch and the
+preserved pre-simplification checkpoint, is recorded in
+[`docs/architecture/repository-authority.md`](docs/architecture/repository-authority.md).
+
 ## Start here
 
 Prerequisites:

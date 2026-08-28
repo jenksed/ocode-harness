@@ -26,7 +26,10 @@ function list(root, current = root, entries = []) {
 function assertSafeEntries(entries) {
   for (const entry of entries) {
     if (entry.path.startsWith('/') || entry.path.split('/').includes('..')) throw new Error(`Unsafe artifact path: ${entry.path}`);
-    if (entry.type === 'symlink' && (entry.target.startsWith('/') || posix.normalize(posix.join(posix.dirname(entry.path), entry.target)).startsWith('../'))) throw new Error(`Escaping artifact symlink: ${entry.path}`);
+    if (entry.type === 'symlink') {
+      const resolved = posix.normalize(posix.join(posix.dirname(entry.path), entry.target));
+      if (entry.target.startsWith('/') || resolved.startsWith('../') || resolved === '..') throw new Error(`Escaping artifact symlink: ${entry.path} -> ${entry.target}`);
+    }
   }
 }
 export function createArtifactManifest(root, release, lockSHA, sdkVersion) {

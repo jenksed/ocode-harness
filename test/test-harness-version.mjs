@@ -69,6 +69,8 @@ copyFileSync(join(harnessRuntimeDir, 'lib', 'admission.mjs'), join(testHarnessRo
 copyFileSync(join(harnessRuntimeDir, 'lib', 'agent-contract.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'agent-contract.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'lib', 'opencode-integration.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'opencode-integration.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'lib', 'deploy.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'deploy.mjs'));
+copyFileSync(join(harnessRuntimeDir, 'lib', 'artifact.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'artifact.mjs'));
+copyFileSync(join(harnessRuntimeDir, 'lib', 'release-store.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'release-store.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'bin', 'harness.mjs'), join(testHarnessRoot, 'harness-runtime', 'bin', 'harness.mjs'));
 
 // Copy doctrine

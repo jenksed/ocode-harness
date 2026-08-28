@@ -96,6 +96,8 @@ copyFileSync(join(harnessRuntimeDir, 'lib', 'opencode-integration.mjs'), join(te
 copyFileSync(join(harnessRuntimeDir, 'lib', 'execution.mjs'), join(testSourceHarnessRuntimeDir, 'lib', 'execution.mjs'));
 for (const lib of ['skill-contract.mjs', 'skill-capsules.mjs', 'skill-projection.mjs', 'skill-runtime.mjs']) copyFileSync(join(harnessRuntimeDir, 'lib', lib), join(testSourceHarnessRuntimeDir, 'lib', lib));
 copyFileSync(join(harnessRuntimeDir, 'lib', 'deploy.mjs'), join(testSourceHarnessRuntimeDir, 'lib', 'deploy.mjs'));
+copyFileSync(join(harnessRuntimeDir, 'lib', 'artifact.mjs'), join(testSourceHarnessRuntimeDir, 'lib', 'artifact.mjs'));
+copyFileSync(join(harnessRuntimeDir, 'lib', 'release-store.mjs'), join(testSourceHarnessRuntimeDir, 'lib', 'release-store.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'bin', 'harness.mjs'), join(testSourceHarnessRuntimeDir, 'bin', 'harness.mjs'));
 copyFileSync(join(harnessRuntimeDir, 'bin', 'ocode.mjs'), join(testSourceHarnessRuntimeDir, 'bin', 'ocode.mjs'));
 mkdirSync(join(testSourceHarnessRuntimeDir, 'bin', 'validation'), { recursive: true });
@@ -168,6 +170,8 @@ copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'opencode-integration.mjs'
 copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'execution.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'execution.mjs'));
 for (const lib of ['skill-contract.mjs', 'skill-capsules.mjs', 'skill-projection.mjs', 'skill-runtime.mjs']) copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', lib), join(testHarnessRoot, 'harness-runtime', 'lib', lib));
 copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'deploy.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'deploy.mjs'));
+copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'artifact.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'artifact.mjs'));
+copyFileSync(join(testSourceHarnessRuntimeDir, 'lib', 'release-store.mjs'), join(testHarnessRoot, 'harness-runtime', 'lib', 'release-store.mjs'));
 copyFileSync(join(testSourceHarnessRuntimeDir, 'bin', 'harness.mjs'), join(testHarnessRoot, 'harness-runtime', 'bin', 'harness.mjs'));
 copyFileSync(join(testSourceHarnessRuntimeDir, 'bin', 'ocode.mjs'), join(testHarnessRoot, 'harness-runtime', 'bin', 'ocode.mjs'));
 copyFileSync(join(testSourceHarnessRuntimeDir, 'bin', 'validation', 'npm'), join(testHarnessRoot, 'harness-runtime', 'bin', 'validation', 'npm'));

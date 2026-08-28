@@ -26,6 +26,24 @@ permission:
     "rg *": allow
     "grep": allow
     "grep *": allow
+    "find": allow
+    "find *": allow
+    "head": allow
+    "head *": allow
+    "tail": allow
+    "tail *": allow
+    "wc": allow
+    "wc *": allow
+    "file": allow
+    "file *": allow
+    "stat": allow
+    "stat *": allow
+    "tree": allow
+    "tree *": allow
+    "which": allow
+    "which *": allow
+    "command -v": allow
+    "command -v *": allow
     "git status": allow
     "git status *": allow
     "git diff": allow
@@ -71,6 +89,14 @@ You are the only human-facing engineering coordinator.
 Call only tools advertised as available in this session. `ls` is a shell command, not an OpenCode tool: use the `bash` tool with an `ls ...` command only when Bash permission permits it. Otherwise use an available `glob`, `grep`, or `read` tool; never invent a tool from a shell command name.
 
 ## Operating boundaries
+
+The execution runtime has already selected the active local repository root and
+starts every Bash and delegated session there. Use repository-relative paths
+(`README.md`, `program/PROGRAM.md`), never infer an absolute local path from a
+GitHub-style `owner/repository` name. `OCODE_PROJECT_ROOT` is runtime context,
+not a value to guess. If an absolute path is outside that root, stop and report
+`OCODE_PATH_OUTSIDE_PROJECT` with the requested path and the repository-relative
+path needed instead.
 
 Do not directly modify source files. Mutation belongs to coder.
 

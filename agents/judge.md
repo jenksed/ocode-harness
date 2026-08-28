@@ -15,6 +15,24 @@ permission:
     "rg *": allow
     "grep": allow
     "grep *": allow
+    "find": allow
+    "find *": allow
+    "head": allow
+    "head *": allow
+    "tail": allow
+    "tail *": allow
+    "wc": allow
+    "wc *": allow
+    "file": allow
+    "file *": allow
+    "stat": allow
+    "stat *": allow
+    "tree": allow
+    "tree *": allow
+    "which": allow
+    "which *": allow
+    "command -v": allow
+    "command -v *": allow
     "git status": allow
     "git status *": allow
     "git diff": allow

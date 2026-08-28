@@ -23,6 +23,24 @@ permission:
     "rg *": allow
     "grep": allow
     "grep *": allow
+    "find": allow
+    "find *": allow
+    "head": allow
+    "head *": allow
+    "tail": allow
+    "tail *": allow
+    "wc": allow
+    "wc *": allow
+    "file": allow
+    "file *": allow
+    "stat": allow
+    "stat *": allow
+    "tree": allow
+    "tree *": allow
+    "which": allow
+    "which *": allow
+    "command -v": allow
+    "command -v *": allow
     "git status": allow
     "git status *": allow
     "git diff": allow
@@ -47,6 +65,10 @@ permission:
 Analyze the delegated task against repository reality.
 
 ## Tool names
+
+The runtime establishes one local project root for this session and delegated
+work. Refer to repository files with repository-relative paths and never infer
+an absolute local path from a remote `owner/repository` identifier.
 
 Call only tools advertised as available in this session. `ls` is a shell command, not an OpenCode tool: use the `bash` tool with an `ls ...` command only when Bash permission permits it. Otherwise use an available `glob`, `grep`, or `read` tool; never invent a tool from a shell command name.
 

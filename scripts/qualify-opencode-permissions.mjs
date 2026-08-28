@@ -1,8 +1,11 @@
 import { createServer } from 'node:http';
-import { existsSync, mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createOpencodeClient, createOpencodeServer } from '@opencode-ai/sdk';
+import { loadAgentContracts } from '../packages/harness-runtime/lib/agent-contract.mjs';
+import { createNativeBashPermissionRules } from '../packages/harness-runtime/lib/command-admission.mjs';
 
 const runtimeVersion = '1.18.21';
 const root = resolve('.');
@@ -62,9 +65,16 @@ function withEnvironment(environment, start) {
   });
 }
 
-async function runScenario({ id, command, commands = [command], rules, reply = null, files = {} }) {
+function initializeGitFixture(fixture) {
+  const git = (args) => execFileSync('git', args, { cwd: fixture, encoding: 'utf8' });
+  git(['init']); git(['config', 'user.email', 'fixture@example.test']); git(['config', 'user.name', 'Permission Fixture']);
+  git(['add', '--', '.']); git(['commit', '-m', 'fixture']); git(['branch', '-M', 'main']);
+}
+
+async function runScenario({ id, command, commands = [command], rules, reply = null, files = {}, git = false }) {
   const fixture = mkdtempSync(join(tmpdir(), `ocode-permission-${id}-`));
   for (const [path, content] of Object.entries(files)) writeFileSync(join(fixture, path), content);
+  if (git) initializeGitFixture(fixture);
   const xdg = join(fixture, '.xdg');
   for (const name of ['config', 'data', 'state', 'cache']) mkdirSync(join(xdg, name), { recursive: true });
   const provider = await startMockProvider(commands);
@@ -103,12 +113,16 @@ async function runScenario({ id, command, commands = [command], rules, reply = n
       } catch (error) { if (!abort.signal.aborted) rejectIdle(error); }
     })();
     responseData(await client.session.promptAsync({ path: { id: created.id }, query: { directory: fixture }, body: { model: { providerID: 'fixture', modelID: 'fixture' }, agent: 'probe', parts: [{ type: 'text', text: 'Run the fixture command.' }] } }), 'PROMPT');
-    await Promise.race([idle, new Promise((_, reject) => setTimeout(() => reject(new Error('SCENARIO_TIMEOUT')), 10_000))]);
+    // The local SDK/server fixture has startup overhead and serializes native
+    // tool rounds. Scale for the full admitted-command matrix rather than
+    // declaring a correct runtime unavailable after an arbitrary short limit.
+    const scenarioTimeout = Math.max(20_000, commands.length * 20_000);
+    await Promise.race([idle, new Promise((_, reject) => setTimeout(() => reject(new Error('SCENARIO_TIMEOUT')), scenarioTimeout))]);
     responseData(await client.session.abort({ path: { id: created.id }, query: { directory: fixture } }), 'SESSION_ABORT');
     abort.abort();
     const permissionEvents = events.filter((event) => event.type === 'permission.updated' || event.type === 'permission.asked');
     const toolParts = events.filter((event) => event.type === 'message.part.updated' && event.properties?.part?.type === 'tool').map((event) => event.properties.part);
-    return { id, commands, rules, reply, permission_request_count: permissionEvents.length, permission_reply: permissionReply, tool_states: toolParts.map((part) => part.state?.status).filter(Boolean), request_count: provider.requests.length, marker_created: existsSync(join(fixture, 'marker.txt')), session_abort: 'SUPPORTED' };
+    return { id, commands, rules, reply, git_fixture: git, permission_request_count: permissionEvents.length, permission_reply: permissionReply, tool_states: toolParts.map((part) => part.state?.status).filter(Boolean), request_count: provider.requests.length, marker_created: existsSync(join(fixture, 'marker.txt')), session_abort: 'SUPPORTED' };
   } finally {
     await opencode?.close?.();
     await new Promise((resolveClose) => provider.server.close(resolveClose));
@@ -117,6 +131,12 @@ async function runScenario({ id, command, commands = [command], rules, reply = n
 
 const scenarios = [];
 const requestedScenarios = new Set((process.env.OCODE_PERMISSION_SCENARIOS || '').split(',').filter(Boolean));
+const { contracts } = loadAgentContracts({ baseDir: root });
+const orchestrator = contracts.get('orchestrator');
+const orchestratorRules = createNativeBashPermissionRules({
+  baseRules: orchestrator.permissions.bash,
+  roleAuthority: orchestrator.authority,
+});
 for (const scenario of [
   { id: 'exact-allow', command: 'pwd', rules: { '*': 'ask', pwd: 'allow' } },
   { id: 'no-match-default', command: 'pwd', rules: { 'git status': 'allow' } },
@@ -139,11 +159,32 @@ for (const scenario of [
   { id: 'admitted-validation', command: 'npm test', rules: { '*': 'ask', 'npm test': 'allow', '*>*': 'deny', '*<*': 'deny' }, files: { 'package.json': '{"scripts":{"test":"node -e \\"process.exit(0)\\""}}' } },
   { id: 'remote-deny', command: 'git push origin fixture', rules: { '*': 'ask', 'git push *': 'deny' } },
   { id: 'low-interruption-loop', commands: ['pwd', 'rg needle fixture.txt', 'npm test', 'npm test'], rules: { '*': 'ask', pwd: 'allow', 'rg *': 'allow', 'npm test': 'allow', '*>*': 'deny', '*<*': 'deny' }, files: { 'fixture.txt': 'needle\n', 'package.json': '{"scripts":{"test":"node -e \\"process.exit(0)\\""}}' } },
+  {
+    id: 'orchestrator-safe-observation',
+    commands: ['pwd', 'ls', 'ls -la', 'rg needle fixture.txt', 'grep needle fixture.txt', 'find . -maxdepth 1', 'head fixture.txt', 'tail fixture.txt', 'wc fixture.txt', 'file fixture.txt', 'stat fixture.txt', 'tree .', 'which git', 'command -v git', 'git status --short', 'git diff', 'git log --oneline -5', 'git show HEAD:README.md', 'git rev-parse HEAD', 'git branch --show-current', 'git branch --list', 'git worktree list'],
+    rules: orchestratorRules,
+    git: true,
+    files: { 'README.md': '# fixture\n', 'fixture.txt': 'needle\n' },
+  },
+  {
+    id: 'orchestrator-mutation-denied',
+    commands: ['git add README.md', 'git commit -m denied', 'git switch denied', 'git restore README.md', 'git push origin main', 'echo x > marker.txt', 'rg needle fixture.txt > marker.txt'],
+    rules: orchestratorRules,
+    git: true,
+    files: { 'README.md': '# fixture\n', 'fixture.txt': 'needle\n' },
+  },
+  { id: 'orchestrator-git-add-denied', command: 'git add README.md', rules: orchestratorRules, git: true, files: { 'README.md': '# fixture\n' } },
+  { id: 'orchestrator-git-status-observation', command: 'git status --short', rules: orchestratorRules, git: true, files: { 'README.md': '# fixture\n' } },
 ]) {
   if (!requestedScenarios.size || requestedScenarios.has(scenario.id)) scenarios.push(await runScenario(scenario));
 }
 
-const artifact = { schema_version: 1, runtime: { opencode: runtimeVersion, sdk: runtimeVersion }, observed_at: new Date().toISOString(), method: 'local OpenAI-compatible non-inference fixture through installed SDK/server', lifecycle: { server_start: 'SUPPORTED', sdk_endpoint: 'SUPPORTED', session_create: 'SUPPORTED', event_subscribe: 'SUPPORTED', prompt_submit: 'SUPPORTED', session_completion: 'SUPPORTED', session_abort: 'SUPPORTED', clean_shutdown: 'SUPPORTED' }, scenarios };
+const baseEvidencePath = process.env.OCODE_PERMISSION_BASE_EVIDENCE ? resolve(process.env.OCODE_PERMISSION_BASE_EVIDENCE) : null;
+const baseEvidence = baseEvidencePath && existsSync(baseEvidencePath) ? JSON.parse(readFileSync(baseEvidencePath, 'utf8')) : null;
+const mergedScenarios = baseEvidence
+  ? [...baseEvidence.scenarios.filter((entry) => !scenarios.some((next) => next.id === entry.id)), ...scenarios]
+  : scenarios;
+const artifact = { schema_version: 1, runtime: { opencode: runtimeVersion, sdk: runtimeVersion }, observed_at: new Date().toISOString(), method: 'local OpenAI-compatible non-inference fixture through installed SDK/server', lifecycle: { server_start: 'SUPPORTED', sdk_endpoint: 'SUPPORTED', session_create: 'SUPPORTED', event_subscribe: 'SUPPORTED', prompt_submit: 'SUPPORTED', session_completion: 'SUPPORTED', session_abort: 'SUPPORTED', clean_shutdown: 'SUPPORTED' }, scenarios: mergedScenarios };
 mkdirSync(resolve('qualification'), { recursive: true });
 writeFileSync(artifactPath, `${JSON.stringify(artifact, null, 2)}\n`);
 console.log(JSON.stringify({ status: 'OPENCODE_PERMISSION_CHARACTERIZATION_RECORDED', artifact: artifactPath, scenarios: scenarios.map(({ id, permission_request_count, tool_states }) => ({ id, permission_request_count, tool_states })) }));

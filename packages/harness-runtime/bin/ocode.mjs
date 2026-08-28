@@ -376,6 +376,16 @@ function orientProject() {
   while (true) {
     if (existsSync(resolve(current, '.opencode', 'orientation.json'))
       && existsSync(resolve(current, '.opencode', 'orientation.md'))) {
+      const orientationPath = resolve(current, '.opencode', 'orientation.json');
+      let orientation;
+      try {
+        orientation = JSON.parse(readFileSync(orientationPath, 'utf8'));
+      } catch {
+        throw new Error(`OCODE_PROJECT_ROOT_MISMATCH: cannot read ${orientationPath}`);
+      }
+      if (orientation?.project?.root !== current) {
+        throw new Error(`OCODE_PROJECT_ROOT_MISMATCH: orientation root ${orientation?.project?.root ?? 'absent'} does not equal resolved project root ${current}`);
+      }
       console.log('=== ORIENTATION READY ===');
       console.log(`project root: ${current}`);
       console.log(`context:      ${resolve(current, '.opencode', 'orientation.md')}\n`);
@@ -461,11 +471,11 @@ async function main() {
 
   assertRuntimeCompatibility(context.harnessRoot);
   validateProfileCompleteness(context.profile, context.manifest);
+  const projectRoot = orientProject();
   validateProfileAvailability(context.profile, {
-    cwd: process.cwd(),
+    cwd: projectRoot,
     env: process.env,
   });
-  const projectRoot = orientProject();
   const overlayConfig = JSON.parse(serializeOpenCodeRuntimeOverlay(context.profile, process.env.OPENCODE_CONFIG_CONTENT));
   const runtimePermissions = createRuntimePermissionProjection({ contracts: context.contracts, projectDir: projectRoot });
   for (const [role, projected] of Object.entries(runtimePermissions.agents)) {
@@ -484,6 +494,9 @@ async function main() {
       ...process.env,
       OPENCODE_ENABLE_EXA: '1',
       OCODE_HARNESS_ROOT: context.harnessRoot,
+      // This is the one authoritative local root. The server, attach client,
+      // validation wrapper, and all child sessions inherit it with cwd below.
+      OCODE_PROJECT_ROOT: projectRoot,
       OPENCODE_CONFIG_CONTENT: overlay,
     };
     if (runtimePermissions.validation_registry) {

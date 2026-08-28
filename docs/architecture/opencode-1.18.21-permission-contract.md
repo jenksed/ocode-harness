@@ -39,10 +39,19 @@ Ocode may project native Bash ALLOW only with these controls:
 
 1. Start from the canonical role's permission/authority contract.
 2. Preserve an explicit `*: ask` or `*: deny` according to that role; never rely on OpenCode's unmatched default.
-3. Add only repository-admitted exact validation commands for roles with `test.execute`.
-4. Append structural redirection, remote, and destructive denials last.
-5. Never use `--auto` or `bash: "*": allow`.
-6. Route admitted npm validation through the fingerprint-checking wrapper so a changed `package.json` invalidates execution-time trust.
+3. Insert `git *: deny` before restoring the deliberately narrow Git
+   observation forms. This closes unknown Git mutations while allowing the
+   later explicit observations to win under the native last-match rule.
+4. Add only repository-admitted exact validation commands for roles with `test.execute`.
+5. Append structural redirection, remote, and destructive denials last.
+6. Never use `--auto` or `bash: "*": allow`.
+7. Route admitted npm validation through the fingerprint-checking wrapper so a changed `package.json` invalidates execution-time trust.
+
+`projectBashCommand` is the internal effective-native matcher for this
+qualified subset and implements the same insertion-order, last-match
+selection. It is not a risk classifier; `classifyCommand` and
+`decideCommandAdmission` remain the separate conservative effect-routing
+layer.
 
 This projection changes execution permission only. It grants no capability, edit, stage, commit, push, review, or acceptance authority.
 

@@ -29,9 +29,6 @@ const NATIVE_STRUCTURAL_DENIES = Object.freeze({
   'git reset --hard *': 'deny',
   'git clean': 'deny',
   'git clean *': 'deny',
-  // Keep all Git subcommands closed by default. Explicit read-only patterns
-  // are restored after this block; redirection remains the final deny.
-  'git *': 'deny',
   'git add': 'deny',
   'git add *': 'deny',
   'git commit': 'deny',
@@ -41,7 +38,9 @@ const NATIVE_STRUCTURAL_DENIES = Object.freeze({
 
 const OBSERVATION_PATTERNS = new Set([
   'ls', 'ls *', 'pwd', 'rg', 'rg *', 'grep', 'grep *', 'find', 'find *',
-  'head', 'head *', 'tail', 'tail *', 'git status', 'git status *',
+  'head', 'head *', 'tail', 'tail *', 'wc', 'wc *', 'file', 'file *',
+  'stat', 'stat *', 'tree', 'tree *', 'which', 'which *', 'command -v', 'command -v *',
+  'git status', 'git status *',
   'git diff', 'git diff *', 'git log', 'git log *', 'git show', 'git show *',
   'git rev-parse', 'git rev-parse *', 'git worktree list', 'git worktree list *',
   'git branch --show-current', 'git branch --list', 'git branch --list *',
@@ -134,12 +133,20 @@ export function evaluateValidationRegistryFreshness(registry, { projectDir } = {
  */
 export function createNativeBashPermissionRules({ baseRules = {}, validationRegistry = null, roleCapabilities = [], roleAuthority = null } = {}) {
   ensureObject(baseRules, 'baseRules');
+  /**
+   * OpenCode 1.18.21 chooses the last matching Bash key. Delete before setting
+   * so this builder never relies on JavaScript assignment preserving an old
+   * object's insertion position.
+   */
   const rules = {};
-  const validationPatterns = [];
+  const append = (pattern, action) => {
+    if (Object.hasOwn(rules, pattern)) delete rules[pattern];
+    rules[pattern] = action;
+  };
+  const validationPatterns = new Set();
   for (const [pattern, action] of Object.entries(baseRules)) {
     if (typeof pattern !== 'string' || !pattern || !['allow', 'ask', 'deny'].includes(action)) throw new Error('baseRules contains an invalid native permission rule');
-    if (/^(?:npm test|npm run |pnpm |yarn |pytest|python -m pytest|go (?:test|build)|mix (?:test|compile)|cargo (?:test|build))/.test(pattern)) { validationPatterns.push(pattern); continue; }
-    rules[pattern] = action;
+    if (/^(?:npm test|npm run |pnpm |yarn |pytest|python -m pytest|go (?:test|build)|mix (?:test|compile)|cargo (?:test|build))/.test(pattern)) validationPatterns.add(pattern);
   }
   const restricted = roleAuthority && (
     roleAuthority.may_edit === false
@@ -148,19 +155,33 @@ export function createNativeBashPermissionRules({ baseRules = {}, validationRegi
     || roleAuthority.may_push === false
   );
   const unadmitted = restricted || baseRules['*'] === 'deny' ? 'deny' : 'ask';
-  if (restricted) rules['*'] = 'deny';
-  for (const pattern of validationPatterns) rules[pattern] = unadmitted;
+
+  // 1. Baseline catch-all. Restricted roles must never convert an unknown
+  // mutation into an operator-granted authority escalation.
+  append('*', restricted ? 'deny' : (baseRules['*'] ?? 'ask'));
+
+  // 2. Close Git broadly before restoring the narrow observation surface. This
+  // position is intentional: a later observation allowance must win under
+  // OpenCode's actual last-match semantics, while unknown Git remains denied.
+  append('git *', 'deny');
+
+  // 3. Explicit safe observations, in contract order.
+  for (const pattern of Object.keys(baseRules)) {
+    if (OBSERVATION_PATTERNS.has(pattern)) append(pattern, baseRules[pattern]);
+  }
+
+  // 4. Repository-admitted validation only for test.execute roles.
   if (validationRegistry && roleCapabilities.includes('test.execute')) {
     const registry = validateValidationRegistry(validationRegistry);
-    for (const command of registry.commands) rules[command] = 'allow';
+    for (const command of registry.commands) append(command, 'allow');
+  } else {
+    for (const pattern of validationPatterns) append(pattern, unadmitted);
   }
-  for (const [pattern, action] of Object.entries(NATIVE_STRUCTURAL_DENIES)) rules[pattern] = action;
-  for (const [pattern, action] of Object.entries(baseRules)) {
-    if (OBSERVATION_PATTERNS.has(pattern)) rules[pattern] = action;
-  }
-  // These must remain last so an observation wildcard cannot authorize shell
-  // composition or redirection.
-  rules['*>*'] = 'deny'; rules['*<*'] = 'deny';
+
+  // 5. Specific remote/destructive denials, then composition denials last.
+  // The final placement prevents an observation wildcard from allowing writes.
+  for (const [pattern, action] of Object.entries(NATIVE_STRUCTURAL_DENIES)) append(pattern, action);
+  append('*>*', 'deny'); append('*<*', 'deny');
   return rules;
 }
 

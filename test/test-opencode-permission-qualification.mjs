@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { projectBashCommand } from '../packages/harness-runtime/lib/permission-projection.mjs';
 
 const evidence = JSON.parse(readFileSync(resolve('qualification/opencode-1.18.21-permissions.json'), 'utf8'));
 assert.deepEqual(evidence.runtime, { opencode: '1.18.21', sdk: '1.18.21' });
@@ -30,4 +31,20 @@ assert.equal(scenario('remote-deny').permission_request_count, 0);
 assert.equal(scenario('remote-deny').tool_states.at(-1), 'error');
 assert.equal(scenario('low-interruption-loop').permission_request_count, 0);
 assert.equal(scenario('low-interruption-loop').tool_states.filter((state) => state === 'completed').length, 4);
+
+const runtimeParity = [
+  ['orchestrator-git-status-observation', 'git status --short', 'ALLOW', 'completed'],
+  ['orchestrator-git-add-denied', 'git add README.md', 'DENY', 'error'],
+];
+for (const [id, command, expected, terminal] of runtimeParity) {
+  const observed = scenario(id);
+  assert.equal(observed.permission_request_count, 0, `${id} does not prompt`);
+  assert.equal(observed.tool_states.at(-1), terminal, `${id} native terminal state`);
+  assert.equal(projectBashCommand(observed.rules, command).state, expected, `${id} internal matcher equals actual OpenCode result`);
+}
+const generatedOrder = Object.keys(scenario('orchestrator-git-status-observation').rules);
+assert.ok(generatedOrder.indexOf('git *') < generatedOrder.indexOf('git status'));
+assert.ok(generatedOrder.indexOf('git status *') < generatedOrder.indexOf('git push'));
+assert.ok(generatedOrder.indexOf('git push *') < generatedOrder.indexOf('*>*'));
+assert.ok(generatedOrder.indexOf('*>*') < generatedOrder.indexOf('*<*'));
 console.log('OPENCODE_1_18_21_PERMISSION_QUALIFICATION_PROVEN');

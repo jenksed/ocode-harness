@@ -31,7 +31,7 @@ try {
   const registry = createValidationRegistry({ projectDir: root, commands: ['npm test', 'npm run test:unit'] });
   assert.equal(createValidationRegistry({ projectDir: root }).commands.includes('npm run deploy'), false);
   const nativeRules = createNativeBashPermissionRules({ baseRules: { '*': 'ask', 'rg *': 'allow' }, validationRegistry: registry, roleCapabilities: ['test.execute'] });
-  assert.equal(nativeRules['npm test'], 'allow'); assert.equal(Object.keys(nativeRules).at(-1), 'rm -rf *'); assert.equal(nativeRules['*>*'], 'deny');
+  assert.equal(nativeRules['npm test'], 'allow'); assert.equal(Object.keys(nativeRules).at(-1), '*<*'); assert.equal(nativeRules['*>*'], 'deny');
   assert.equal(decideCommandAdmission({ command: 'npm test', role: 'coder', roleCapabilities: ['test.execute'], validationRegistry: registry, projectDir: root }).decision, 'ALLOW');
   writeFileSync(join(root, 'package.json'), JSON.stringify({ scripts: { test: 'changed' } }), 'utf8');
   assert.equal(evaluateValidationRegistryFreshness(registry, { projectDir: root }).status, 'STALE');

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
-import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
@@ -31,8 +31,8 @@ try {
     writeFileSync(path, `#!/bin/sh\n${source}\n`);
     chmodSync(path, 0o755);
   };
-  writeExecutable('orient', 'mkdir -p "$1/.opencode"\nprintf "{}" > "$1/.opencode/orientation.json"\nprintf "orientation" > "$1/.opencode/orientation.md"');
-  writeExecutable('opencode', 'if [ "$1" = "models" ]; then printf "%s\\n" freellmapi/auto:default freellmapi/auto:planning freellmapi/auto:coding freellmapi/auto:wayfinder freellmapi/auto:research freellmapi/auto:verification freellmapi/auto:review freellmapi/auto:reasoning freellmapi/auto:utility; fi\nexit 0');
+  writeExecutable('orient', 'mkdir -p "$1/.opencode"\nprintf "{\\\"project\\\":{\\\"root\\\":\\\"%s\\\"}}" "$1" > "$1/.opencode/orientation.json"\nprintf "orientation" > "$1/.opencode/orientation.md"');
+  writeExecutable('opencode', 'printf "%s\\n%s\\n" "$PWD" "$OCODE_PROJECT_ROOT" > "$OCODE_PROJECT_ROOT/opencode-root.log"\nif [ "$1" = "models" ]; then printf "%s\\n" freellmapi/auto:default freellmapi/auto:planning freellmapi/auto:coding freellmapi/auto:wayfinder freellmapi/auto:research freellmapi/auto:verification freellmapi/auto:review freellmapi/auto:reasoning freellmapi/auto:utility; fi\nexit 0');
   const result = spawnSync(process.execPath, [cli], {
     cwd: project,
     encoding: 'utf8',
@@ -47,6 +47,7 @@ try {
   assert.equal(activity.events.some((event) => event.event_type === 'WORKFLOW_STARTED' && event.agent_role === 'orchestrator'), true);
   assert.equal(activity.events.some((event) => event.event_type === 'AGENT_STARTED' && event.agent_role === 'orchestrator'), true);
   assert.equal(activity.events.some((event) => event.event_type === 'AGENT_COMPLETED' && event.agent_role === 'orchestrator'), true);
+  assert.deepEqual(readFileSync(join(project, 'opencode-root.log'), 'utf8').trim().split('\n'), [realpathSync(project), realpathSync(project)]);
   console.log('✓ Normal ocode launcher emits runtime-owned primary workflow and orchestrator lifecycle activity');
 } finally {
   rmSync(project, { recursive: true, force: true });

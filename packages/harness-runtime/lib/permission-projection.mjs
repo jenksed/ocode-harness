@@ -35,7 +35,11 @@ function normalizePermission(value) {
   return PERMISSION_PROJECTION_STATES.UNKNOWN;
 }
 
-function commandPatternMatches(pattern, command) {
+/**
+ * The bounded Bash-pattern subset Ocode qualifies against OpenCode 1.18.21.
+ * This is intentionally not a shell parser or a general glob implementation.
+ */
+export function matchesOpenCodeBashPattern(pattern, command) {
   if (pattern === '*') return true;
   if (pattern === '*>*') return command.includes('>');
   if (pattern === '*<*') return command.includes('<');
@@ -43,14 +47,11 @@ function commandPatternMatches(pattern, command) {
   return pattern === command;
 }
 
-function commandPatternSpecificity(pattern) {
-  return pattern === '*' ? 0 : pattern.endsWith(' *') ? pattern.length - 2 : pattern.length + 1;
-}
-
 /**
- * Applies only the OpenCode command forms represented by current Ocode role
- * contracts: catch-all, exact command, and a trailing-space wildcard. The
- * longest matching pattern wins; an equal-specificity conflict fails closed.
+ * Models the effective native OpenCode 1.18.21 selection rule for Ocode's
+ * qualified Bash-pattern subset: rules are evaluated in insertion order and
+ * the last matching rule wins. Keep risk classification separate; this helper
+ * reports the actual native permission result, not a safer approximation.
  */
 export function projectBashCommand(permission, command) {
   if (typeof permission === 'string') {
@@ -68,9 +69,7 @@ export function projectBashCommand(permission, command) {
     };
   }
   const matches = Object.entries(permission)
-    .filter(([pattern]) => commandPatternMatches(pattern, command))
-    .map(([pattern, value]) => ({ pattern, value, specificity: commandPatternSpecificity(pattern) }))
-    .sort((left, right) => right.specificity - left.specificity || left.pattern.localeCompare(right.pattern));
+    .filter(([pattern]) => matchesOpenCodeBashPattern(pattern, command));
   if (matches.length === 0) {
     return {
       state: PERMISSION_PROJECTION_STATES.UNKNOWN,
@@ -78,13 +77,11 @@ export function projectBashCommand(permission, command) {
       evidence: [`no recognized bash pattern matched ${command}`],
     };
   }
-  const highestSpecificity = matches[0].specificity;
-  const decisive = matches.filter(({ specificity }) => specificity === highestSpecificity);
-  const states = [...new Set(decisive.map(({ value }) => normalizePermission(value)))];
+  const decisive = matches.at(-1);
   return {
-    state: states.length === 1 ? states[0] : PERMISSION_PROJECTION_STATES.UNKNOWN,
+    state: normalizePermission(decisive[1]),
     source: 'opencode.bash',
-    evidence: decisive.map(({ pattern, value }) => `${pattern}=${value}`),
+    evidence: matches.map(([pattern, value], index) => `${index === matches.length - 1 ? 'effective ' : ''}${pattern}=${value}`),
   };
 }
 

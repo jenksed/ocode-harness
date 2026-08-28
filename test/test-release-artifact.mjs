@@ -34,15 +34,16 @@ try {
 
   const sentinel = join(root, 'outside-sentinel'); writeFileSync(sentinel, 'unchanged');
   const attacks = [
-    { label: 'traversal', entry: { name: 'ocode-release/../outside', body: 'bad' } },
-    { label: 'absolute', entry: { name: '/outside', body: 'bad' } },
-    { label: 'absolute-symlink', entry: { name: 'ocode-release/link', type: '2', link: '/outside' } },
-    { label: 'relative-symlink', entry: { name: 'ocode-release/link', type: '2', link: '../outside' } },
-    { label: 'symlink-followed-by-file', entry: { name: 'ocode-release/link', type: '2', link: '../outside' } },
-    { label: 'hard-link', entry: { name: 'ocode-release/link', type: '1', link: '../../outside' } },
+    { label: 'traversal', entries: [{ name: 'ocode-release/../outside', body: 'bad' }] },
+    { label: 'absolute', entries: [{ name: '/outside', body: 'bad' }] },
+    { label: 'absolute-symlink', entries: [{ name: 'ocode-release/link', type: '2', link: '/outside' }] },
+    { label: 'relative-symlink', entries: [{ name: 'ocode-release/link', type: '2', link: '../outside' }] },
+    { label: 'symlink-followed-by-file', entries: [{ name: 'ocode-release/link', type: '2', link: '../outside' }, { name: 'ocode-release/link/escaped', body: 'bad' }] },
+    { label: 'nested-symlink-chain', entries: [{ name: 'ocode-release/first', type: '2', link: 'second' }, { name: 'ocode-release/second', type: '2', link: '../outside' }, { name: 'ocode-release/first/escaped', body: 'bad' }] },
+    { label: 'hard-link', entries: [{ name: 'ocode-release/link', type: '1', link: '../../outside' }] },
   ];
   for (const attack of attacks) {
-    const archive = join(root, `${attack.label}.tar.gz`); writeArchive(archive, [{ name: 'ocode-release/', type: '5' }, attack.entry]);
+    const archive = join(root, `${attack.label}.tar.gz`); writeArchive(archive, [{ name: 'ocode-release/', type: '5' }, ...attack.entries]);
     assert.throws(() => materializeVerifiedArtifact(archive, join(root, `${attack.label}-candidate`)), /Unsafe artifact path|Artifact root is invalid|Artifact link or special entry/);
     assert.equal(readFileSync(sentinel, 'utf8'), 'unchanged', `${attack.label} modified outside sentinel`);
     assert.equal(existsSync(join(root, 'outside')), false, `${attack.label} created escaped path`);

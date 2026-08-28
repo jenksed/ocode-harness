@@ -4,7 +4,7 @@
     "opencode": "1.18.21",
     "sdk": "1.18.21"
   },
-  "observed_at": "2026-08-28T23:05:12.671Z",
+  "observed_at": "2026-08-28T23:25:44.341Z",
   "method": "local OpenAI-compatible non-inference fixture through installed SDK/server",
   "lifecycle": {
     "server_start": "SUPPORTED",
@@ -3050,6 +3050,489 @@
       "request_count": 2,
       "marker_created": false,
       "fixture_file_exists": {},
+      "effect_before": null,
+      "effect_after": null,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "interactive-source-orchestrator-git-add-denied",
+      "commands": [
+        "git add README.md"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "git push": "deny",
+        "git push *": "deny",
+        "git reset --hard": "deny",
+        "git reset --hard *": "deny",
+        "git clean": "deny",
+        "git clean *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "rm -rf *": "deny",
+        "find *": "deny",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "git_fixture": true,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "git add README.md",
+          "status": "running"
+        },
+        {
+          "command": "git add README.md",
+          "status": "error"
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "fixture_file_exists": {
+        "README.md": true
+      },
+      "effect_before": {
+        "index_entry": "100644 9741694d75caeb49d3b7c1f59451c0c56bf6216c 0\tREADME.md"
+      },
+      "effect_after": {
+        "index_entry": "100644 9741694d75caeb49d3b7c1f59451c0c56bf6216c 0\tREADME.md"
+      },
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "interactive-source-orchestrator-safe-smoke",
+      "commands": [
+        "pwd",
+        "ls",
+        "rg needle fixture.txt",
+        "grep needle fixture.txt",
+        "git status --short",
+        "git rev-parse HEAD",
+        "git branch --show-current",
+        "git worktree list"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "git push": "deny",
+        "git push *": "deny",
+        "git reset --hard": "deny",
+        "git reset --hard *": "deny",
+        "git clean": "deny",
+        "git clean *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "rm -rf *": "deny",
+        "find *": "deny",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "git_fixture": true,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed",
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed",
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed",
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed",
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed",
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed",
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed",
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "pwd",
+          "status": "running"
+        },
+        {
+          "command": "pwd",
+          "status": "running"
+        },
+        {
+          "command": "pwd",
+          "status": "running"
+        },
+        {
+          "command": "pwd",
+          "status": "completed"
+        },
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "ls",
+          "status": "running"
+        },
+        {
+          "command": "ls",
+          "status": "running"
+        },
+        {
+          "command": "ls",
+          "status": "running"
+        },
+        {
+          "command": "ls",
+          "status": "completed"
+        },
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "rg needle fixture.txt",
+          "status": "running"
+        },
+        {
+          "command": "rg needle fixture.txt",
+          "status": "running"
+        },
+        {
+          "command": "rg needle fixture.txt",
+          "status": "running"
+        },
+        {
+          "command": "rg needle fixture.txt",
+          "status": "completed"
+        },
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "grep needle fixture.txt",
+          "status": "running"
+        },
+        {
+          "command": "grep needle fixture.txt",
+          "status": "running"
+        },
+        {
+          "command": "grep needle fixture.txt",
+          "status": "running"
+        },
+        {
+          "command": "grep needle fixture.txt",
+          "status": "completed"
+        },
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "git status --short",
+          "status": "running"
+        },
+        {
+          "command": "git status --short",
+          "status": "running"
+        },
+        {
+          "command": "git status --short",
+          "status": "running"
+        },
+        {
+          "command": "git status --short",
+          "status": "completed"
+        },
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "git rev-parse HEAD",
+          "status": "running"
+        },
+        {
+          "command": "git rev-parse HEAD",
+          "status": "running"
+        },
+        {
+          "command": "git rev-parse HEAD",
+          "status": "running"
+        },
+        {
+          "command": "git rev-parse HEAD",
+          "status": "completed"
+        },
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "git branch --show-current",
+          "status": "running"
+        },
+        {
+          "command": "git branch --show-current",
+          "status": "running"
+        },
+        {
+          "command": "git branch --show-current",
+          "status": "running"
+        },
+        {
+          "command": "git branch --show-current",
+          "status": "completed"
+        },
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "git worktree list",
+          "status": "running"
+        },
+        {
+          "command": "git worktree list",
+          "status": "running"
+        },
+        {
+          "command": "git worktree list",
+          "status": "running"
+        },
+        {
+          "command": "git worktree list",
+          "status": "completed"
+        }
+      ],
+      "request_count": 9,
+      "marker_created": false,
+      "fixture_file_exists": {
+        "README.md": true,
+        "fixture.txt": true
+      },
+      "effect_before": null,
+      "effect_after": null,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "interactive-source-orchestrator-git-status-observation",
+      "commands": [
+        "git status --short"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "git push": "deny",
+        "git push *": "deny",
+        "git reset --hard": "deny",
+        "git reset --hard *": "deny",
+        "git clean": "deny",
+        "git clean *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "rm -rf *": "deny",
+        "find *": "deny",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "git_fixture": true,
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "running",
+        "running",
+        "completed"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "git status --short",
+          "status": "running"
+        },
+        {
+          "command": "git status --short",
+          "status": "running"
+        },
+        {
+          "command": "git status --short",
+          "status": "running"
+        },
+        {
+          "command": "git status --short",
+          "status": "completed"
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "fixture_file_exists": {
+        "README.md": true
+      },
       "effect_before": null,
       "effect_after": null,
       "session_abort": "SUPPORTED"

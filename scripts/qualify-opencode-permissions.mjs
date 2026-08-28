@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createOpencodeClient, createOpencodeServer } from '@opencode-ai/sdk';
@@ -128,17 +128,18 @@ const governedGitEffectProbes = {
   },
 };
 
-async function runScenario({ id, command, commands = [command], rules, reply = null, files = {}, git = false, effectProbe = null }) {
+async function runScenario({ id, command, commands = [command], rules, reply = null, files = {}, git = false, effectProbe = null, agent = 'probe', sourceAgents = false }) {
   const fixture = mkdtempSync(join(tmpdir(), `ocode-permission-${id}-`));
   for (const [path, content] of Object.entries(files)) writeFileSync(join(fixture, path), content);
   if (git) initializeGitFixture(fixture);
   const effect_before = effectProbe?.prepare(fixture) ?? null;
   const xdg = join(fixture, '.xdg');
   for (const name of ['config', 'data', 'state', 'cache']) mkdirSync(join(xdg, name), { recursive: true });
+  if (sourceAgents) cpSync(join(root, 'agents'), join(xdg, 'config', 'opencode', 'agents'), { recursive: true });
   const provider = await startMockProvider(commands);
   const config = {
     provider: { fixture: { npm: '@ai-sdk/openai-compatible', name: 'Permission Fixture', options: { baseURL: provider.baseURL, apiKey: 'fixture-key' }, models: { fixture: { name: 'Fixture' } } } },
-    agent: { probe: { mode: 'primary', model: 'fixture/fixture', permission: { bash: rules } } },
+    agent: { [agent]: { mode: 'primary', model: 'fixture/fixture', permission: { bash: rules } } },
   };
   const environment = {
     XDG_CONFIG_HOME: join(xdg, 'config'), XDG_DATA_HOME: join(xdg, 'data'), XDG_STATE_HOME: join(xdg, 'state'), XDG_CACHE_HOME: join(xdg, 'cache'),
@@ -170,7 +171,7 @@ async function runScenario({ id, command, commands = [command], rules, reply = n
         }
       } catch (error) { if (!abort.signal.aborted) rejectIdle(error); }
     })();
-    responseData(await client.session.promptAsync({ path: { id: created.id }, query: { directory: fixture }, body: { model: { providerID: 'fixture', modelID: 'fixture' }, agent: 'probe', parts: [{ type: 'text', text: 'Run the fixture command.' }] } }), 'PROMPT');
+    responseData(await client.session.promptAsync({ path: { id: created.id }, query: { directory: fixture }, body: { model: { providerID: 'fixture', modelID: 'fixture' }, agent, parts: [{ type: 'text', text: 'Run the fixture command.' }] } }), 'PROMPT');
     // The local SDK/server fixture has startup overhead and serializes native
     // tool rounds. Scale for the full admitted-command matrix rather than
     // declaring a correct runtime unavailable after an arbitrary short limit.
@@ -241,6 +242,8 @@ for (const scenario of [
   },
   { id: 'orchestrator-git-add-denied', command: 'git add README.md', rules: orchestratorRules, git: true, files: { 'README.md': '# fixture\n' }, effectProbe: governedGitEffectProbes.add },
   { id: 'orchestrator-git-status-observation', command: 'git status --short', rules: orchestratorRules, git: true, files: { 'README.md': '# fixture\n' } },
+  { id: 'interactive-source-orchestrator-git-status-observation', command: 'git status --short', rules: orchestratorRules, git: true, files: { 'README.md': '# fixture\n' }, agent: 'orchestrator', sourceAgents: true },
+  { id: 'interactive-source-orchestrator-git-add-denied', command: 'git add README.md', rules: orchestratorRules, git: true, files: { 'README.md': '# fixture\n' }, effectProbe: governedGitEffectProbes.add, agent: 'orchestrator', sourceAgents: true },
   { id: 'orchestrator-pipeline-write-probe', command: 'rg needle fixture.txt | tee marker.txt', rules: orchestratorRules, files: { 'fixture.txt': 'needle\n' } },
   { id: 'orchestrator-and-write-probe', command: 'git status --short && touch marker.txt', rules: orchestratorRules, git: true, files: { 'README.md': '# fixture\n' } },
   { id: 'orchestrator-semicolon-write-probe', command: 'find . -maxdepth 1; touch marker.txt', rules: orchestratorRules, files: { 'fixture.txt': 'needle\n' } },

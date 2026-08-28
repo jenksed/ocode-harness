@@ -39,6 +39,7 @@ permission:
     "which *": allow
     "command -v": allow
     "command -v *": allow
+    "git *": deny
     "git status": allow
     "git status *": allow
     "git diff": allow

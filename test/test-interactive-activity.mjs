@@ -3,7 +3,7 @@ import { EventEmitter } from 'node:events';
 import { chmodSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { spawn, spawnSync } from 'node:child_process';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import {
   activityStorePath,
   createActivityExecutionContext,
@@ -16,8 +16,55 @@ import {
   roleFromOpenCodeAgent,
   runInteractiveOpenCode,
 } from '../packages/harness-runtime/lib/interactive-activity.mjs';
+import { loadAgentContracts } from '../packages/harness-runtime/lib/agent-contract.mjs';
+import { createRuntimePermissionProjection } from '../packages/harness-runtime/lib/command-admission.mjs';
+import { applyInteractiveRuntimePermissions, createSourceBoundOpenCodeEnvironment } from '../packages/harness-runtime/lib/interactive-configuration.mjs';
+import { loadBindingProfile, serializeOpenCodeRuntimeOverlay } from '../packages/harness-runtime/lib/opencode-integration.mjs';
+import { projectBashCommand } from '../packages/harness-runtime/lib/permission-projection.mjs';
 
 const root = resolve('.');
+
+// This exercises the same source-agent + OPENCODE_CONFIG_CONTENT path used by
+// `ocode-dev .`. It catches an OpenCode deep-merge ordering bug that a pure
+// runtime projection cannot observe: inherited agent keys retain insertion
+// order, while OpenCode evaluates the last matching Bash rule.
+{
+  const { manifest, contracts } = loadAgentContracts({ baseDir: root });
+  const profile = loadBindingProfile('free', { profilesDir: resolve(root, 'profiles'), manifest }).profile;
+  const overlay = JSON.parse(serializeOpenCodeRuntimeOverlay(profile));
+  applyInteractiveRuntimePermissions(overlay, createRuntimePermissionProjection({ contracts, projectDir: root }));
+  const sourceBound = createSourceBoundOpenCodeEnvironment({ harnessRoot: root });
+  try {
+    const resolved = JSON.parse(execFileSync('opencode', ['debug', 'agent', 'orchestrator'], {
+      cwd: root,
+      encoding: 'utf8',
+      env: {
+        ...sourceBound.environment,
+        OPENCODE_CONFIG_CONTENT: JSON.stringify(overlay),
+        OPENCODE_DISABLE_EXTERNAL_SKILLS: '1',
+        OPENCODE_DISABLE_CLAUDE_CODE_SKILLS: '1',
+      },
+    }));
+    const bashEntries = resolved.permission
+      .filter((entry) => entry.permission === 'bash')
+      .map((entry) => [entry.pattern, entry.action]);
+    const bash = Object.fromEntries(bashEntries);
+    const order = bashEntries.map(([pattern]) => pattern);
+    for (const safe of ['git status', 'git status *', 'git rev-parse', 'git rev-parse *', 'git worktree list', 'git worktree list *', 'git branch --show-current']) {
+      assert.ok(order.indexOf('git *') < order.indexOf(safe), `${safe} follows broad Git closure`);
+    }
+    for (const command of ['git status --short', 'git rev-parse HEAD', 'git branch --show-current', 'git worktree list']) {
+      assert.equal(projectBashCommand(bash, command).state, 'ALLOW', command);
+    }
+    for (const command of ['git add README.md', 'git commit -m denied', 'git push origin main', 'git reset --hard', 'git clean -fd']) {
+      assert.equal(projectBashCommand(bash, command).state, 'DENY', command);
+    }
+    console.log('✓ Source-bound interactive OpenCode config preserves Git observation exceptions after family denial');
+  } finally {
+    sourceBound.cleanup();
+  }
+}
+
 const project = mkdtempSync(join(tmpdir(), 'ocode-interactive-activity-'));
 const bin = join(project, 'bin');
 const config = join(project, 'config.json');

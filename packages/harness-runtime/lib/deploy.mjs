@@ -350,7 +350,7 @@ export function validateCandidate(stagingDir) {
     }
   } else checks.push({ name: 'harness-runtime package', ok: false, error: 'not found' });
 
-  const harnessLibs = ['identity.mjs', 'lifecycle.mjs', 'ledger.mjs', 'evidence.mjs', 'composition.mjs', 'closeout.mjs', 'verify.mjs', 'governance.mjs', 'permission-projection.mjs', 'admission.mjs', 'agent-contract.mjs', 'opencode-integration.mjs', 'execution.mjs', 'skill-contract.mjs', 'skill-capsules.mjs', 'skill-projection.mjs', 'skill-runtime.mjs', 'command-admission.mjs', 'deterministic-staging.mjs', 'task-capsule.mjs', 'model-telemetry.mjs', 'model-qualification.mjs', 'behavioral-adapters.mjs', 'capability-resolution.mjs', 'tool-loop-control.mjs'];
+  const harnessLibs = ['identity.mjs', 'lifecycle.mjs', 'ledger.mjs', 'evidence.mjs', 'composition.mjs', 'closeout.mjs', 'verify.mjs', 'governance.mjs', 'permission-projection.mjs', 'admission.mjs', 'agent-contract.mjs', 'opencode-integration.mjs', 'execution.mjs', 'skill-contract.mjs', 'skill-capsules.mjs', 'skill-projection.mjs', 'skill-runtime.mjs', 'command-admission.mjs', 'deterministic-staging.mjs', 'task-capsule.mjs', 'repository-snapshot.mjs', 'model-telemetry.mjs', 'model-qualification.mjs', 'behavioral-adapters.mjs', 'capability-resolution.mjs', 'tool-loop-control.mjs'];
   for (const lib of harnessLibs) checks.push({ name: `harness-runtime lib/${lib}`, ok: existsSync(join(harnessRuntimeDir, 'lib', lib)) });
   checks.push({ name: 'harness-runtime validation npm wrapper', ok: existsSync(join(harnessRuntimeDir, 'bin', 'validation', 'npm')) });
 

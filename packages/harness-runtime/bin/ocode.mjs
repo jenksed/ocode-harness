@@ -33,6 +33,7 @@ import {
 import { runInteractiveOpenCode } from '../lib/interactive-activity.mjs';
 import { renderActivityView, renderAgentsView, renderAnnouncement } from '../lib/work-view.mjs';
 import { createRuntimePermissionProjection, createValidationWrapperEnvironment } from '../lib/command-admission.mjs';
+import { createRepositorySnapshot, repositorySnapshotFingerprint } from '../lib/repository-snapshot.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 
@@ -396,6 +397,21 @@ function printBindingError(error) {
   console.error(`fallback: ${details.fallback || 'deny'}`);
 }
 
+function printRepositorySnapshot(args) {
+  let json = false; let taskIdentity = null;
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+    if (arg === '--json') json = true;
+    else if (arg === '--task') {
+      taskIdentity = args[++index];
+      if (!taskIdentity || taskIdentity.startsWith('-')) throw new Error('ocode context snapshot --task requires a task identity');
+    } else throw new Error('Usage: ocode context snapshot [--json] [--task <identity>]');
+  }
+  const { snapshot } = createRepositorySnapshot({ repositoryRoot: process.cwd(), taskIdentity });
+  if (json) { console.log(JSON.stringify(snapshot)); return; }
+  console.log(`REPOSITORY\n${snapshot.repository_root}\n\nBRANCH\n${snapshot.branch}\n\nHEAD\n${snapshot.head}\n\nWORKTREE\n${snapshot.worktree.dirty ? 'DIRTY' : 'CLEAN'}\n\nAUTHORITY\n${snapshot.authority.map((entry) => `${entry.path} (${entry.authority_type}, scope ${entry.scope})`).join('\n') || 'NONE'}\n\nSNAPSHOT FINGERPRINT\n${repositorySnapshotFingerprint(snapshot)}`);
+}
+
 async function main() {
   const { override, remaining } = extractProfileOverride(process.argv.slice(2));
   if (remaining[0] === 'explain' && remaining[1] === '--run') {
@@ -417,6 +433,12 @@ async function main() {
   if (remaining[0] === 'govern') {
     const decision = govern(loadGovernanceContext(), remaining.slice(1));
     if (decision?.decision === 'DENY') process.exitCode = 1;
+    return;
+  }
+
+  if (remaining[0] === 'context') {
+    if (remaining[1] !== 'snapshot') throw new Error('Usage: ocode context snapshot [--json] [--task <identity>]');
+    printRepositorySnapshot(remaining.slice(2));
     return;
   }
 

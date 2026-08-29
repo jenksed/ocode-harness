@@ -38,12 +38,16 @@ for (const command of ['git merge topic', 'git rebase main', 'git cherry-pick HE
   assert.equal(decide(command).decision, PRE_EXECUTION_GUARD_DECISIONS.DENY, command);
 }
 
-for (const command of ['git branch --show-current', 'git branch --list', 'git branch --list feature/*', 'git branch -a', 'git branch -r', 'git worktree list', 'git worktree list --porcelain']) {
+for (const command of ['git branch', 'git branch --show-current', 'git branch --list', 'git branch --list feature/*', 'git branch -a', 'git branch -r', 'git worktree list', 'git worktree list --porcelain']) {
   assert.equal(decide(command, 'reviewer').decision, PRE_EXECUTION_GUARD_DECISIONS.CONTINUE, `observation ${command}`);
 }
-for (const command of ['git branch -D stale', 'git branch -d stale', 'git branch -m old new', 'git branch -M old new', 'git worktree add ../other branch', 'git worktree remove ../other', 'git worktree move old new', 'git worktree lock ../other', 'git worktree unlock ../other', 'git worktree prune', 'git worktree repair']) {
-  assert.equal(decide(command, 'reviewer').decision, PRE_EXECUTION_GUARD_DECISIONS.DENY, `read-only mutation ${command}`);
-  assert.equal(decide(command).decision, PRE_EXECUTION_GUARD_DECISIONS.CONTINUE, `coder repository.edit ${command}`);
+for (const command of ['git branch -D stale', 'git branch -d stale', 'git branch -m old new', 'git branch -M old new', 'git branch new-branch', 'git worktree add ../other branch', 'git worktree remove ../other', 'git worktree move old new', 'git worktree lock ../other', 'git worktree unlock ../other', 'git worktree prune', 'git worktree repair']) {
+  for (const role of ['coder', 'reviewer']) {
+    const result = decide(command, role);
+    assert.equal(result.decision, PRE_EXECUTION_GUARD_DECISIONS.DENY, `${role} unmodeled mutation ${command}`);
+    assert.equal(result.effect, 'governed-git-unknown', `${role} unmodeled effect ${command}`);
+    assert.equal(result.reason, 'UNCLASSIFIED_GIT_EFFECT', `${role} unmodeled reason ${command}`);
+  }
 }
 
 for (const command of ['git status && git add file', 'git status ; git add file', 'git status || git commit -m x', 'git status | git add file', "sh -c 'git add file'", "bash -c 'git add file'", "zsh -c 'git add file'"]) {

@@ -18,5 +18,7 @@ evaluates a Bash request. It derives its runtime options from the parsed role
 contracts, calls `decideEffectAdmission()` for `repository.edit`, `stage`,
 `commit`, and `push`, and only returns `CONTINUE` or `DENY`. Explicit branch
 observations (`--show-current`, `--list`, `-a`, `-r`) and worktree listing are
-outside the guard; branch/worktree mutation is `repository.edit`. This is a
-bounded Git authority check, not shell safety analysis or approval mediation.
+outside the guard. Branch-ref and worktree-administration mutation have no
+established constitutional effect, so they fail closed as unclassified
+governed Git. This is a bounded Git authority check, not shell safety analysis
+or approval mediation.

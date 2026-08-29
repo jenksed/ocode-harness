@@ -67,27 +67,21 @@ function gitInvocation(segment) {
   return { subcommand: '', args: [] };
 }
 
-function branchEffect(args) {
-  if (args.length === 1 && ['--show-current', '-a', '-r'].includes(args[0])) return null;
-  if (args[0] === '--list') return null;
-  // Branch creation, deletion, and renaming all mutate Git refs. Unknown
-  // branch grammar is conservatively treated as repository mutation rather
-  // than granted an observation exemption.
-  return 'repository.edit';
+function isBranchObservation(args) {
+  if (args.length === 0) return true;
+  if (args.length === 1 && ['--show-current', '-a', '-r'].includes(args[0])) return true;
+  return args[0] === '--list';
 }
 
-function worktreeEffect(args) {
-  if (args[0] === 'list' && args.slice(1).every((arg) => arg === '--porcelain')) return null;
-  // add/remove/move/lock/unlock/prune/repair mutate repository worktree
-  // metadata. Keep unrecognized variants on the same conservative boundary.
-  return 'repository.edit';
+function isWorktreeObservation(args) {
+  return args[0] === 'list' && args.slice(1).every((arg) => arg === '--porcelain');
 }
 
 function resolveInvocationEffect(invocation) {
   if (Object.hasOwn(EFFECT_BY_GIT_SUBCOMMAND, invocation.subcommand)) return EFFECT_BY_GIT_SUBCOMMAND[invocation.subcommand];
   if (OBSERVATION_SUBCOMMANDS.has(invocation.subcommand)) return null;
-  if (invocation.subcommand === 'branch') return branchEffect(invocation.args);
-  if (invocation.subcommand === 'worktree') return worktreeEffect(invocation.args);
+  if (invocation.subcommand === 'branch') return isBranchObservation(invocation.args) ? null : undefined;
+  if (invocation.subcommand === 'worktree') return isWorktreeObservation(invocation.args) ? null : undefined;
   return undefined;
 }
 

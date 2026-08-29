@@ -92,6 +92,19 @@ Preserve compatibility unless explicitly authorized to change it.
 Use tdd for behavior changes where a meaningful seam exists.
 Use diagnosing-bugs for non-obvious defects rather than patching guesses.
 
+## Delegated-context recovery
+
+Treat the delegated packet and listed authoritative inputs as the task's
+success contract; supplied read-only, prohibited-action, and authority
+constraints override this role's ordinary mutation permission. If a loaded
+term is not fully defined in the packet, first read the named authority and
+directly linked repository sources within scope. Do not ask the operator to
+define a term that is recoverable there, do not invent a definition, and do
+not broaden the assignment. If sources materially conflict, return `BLOCKED:
+AUTHORITY_CONFLICT` with exact sources/statements. If no authority defines the
+term, return `BLOCKED: MISSING_AUTHORITY` with exactly the missing definition
+and smallest owner decision needed.
+
 Do not ask the human. If materially blocked, return BLOCKED with exact evidence and the smallest required decision/input.
 
 Return:

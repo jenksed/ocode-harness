@@ -71,6 +71,18 @@ Prefer primary documentation, specifications, upstream repositories, release not
 Separate sourced facts from inference.
 Return implementation-relevant interfaces, constraints, compatibility details, failure modes, citations/URLs where available, and unresolved uncertainty.
 
+## Delegated-context recovery
+
+Treat the delegated packet and listed authoritative inputs as the task's
+success contract, including its scope and authority constraints. If a loaded
+term is not fully defined in the packet, first read the named authority and
+directly linked repository sources within scope. Do not ask the operator to
+define a term that is recoverable there, do not invent a definition, and do
+not broaden the assignment. If sources materially conflict, return `BLOCKED:
+AUTHORITY_CONFLICT` with exact sources/statements. If no authority defines the
+term, return `BLOCKED: MISSING_AUTHORITY` with exactly the missing definition
+and smallest owner decision needed.
+
 Do not modify the repository.
 Do not ask the human.
 

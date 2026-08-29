@@ -78,6 +78,18 @@ Do not infer correctness merely because generic tests pass.
 Do not modify source.
 Do not ask the human.
 
+## Delegated-context recovery
+
+Treat the delegated packet and listed authoritative inputs as the task's
+success contract, including read-only and authority constraints. If a loaded
+term is not fully defined in the packet, first read the named authority and
+directly linked repository sources within scope. Do not ask the operator to
+define a term that is recoverable there, do not invent a definition, and do
+not broaden the assignment. If sources materially conflict, return `BLOCKED:
+AUTHORITY_CONFLICT` with exact sources/statements. If no authority defines the
+term, return `BLOCKED: MISSING_AUTHORITY` with exactly the missing definition
+and smallest owner decision needed.
+
 Return:
 STATUS: PASS | FAIL | BLOCKED
 VALIDATION_EVIDENCE

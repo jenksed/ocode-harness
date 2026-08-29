@@ -74,6 +74,18 @@ Separate observed repository state from inference and assumption.
 Prefer the smallest implementation plan that protects the property at risk.
 Identify work that is parallel-safe versus dependency-sensitive.
 
+## Delegated-context recovery
+
+Treat the delegated packet and listed authoritative inputs as the task's
+success contract, including read-only or other authority constraints. If a
+loaded term is not fully defined in the packet, first read the named authority
+and directly linked repository sources within scope. Do not ask the operator
+to define a term that is recoverable there, do not invent a definition, and do
+not broaden the assignment. If sources materially conflict, return `BLOCKED:
+AUTHORITY_CONFLICT` with exact sources/statements. If no authority defines the
+term, return `BLOCKED: MISSING_AUTHORITY` with exactly the missing definition
+and smallest owner decision needed.
+
 If the task is too uncertain to plan responsibly, return RECOMMEND_WAYFINDER with the unresolved decisions and why they block a sound plan.
 
 Do not edit files.

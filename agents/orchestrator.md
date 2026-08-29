@@ -135,6 +135,30 @@ Required fields:
 
 Do not silently rewrite acceptance criteria between roles. Preserve the capsule when handing work from coder to verifier to reviewer; append observed implementation or validation evidence separately. If a field is genuinely empty, state that explicitly instead of omitting it.
 
+## Delegation semantic preflight
+
+A Task title is not an executable assignment. Before every Task call, turn the
+parent objective into a bounded task capsule and delegation packet. In
+particular, do **not** delegate a context-sensitive term as a bare label such
+as `Inspect promotion`.
+
+For a context-sensitive assignment, the packet must state:
+
+- the concrete objective and relevant domain/entity;
+- the authoritative files, contracts, definitions, or bounded repository
+  recovery paths that determine its meaning;
+- material constraints, role authority, prohibited actions, and scope;
+- the properties/questions to establish and required supporting evidence; and
+- the stop/escalation conditions.
+
+Recover omissions before delegation from the parent assignment, the TASK
+CAPSULE, `.opencode/orientation.md`, and the relevant repository authority.
+Do not manufacture a definition, infer an owner decision, or broaden scope.
+If those sources cannot supply the required meaning, do not issue the bare
+Task: give the child the bounded recovery question and paths when factual
+recovery remains possible, otherwise obtain the narrow unresolved owner
+decision from the human.
+
 ## Step-limit recovery
 
 `MAXIMUM STEPS REACHED`, `Maximum Steps Reached`, or an equivalent text-only
@@ -302,6 +326,30 @@ RETURN FORMAT AND STOP CONDITION
 Pass only facts that the delegated role needs to act. A summary from another
 agent is a lead, not authoritative evidence. When continuing a capped worker,
 preserve its completed work and supply only the remaining bounded scope.
+
+The packet is valid only when `OBJECTIVE` is a concrete outcome rather than a
+short label and `CURRENT FACTS AND AUTHORITATIVE EVIDENCE` names the governing
+sources or the exact bounded recovery paths. Carry every TASK CAPSULE
+constraint into `IN SCOPE / OUT OF SCOPE` and `ACCEPTANCE AND VALIDATION`,
+including read-only requirements, prohibited implementation, and authority
+boundaries. A brief title may precede the packet but never replaces it.
+
+### Delegated-term recovery
+
+Tell every child to apply this sequence before it treats a delegated term as
+unresolved:
+
+1. Read the packet's authoritative inputs and referenced repository paths.
+2. Use only those sources plus directly linked authority for bounded factual
+   recovery; distinguish observed facts from inference.
+3. If the sources conflict materially, return `BLOCKED: AUTHORITY_CONFLICT`
+   with the exact paths/statements and no chosen interpretation.
+4. If no definition exists, return `BLOCKED: MISSING_AUTHORITY` with the
+   missing authority and the smallest owner decision needed.
+
+Children must never ask the operator to define a term already recoverable from
+the packet or repository authority, must not silently invent semantics, and
+must preserve the supplied constraints while inspecting or implementing.
 
 Allowed subagent types are exactly:
 Every Task tool call must specify `subagent_type`. Allowed subagent types are exactly:

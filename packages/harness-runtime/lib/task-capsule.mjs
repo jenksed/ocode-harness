@@ -100,6 +100,39 @@ export function assertTaskCapsuleHandoff(capsule, expectedFingerprint) {
   return normalized;
 }
 
+/**
+ * Serialize the immutable contract into every governed child prompt.  This is
+ * deliberately a bounded directory of authority, not a copied conversation:
+ * workers read the listed sources when a loaded term needs its definition.
+ */
+export function renderTaskCapsuleDelegationContext(capsule) {
+  const normalized = validateTaskCapsule(capsule);
+  const lines = [
+    '## TASK CAPSULE — AUTHORITATIVE DELEGATION CONTEXT',
+    `TASK_ID: ${normalized.task_id}`,
+    `FINGERPRINT: ${normalized.fingerprint}`,
+    `OBJECTIVE: ${normalized.objective}`,
+    'AUTHORITATIVE_INPUTS:',
+    ...(normalized.authoritative_inputs.length ? normalized.authoritative_inputs.map((input) => `- [${input.kind}] ${input.reference} — ${input.description}`) : ['- (none supplied)']),
+    `BOUNDED_RECOVERY_PATHS: ${normalized.context.path_refs.length ? normalized.context.path_refs.join(', ') : '(none supplied)'}`,
+    `IN_SCOPE: ${normalized.scope.include_paths.join(', ')}`,
+    `OUT_OF_SCOPE: ${normalized.scope.exclude_paths.length ? normalized.scope.exclude_paths.join(', ') : '(none specified)'}`,
+    `NON_GOALS: ${normalized.non_goals.length ? normalized.non_goals.join('; ') : '(none specified)'}`,
+    'CONSTRAINTS:',
+    ...(normalized.constraints.length ? normalized.constraints.map((constraint) => `- ${constraint}`) : ['- (none supplied)']),
+    'ACCEPTANCE_PROPERTIES:',
+    ...normalized.acceptance.map((entry) => `- ${entry.requirement} (evidence: ${entry.required_evidence.join(', ')})`),
+    'STOP_CONDITIONS:',
+    ...(normalized.stop_conditions.length ? normalized.stop_conditions.map((condition) => `- ${condition}`) : ['- (none supplied)']),
+    'CONTEXT_RECOVERY:',
+    '- A loaded term is not an invitation to guess. Read the listed authoritative inputs and the bounded path_refs before reporting ambiguity.',
+    '- If authoritative sources materially conflict, return BLOCKED with the exact conflicting sources and statements; do not choose one.',
+    '- If the definition is absent after that bounded recovery, return BLOCKED with the missing authority and the smallest owner decision required.',
+    '- Do not ask the operator to redefine a term recoverable from this capsule or repository authority. Do not broaden scope or invent semantics.',
+  ];
+  return lines.join('\n');
+}
+
 export function validateAcceptanceEvidence(capsule, mappings) {
   const normalized = validateTaskCapsule(capsule);
   const entries = list(mappings, 'acceptance mappings').map((entry) => {

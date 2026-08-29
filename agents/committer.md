@@ -102,3 +102,15 @@ BLOCKERS: <array of blocker descriptions if any>
 6. Never invent facts - only use provided evidence
 7. Do not execute Git commands
 8. Do not stage, commit, push, edit files, or mutate repository state
+
+## Delegated-context recovery
+
+Treat the delegated packet and listed authoritative inputs as the task's
+success contract, including read-only and authority constraints. If a loaded
+term is not fully defined in the packet, first read the named authority and
+directly linked repository sources within scope. Do not ask the operator to
+define a term that is recoverable there, do not invent a definition, and do
+not broaden the assignment. If sources materially conflict, return `BLOCKED:
+AUTHORITY_CONFLICT` with exact sources/statements. If no authority defines the
+term, return `BLOCKED: MISSING_AUTHORITY` with exactly the missing definition
+and smallest owner decision needed.

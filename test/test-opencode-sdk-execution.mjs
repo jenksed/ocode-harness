@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, realpathSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { executeGovernedRole } from '../packages/harness-runtime/lib/execution.mjs';
+import { executeGovernedRole, executeGovernedTask } from '../packages/harness-runtime/lib/execution.mjs';
 import { checkpointQualificationExecution } from '../packages/harness-runtime/lib/skill-qualification.mjs';
 import { normalizeOpenCodeSdkEvent, runOpenCodeSdkSession } from '../packages/harness-runtime/lib/opencode-sdk-execution.mjs';
 import { activityStorePath, queryActivity } from '../packages/harness-runtime/lib/activity.mjs';
@@ -25,6 +25,7 @@ function fakeSdk({ events = [], messages, status = { s1: { type: 'busy' } }, pro
   let serverOptions = null;
   let serverPath = null;
   let serverExecutable = null;
+  let submittedPrompt = null;
   const assistantMessages = messages ?? [{
     info: { id: 'a1', sessionID: 's1', role: 'assistant', providerID: 'freellmapi', modelID: 'auto:coding', agent: 'coder' },
     parts: [{ id: 'p1', sessionID: 's1', messageID: 'a1', type: 'text', text: '{"ok":true}' }],
@@ -51,7 +52,7 @@ function fakeSdk({ events = [], messages, status = { s1: { type: 'busy' } }, pro
         },
         session: {
           async create() { calls.push('session.create'); return { data: { id: 's1' } }; },
-          async promptAsync() { calls.push('session.promptAsync'); release(); return promptError ? { error: promptError } : { data: true }; },
+          async promptAsync(input) { submittedPrompt = input; calls.push('session.promptAsync'); release(); return promptError ? { error: promptError } : { data: true }; },
           async status() { calls.push('session.status'); return { data: status }; },
           async messages() { calls.push('session.messages'); return { data: assistantMessages }; },
           async abort() { aborted += 1; calls.push('session.abort'); return { data: true }; },
@@ -59,7 +60,16 @@ function fakeSdk({ events = [], messages, status = { s1: { type: 'busy' } }, pro
       };
     },
   };
-  return { sdk, calls, get closed() { return closed; }, get aborted() { return aborted; }, get serverOptions() { return serverOptions; }, get serverPath() { return serverPath; }, get serverExecutable() { return serverExecutable; } };
+  return {
+    sdk,
+    calls,
+    get closed() { return closed; },
+    get aborted() { return aborted; },
+    get serverOptions() { return serverOptions; },
+    get serverPath() { return serverPath; },
+    get serverExecutable() { return serverExecutable; },
+    get submittedPrompt() { return submittedPrompt; },
+  };
 }
 
 const rawTool = { type: 'message.part.updated', properties: { part: { type: 'tool', sessionID: 's1', tool: 'skill', state: { status: 'completed', input: { name: 'tdd' } } } } };
@@ -168,6 +178,22 @@ assert.equal(activity.workflow_graph.edges[0].child_agent_role, 'coder');
 assert.equal(activity.effects.event_types.includes('APPROVAL_GRANTED'), true);
 assert.equal(activity.effects.event_types.includes('EFFECT_EXECUTED'), true);
 assert.equal(JSON.stringify(activity.effects).includes('must not persist'), false);
+
+const taskCapsuleFake = fakeSdk({
+  events: [{ type: 'session.status', properties: { sessionID: 's1', status: { type: 'idle' } } }],
+});
+await executeGovernedTask({
+  transport: 'sdk', baseDir: root, projectDir, role: 'coder', profile,
+  bindingSource: 'test', admissionDecision: allow, prompt: 'Trace the implementation only.', models: ['freellmapi/auto:coding'],
+  sdk: taskCapsuleFake.sdk, timeout: 500,
+  taskCapsule, taskCapsuleFingerprint: taskCapsule.fingerprint, capability: 'implementation.change',
+});
+const delegatedPrompt = taskCapsuleFake.submittedPrompt.body.parts[0].text;
+assert.match(delegatedPrompt, /TASK CAPSULE — AUTHORITATIVE DELEGATION CONTEXT/);
+assert.match(delegatedPrompt, /fixture\.txt — Controlled fixture/);
+assert.match(delegatedPrompt, /## ROLE ASSIGNMENT\nTrace the implementation only\./);
+console.log('✓ Governed task execution injects immutable authority context ahead of the child role assignment');
+
 const reviewerFake = fakeSdk({
   events: [{ type: 'session.status', properties: { sessionID: 's1', status: { type: 'idle' } } }],
   messages: [{ info: { id: 'review-1', sessionID: 's1', role: 'assistant', providerID: 'freellmapi', modelID: 'auto:review', agent: 'reviewer' }, parts: [{ id: 'review-text', sessionID: 's1', messageID: 'review-1', type: 'text', text: 'model prose is not a verdict' }] }],

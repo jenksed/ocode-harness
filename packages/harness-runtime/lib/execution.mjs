@@ -15,7 +15,7 @@ import {
 import { appendRecord, createLedgerRecord } from './ledger.mjs';
 import { generateRunId, generateTaskId } from './identity.mjs';
 import { createModelTelemetry, MODEL_FAILURE_CLASSES } from './model-telemetry.mjs';
-import { assertTaskCapsuleHandoff } from './task-capsule.mjs';
+import { assertTaskCapsuleHandoff, renderTaskCapsuleDelegationContext } from './task-capsule.mjs';
 import { runOpenCodeSdkSession } from './opencode-sdk-execution.mjs';
 import {
   createActivityExecutionContext,
@@ -344,8 +344,10 @@ export function assertTaskCapsuleProjectRoot(taskCapsule, projectDir) {
 
 /** New workflow entrypoint: requires the machine-valid TaskCapsule contract. */
 export function executeGovernedTask(options) {
-  bindTaskCapsuleToExecution({ taskCapsule: options.taskCapsule, expectedTaskCapsuleFingerprint: options.taskCapsuleFingerprint, role: options.role, required: true });
-  return executeGovernedRole({ ...options, requireTaskCapsule: true });
+  const taskCapsule = bindTaskCapsuleToExecution({ taskCapsule: options.taskCapsule, expectedTaskCapsuleFingerprint: options.taskCapsuleFingerprint, role: options.role, required: true });
+  if (typeof options.prompt !== 'string' || !options.prompt.trim()) throw new BindingError('Governed task execution requires a role assignment prompt');
+  const prompt = `${renderTaskCapsuleDelegationContext(taskCapsule)}\n\n## ROLE ASSIGNMENT\n${options.prompt.trim()}`;
+  return executeGovernedRole({ ...options, prompt, requireTaskCapsule: true });
 }
 
 export function executeGovernedRole(options) {

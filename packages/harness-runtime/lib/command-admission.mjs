@@ -7,7 +7,7 @@ export const COMMAND_ADMISSION_SCHEMA_VERSION = 1;
 export const COMMAND_RISK_CLASSES = Object.freeze({
   OBSERVE: 'OBSERVE', VALIDATE: 'VALIDATE', WORKSPACE_EFFECT: 'WORKSPACE_EFFECT',
   REPOSITORY_EFFECT: 'REPOSITORY_EFFECT', REMOTE_EFFECT: 'REMOTE_EFFECT',
-  DESTRUCTIVE: 'DESTRUCTIVE', UNKNOWN: 'UNKNOWN',
+  AUTHORITY_REF_PREFLIGHT: 'AUTHORITY_REF_PREFLIGHT', DESTRUCTIVE: 'DESTRUCTIVE', UNKNOWN: 'UNKNOWN',
 });
 export const COMMAND_DECISIONS = Object.freeze({ ALLOW: 'ALLOW', ASK: 'ASK', DENY: 'DENY' });
 
@@ -17,25 +17,34 @@ const OBSERVE = new Set([
 ]);
 const DESTRUCTIVE = /^(?:rm\s+-[^\n]*r|git\s+(?:reset\s+--hard|clean\b)|find\b.*\s-delete\b)/;
 const REMOTE = /^(?:git\s+push\b|git\s+fetch\b|git\s+pull\b|curl\b|wget\b|ssh\b|scp\b)/;
+const AUTHORITY_REF_PREFLIGHT = /^git\s+fetch\s+--no-tags\b/;
 const REPOSITORY = /^(?:git\s+(?:add|commit|merge|rebase|checkout|switch|restore|cherry-pick)\b)/;
 const WORKSPACE = /^(?:mkdir|touch|cp|mv|sed\s+-i|perl\s+-i|npm\s+(?:install|ci)|pnpm\s+(?:install|add)|yarn\s+(?:add|install))\b/;
 const SHELL_COMPOSITION = /[\n\r;&|><`$\\]|\$\(|\)\s*\(/;
 const OBSERVATION_SHAPED_MUTATION = /^(?:git\s+(?:show|diff|log)\b.*(?:--output(?:=|\s)|-o\s)|find\b.*\s-(?:delete|exec|execdir|ok|okdir)\b|tree\b.*\s(?:-o\s|--output(?:=|\s)))/;
-const NATIVE_STRUCTURAL_DENIES = Object.freeze({
-  '*>*': 'deny',
-  '*<*': 'deny',
+const NATIVE_AUTHORITY_DENIES = Object.freeze({
   'git push': 'deny',
   'git push *': 'deny',
-  'git reset --hard': 'deny',
-  'git reset --hard *': 'deny',
-  'git clean': 'deny',
-  'git clean *': 'deny',
   'git add': 'deny',
   'git add *': 'deny',
   'git commit': 'deny',
   'git commit *': 'deny',
-  'rm -rf *': 'deny',
-  'find *': 'deny',
+});
+
+// Destructive operations remain effectful, but the operator may approve one
+// exact invocation through OpenCode's native permission UI. These rules grant
+// no enduring role authority and composition/redirection still remains denied.
+const NATIVE_DESTRUCTIVE_ASKS = Object.freeze({
+  'git reset --hard': 'ask',
+  'git reset --hard *': 'ask',
+  'git clean': 'ask',
+  'git clean *': 'ask',
+  'rm -rf *': 'ask',
+  // The qualified OpenCode matcher supports only trailing command wildcards;
+  // it cannot distinguish `find` predicates safely. Any argument-bearing
+  // find invocation is therefore approval-gated, while bare `find` remains a
+  // local observation.
+  'find *': 'ask',
 });
 
 const OBSERVATION_PATTERNS = new Set([
@@ -69,11 +78,15 @@ function gitEffect(command) {
 export function classifyCommand(command) {
   const normalized = normalizedCommand(command);
   if (SHELL_COMPOSITION.test(normalized)) return { risk_class: COMMAND_RISK_CLASSES.UNKNOWN, normalized, reason: 'SHELL_COMPOSITION_OR_EXPANSION' };
+  if (DESTRUCTIVE.test(normalized)) return { risk_class: COMMAND_RISK_CLASSES.DESTRUCTIVE, normalized, reason: 'DESTRUCTIVE_APPROVAL_REQUIRED' };
   if (OBSERVATION_SHAPED_MUTATION.test(normalized)) return { risk_class: COMMAND_RISK_CLASSES.WORKSPACE_EFFECT, normalized, reason: 'OBSERVATION_SHAPED_MUTATION_PATTERN' };
   const effect = gitEffect(normalized);
   if (effect === 'push') return { risk_class: COMMAND_RISK_CLASSES.REMOTE_EFFECT, normalized, git_effect: effect, reason: 'REMOTE_OR_NETWORK_PATTERN' };
   if (effect) return { risk_class: COMMAND_RISK_CLASSES.REPOSITORY_EFFECT, normalized, git_effect: effect, reason: 'REPOSITORY_MUTATION_PATTERN' };
-  if (DESTRUCTIVE.test(normalized)) return { risk_class: COMMAND_RISK_CLASSES.DESTRUCTIVE, normalized, reason: 'STRUCTURAL_DESTRUCTIVE_PATTERN' };
+  // Fetching an explicitly supplied authority ref updates only Git metadata;
+  // it does not alter the worktree, index, HEAD, or a remote repository. It
+  // remains ASK-gated so the native approval UI presents the exact refspec.
+  if (AUTHORITY_REF_PREFLIGHT.test(normalized)) return { risk_class: COMMAND_RISK_CLASSES.AUTHORITY_REF_PREFLIGHT, normalized, reason: 'EXPLICIT_AUTHORITY_REF_FETCH' };
   if (REMOTE.test(normalized)) return { risk_class: COMMAND_RISK_CLASSES.REMOTE_EFFECT, normalized, reason: 'REMOTE_OR_NETWORK_PATTERN' };
   if (REPOSITORY.test(normalized)) return { risk_class: COMMAND_RISK_CLASSES.REPOSITORY_EFFECT, normalized, reason: 'REPOSITORY_MUTATION_PATTERN' };
   if (WORKSPACE.test(normalized)) return { risk_class: COMMAND_RISK_CLASSES.WORKSPACE_EFFECT, normalized, reason: 'WORKSPACE_MUTATION_PATTERN' };
@@ -134,8 +147,8 @@ export function evaluateValidationRegistryFreshness(registry, { projectDir } = {
 /**
  * Project the already-governed role policy into OpenCode's observed last-match
  * rule order. Repository-defined validation is added only for test.execute
- * roles; structural denials are always appended last so broad observation
- * patterns cannot authorize redirection or a remote/destructive effect.
+ * roles; authority denials and approval-gated destructive operations follow
+ * broad observations, while composition denials remain final.
  */
 export function createNativeBashPermissionRules({ baseRules = {}, validationRegistry = null, roleCapabilities = [], roleAuthority = null } = {}) {
   ensureObject(baseRules, 'baseRules');
@@ -180,7 +193,15 @@ export function createNativeBashPermissionRules({ baseRules = {}, validationRegi
     if (OBSERVATION_PATTERNS.has(pattern)) append(pattern, baseRules[pattern]);
   }
 
-  // 4. Repository-admitted validation only for test.execute roles.
+  // 4. An explicit authority-ref fetch is the sole networked Git exception.
+  // It must be --no-tags and remains native-ASK-gated. This restores an
+  // authoritative branch/tag/commit for inspection without granting checkout,
+  // index, worktree, closeout, or remote mutation authority.
+  for (const [pattern, action] of Object.entries(baseRules)) {
+    if (pattern === 'git fetch --no-tags' || pattern === 'git fetch --no-tags *') append(pattern, action);
+  }
+
+  // 5. Repository-admitted validation only for test.execute roles.
   if (validationRegistry && roleCapabilities.includes('test.execute')) {
     const registry = validateValidationRegistry(validationRegistry);
     for (const command of registry.commands) append(command, 'allow');
@@ -188,9 +209,17 @@ export function createNativeBashPermissionRules({ baseRules = {}, validationRegi
     for (const pattern of validationPatterns) append(pattern, unadmitted);
   }
 
-  // 5. Specific remote/destructive denials, then composition denials last.
-  // The final placement prevents an observation wildcard from allowing writes.
-  for (const [pattern, action] of Object.entries(NATIVE_STRUCTURAL_DENIES)) append(pattern, action);
+  // 6. Direct closeout and remote effects are denied. Destructive operations
+  // are ASK-gated: approval is an operator decision, never role authority.
+  for (const [pattern, action] of Object.entries(NATIVE_AUTHORITY_DENIES)) append(pattern, action);
+  // Only an explicitly declared destructive ASK survives projection. This
+  // keeps read-only roles fail-closed even though the runtime knows the
+  // approval-gated command family.
+  for (const [pattern, action] of Object.entries(NATIVE_DESTRUCTIVE_ASKS)) {
+    if (baseRules[pattern] === 'ask') append(pattern, action);
+  }
+  // Final placement prevents a destructive or observation wildcard from
+  // authorizing shell composition/redirection.
   append('*>*', 'deny'); append('*<*', 'deny');
   return rules;
 }
@@ -235,7 +264,9 @@ export function decideCommandAdmission({ command, role, roleCapabilities = [], r
   ensureString(role, 'role');
   const classified = classifyCommand(command);
   const provenance = { classifier: 'OCODE_COMMAND_ADMISSION_V1', role, risk_class: classified.risk_class, reason: classified.reason };
-  if (classified.risk_class === COMMAND_RISK_CLASSES.DESTRUCTIVE || classified.risk_class === COMMAND_RISK_CLASSES.REMOTE_EFFECT) return { decision: COMMAND_DECISIONS.DENY, ...provenance };
+  if (classified.risk_class === COMMAND_RISK_CLASSES.REMOTE_EFFECT) return { decision: COMMAND_DECISIONS.DENY, ...provenance };
+  if (classified.risk_class === COMMAND_RISK_CLASSES.DESTRUCTIVE) return { decision: COMMAND_DECISIONS.ASK, ...provenance };
+  if (classified.risk_class === COMMAND_RISK_CLASSES.AUTHORITY_REF_PREFLIGHT) return { decision: COMMAND_DECISIONS.ASK, ...provenance };
   if (classified.risk_class === COMMAND_RISK_CLASSES.REPOSITORY_EFFECT) {
     const gitCommand = classified.git_effect;
     const effect = ['add', 'update-index'].includes(gitCommand) ? 'stage' : ['commit', 'merge', 'rebase', 'cherry-pick', 'tag'].includes(gitCommand) ? 'commit' : ['checkout', 'restore', 'switch', 'rm', 'mv', 'config'].includes(gitCommand) ? 'repository.edit' : gitCommand === 'push' ? 'push' : null;

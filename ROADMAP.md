@@ -129,7 +129,7 @@ M6 worktree preservation: the unrelated in-progress M6 changes were saved before
 
 Purpose: use OpenCode's normal interactive tool-permission UI exactly once for every primary-session approvable operation.
 
-The primary orchestrator uses `bash "*": ask` with structural denials for `git push`, `git reset --hard`, `git clean`, and `rm -rf *`. `request_effect`, `ocode effect`, Ocode terminal approval prompts, custom execution, custom approval ledgers, and SDK permission mediation have been removed. Constrained subagents return an exact `EFFECT REQUEST`; the primary executes it through native OpenCode ASK. The child-session propagation limitation on OpenCode 1.18.21 remains non-authoritative. See [native approval architecture](docs/architecture/approval-first-execution.md).
+The primary orchestrator uses `bash "*": ask` with structural authority denials for direct `git push`, staging, commit, redirection, and composition. Destructive operations such as `git reset --hard`, `git clean`, and `rm -rf *` are native-ASK-gated. `request_effect`, `ocode effect`, Ocode terminal approval prompts, custom execution, custom approval ledgers, and SDK permission mediation have been removed. Constrained subagents return an exact `EFFECT REQUEST`; the primary executes it through native OpenCode ASK. The child-session propagation limitation on OpenCode 1.18.21 remains non-authoritative. See [native approval architecture](docs/architecture/approval-first-execution.md).
 
 ### M7 Planner Compiler — PLANNED
 

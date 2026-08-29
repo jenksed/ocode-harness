@@ -4,6 +4,15 @@ Ocode treats an intended effect as the governed unit, not the name of the tool s
 
 The runtime projection derives this boundary from the manifest authority. Read-only roles receive an explicit Bash deny catch-all, with only declared observation patterns restored and repository-defined validation commands admitted for roles with `test.execute`. Structural staging/commit/push denials remain last-match rules for every role. Coder retains native `edit: allow`, `repository.edit`, `command.execute`, and `test.execute`, but not Git mutation authority.
 
+The native matcher is not the final constitutional boundary. Before the
+OpenCode server executes Bash, its source-owned `tool.execute.before` guard
+uses the same manifest-derived authority projection to reject governed Git
+effects. It recognizes direct, global-option, environment-prefixed,
+`env`/`command`, and executable-path stage/commit/push forms. An unclassified
+Git-shaped command or nested `sh`/`bash`/`zsh -c` form is fail-closed; ordinary
+non-Git commands are outside the guard and continue to native policy. The
+guard is deny-only and does not participate in permission replies.
+
 `decideEffectAdmission()` returns `OCODE_ROLE_EFFECT_DENIED` with the effect, role, owner, and next action. Repository edit denial routes to `coder`; Git effects route to deterministic runtime. `decideCommandAdmission()` applies the same effect boundary when role authority is supplied. An orchestrator must identify the effect before tool selection, delegate edits, and never run a subagent's mutation request itself.
 
 | Role class | Repository edit | Direct staging/commit/push | Observation | Admitted tests |

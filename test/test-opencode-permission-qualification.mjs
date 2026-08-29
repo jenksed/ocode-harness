@@ -32,6 +32,32 @@ assert.equal(scenario('remote-deny').tool_states.at(-1), 'error');
 assert.equal(scenario('low-interruption-loop').permission_request_count, 0);
 assert.equal(scenario('low-interruption-loop').tool_states.filter((state) => state === 'completed').length, 4);
 
+const hookDenied = scenario('pre-execution-plugin-denies-before-native-ask');
+assert.equal(hookDenied.permission_request_count, 0);
+assert.equal(hookDenied.tool_states.at(-1), 'error');
+assert.equal(hookDenied.plugin_events.find((event) => event.event === 'before')?.agent_from_chat_message, 'coder');
+assert.equal(hookDenied.plugin_events.find((event) => event.event === 'before')?.agent_from_session_messages, 'coder');
+assert.deepEqual(hookDenied.effect_after, hookDenied.effect_before);
+const hookPassed = scenario('pre-execution-plugin-passes-to-native-ask');
+assert.equal(hookPassed.permission_request_count, 1);
+assert.equal(hookPassed.tool_results.at(-1).error, 'The user rejected permission to use this specific tool call.');
+
+for (const id of [
+  'production-guard-stage-alternates-before-native-ask',
+  'production-guard-commit-alternates-before-native-ask',
+  'production-guard-push-alternates-before-native-ask',
+  'production-guard-child-stage-before-native-ask',
+]) {
+  const observed = scenario(id);
+  assert.equal(observed.permission_request_count, 0, `${id} bypasses no native authority prompt`);
+  assert.equal(observed.tool_states.filter((state) => state === 'error').length, observed.commands.length, `${id} rejects every governed call`);
+  assert.deepEqual(observed.effect_after, observed.effect_before, `${id} leaves the governed fixture effect unchanged`);
+  assert.equal(observed.tool_results.filter((entry) => entry.status === 'error').every((entry) => entry.error?.startsWith('OCODE_ROLE_EFFECT_DENIED\nrole: coder\n')), true, `${id} reports constitutional denial`);
+}
+const productionUnknown = scenario('production-guard-passes-unknown-command-to-native-ask');
+assert.equal(productionUnknown.permission_request_count, 1);
+assert.equal(productionUnknown.tool_results.at(-1).error, 'The user rejected permission to use this specific tool call.');
+
 const runtimeParity = [
   ['orchestrator-git-status-observation', 'git status --short', 'ALLOW', 'completed'],
   ['interactive-source-orchestrator-git-status-observation', 'git status --short', 'ALLOW', 'completed'],
@@ -49,12 +75,9 @@ const runtimeParity = [
   ['interactive-source-orchestrator-git-add-denied', 'git add README.md', 'DENY', 'error'],
   ['orchestrator-git-commit-denied', 'git commit -m denied', 'DENY', 'error'],
   ['orchestrator-git-push-denied', 'git push origin main', 'DENY', 'error'],
-  ['orchestrator-git-reset-denied', 'git reset --hard', 'DENY', 'error'],
-  ['orchestrator-git-clean-denied', 'git clean -fd', 'DENY', 'error'],
   ['orchestrator-git-show-output-denied', 'git show --output=marker.txt HEAD', 'DENY', 'error'],
   ['orchestrator-git-diff-output-denied', 'git diff --output=marker.txt', 'DENY', 'error'],
   ['orchestrator-git-log-output-denied', 'git log --output=marker.txt', 'DENY', 'error'],
-  ['orchestrator-find-delete-denied', 'find . -delete', 'DENY', 'error'],
   ['orchestrator-find-exec-denied', 'find . -exec touch marker.txt \\;', 'DENY', 'error'],
   ['orchestrator-tree-output-denied', 'tree -o marker.txt', 'DENY', 'error'],
   ['orchestrator-redirection-denied', 'rg needle fixture.txt > marker.txt', 'DENY', 'error'],
@@ -69,9 +92,24 @@ for (const [id, command, expected, terminal] of runtimeParity) {
   assert.equal(observed.marker_created, false, `${id} did not create a fixture marker`);
   assert.equal(projectBashCommand(observed.rules, command).state, expected, `${id} internal matcher equals actual OpenCode result`);
 }
-for (const id of ['orchestrator-git-add-denied', 'interactive-source-orchestrator-git-add-denied', 'orchestrator-git-commit-denied', 'orchestrator-git-push-denied', 'orchestrator-git-reset-denied', 'orchestrator-git-clean-denied']) {
+for (const id of ['orchestrator-git-add-denied', 'interactive-source-orchestrator-git-add-denied', 'orchestrator-git-commit-denied', 'orchestrator-git-push-denied']) {
   const observed = scenario(id);
   assert.deepEqual(observed.effect_after, observed.effect_before, `${id} protected fixture state unchanged`);
+}
+for (const [id, command] of [
+  ['orchestrator-git-reset-approval-rejected', 'git reset --hard'],
+  ['orchestrator-git-clean-approval-rejected', 'git clean -fd'],
+  ['orchestrator-find-delete-approval-rejected', 'find . -delete'],
+  ['orchestrator-authority-ref-fetch-approval-rejected', 'git fetch --no-tags origin refs/heads/program:refs/remotes/origin/program'],
+]) {
+  const observed = scenario(id);
+  assert.equal(observed.permission_request_count, 1, `${id} asks exactly once`);
+  assert.equal(observed.tool_states.at(-1), 'error', `${id} rejection prevents execution`);
+  assert.equal(projectBashCommand(observed.rules, command).state, 'ASK', `${id} is native-ASK-gated`);
+}
+for (const id of ['orchestrator-git-reset-approval-rejected', 'orchestrator-git-clean-approval-rejected']) {
+  const observed = scenario(id);
+  assert.deepEqual(observed.effect_after, observed.effect_before, `${id} rejection preserves the protected fixture state`);
 }
 const generatedOrder = Object.keys(scenario('orchestrator-git-status-observation').rules);
 assert.ok(generatedOrder.indexOf('git *') < generatedOrder.indexOf('git status'));

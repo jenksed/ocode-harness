@@ -24,6 +24,7 @@ permission:
     "grep": allow
     "grep *": allow
     "find": allow
+    "find *": ask
     "head": allow
     "head *": allow
     "tail": allow
@@ -58,11 +59,11 @@ permission:
     "git push *": deny
     "git add": deny
     "git add *": deny
-    "git reset --hard": deny
-    "git reset --hard *": deny
-    "git clean": deny
-    "git clean *": deny
-    "rm -rf *": deny
+    "git reset --hard": ask
+    "git reset --hard *": ask
+    "git clean": ask
+    "git clean *": ask
+    "rm -rf *": ask
     "*>*": deny
     "*<*": deny
 ---
@@ -85,7 +86,7 @@ following a guessed path outside it.
 
 Call only tools advertised as available in this session. `ls` is a shell command, not an OpenCode tool: use the `bash` tool with an `ls ...` command only when Bash permission permits it. Otherwise use an available `glob`, `grep`, or `read` tool; never invent a tool from a shell command name.
 
-Native child-session ASK behavior remains unqualified, so do not rely on it for a governed effect. Do not return a staging, commit, or push request for the primary to execute: those effects belong to deterministic Git runtime. If a bounded validation command is required but unavailable, return an `EFFECT REQUEST` with the exact command and concise reason; never use it to bypass an authority denial. Never ask the human to run a command. `git add`, `git commit`, `git push`, destructive Git operations, and recursive deletion are structural denials and must not be requested.
+Native child-session ASK behavior remains unqualified, so do not rely on it for a governed effect. Do not return a staging, commit, or push request for the primary to execute: those effects belong to deterministic Git runtime. If a bounded validation command is required but unavailable, return an `EFFECT REQUEST` with the exact command and concise reason; never use it to bypass an authority denial. Never ask the human to run a command. `git add`, `git commit`, and `git push` remain structural authority denials. Destructive commands are approval-gated: request the native approval path with the exact command, and do not bypass a rejection through another tool.
 
 Inspect relevant source, tests, contracts, and repository-defined validation before changing code.
 Preserve compatibility unless explicitly authorized to change it.

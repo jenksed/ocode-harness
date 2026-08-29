@@ -25,13 +25,18 @@ try {
 
   assert.equal(classifyCommand('rg task src').risk_class, 'OBSERVE');
   assert.equal(classifyCommand('git push origin main').risk_class, 'REMOTE_EFFECT');
+  assert.equal(classifyCommand('git fetch --no-tags origin refs/heads/program:refs/remotes/origin/program').risk_class, 'AUTHORITY_REF_PREFLIGHT');
   assert.equal(classifyCommand('rm -rf build').risk_class, 'DESTRUCTIVE');
-  for (const command of ['git show --output=marker.txt HEAD', 'git diff --output=marker.txt', 'git log --output=marker.txt', 'find . -delete', 'find . -exec touch marker.txt', 'tree -o marker.txt']) {
+  assert.equal(classifyCommand('find . -delete').risk_class, 'DESTRUCTIVE');
+  for (const command of ['git show --output=marker.txt HEAD', 'git diff --output=marker.txt', 'git log --output=marker.txt', 'find . -exec touch marker.txt', 'tree -o marker.txt']) {
     assert.equal(classifyCommand(command).risk_class, 'WORKSPACE_EFFECT', command);
   }
   assert.equal(classifyCommand('rg x; rm -rf /').risk_class, 'UNKNOWN');
   assert.equal(decideCommandAdmission({ command: 'unknown-command', role: 'coder' }).decision, 'ASK');
   assert.equal(decideCommandAdmission({ command: 'git push origin main', role: 'coder' }).decision, 'DENY');
+  assert.equal(decideCommandAdmission({ command: 'rm -rf build', role: 'orchestrator' }).decision, 'ASK');
+  assert.equal(decideCommandAdmission({ command: 'find . -delete', role: 'orchestrator' }).decision, 'ASK');
+  assert.equal(decideCommandAdmission({ command: 'git fetch --no-tags origin refs/heads/program:refs/remotes/origin/program', role: 'orchestrator' }).decision, 'ASK');
   const registry = createValidationRegistry({ projectDir: root, commands: ['npm test', 'npm run test:unit'] });
   assert.equal(createValidationRegistry({ projectDir: root }).commands.includes('npm run deploy'), false);
   const nativeRules = createNativeBashPermissionRules({ baseRules: { '*': 'ask', 'rg *': 'allow' }, validationRegistry: registry, roleCapabilities: ['test.execute'] });

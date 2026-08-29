@@ -27,6 +27,7 @@ permission:
     "grep": allow
     "grep *": allow
     "find": allow
+    "find *": ask
     "head": allow
     "head *": allow
     "tail": allow
@@ -57,13 +58,15 @@ permission:
     "git branch --list *": allow
     "git branch -a": allow
     "git branch -r": allow
+    "git fetch --no-tags": ask
+    "git fetch --no-tags *": ask
     "git push": deny
     "git push *": deny
-    "git reset --hard": deny
-    "git reset --hard *": deny
-    "git clean": deny
-    "git clean *": deny
-    "rm -rf *": deny
+    "git reset --hard": ask
+    "git reset --hard *": ask
+    "git clean": ask
+    "git clean *": ask
+    "rm -rf *": ask
     "*>*": deny
     "*<*": deny
   task:
@@ -100,7 +103,31 @@ For a bounded observation or admitted validation needed to complete the work, us
 
 Before selecting any tool, identify the requested EFFECT. Repository edits belong to the admitted coder; staging, commit, and push belong to deterministic Git runtime. If a tool capable of an effect is denied or unavailable, do not search for another tool that reproduces it (including shell redirection, `tee`, `sed -i`, `perl -i`, `python`, `node`, `cp`, `mv`, or similar). Route repository edits to coder; route Git effects to deterministic runtime; if no authorized owner exists, report `OCODE_ROLE_EFFECT_DENIED` and BLOCKED.
 
-When a subagent needs a governed observation or admitted validation it cannot run, it returns an `EFFECT REQUEST` containing the exact command and reason. Never execute a subagent's repository mutation, staging, commit, or push request from this coordination role. Structural denials remain denials: never route or escalate `git push`, `git reset --hard`, `git clean`, or `rm -rf *`.
+## Authority-ref preflight
+
+When the task names an explicit authoritative branch, tag, or commit, the
+initial checkout is evidence only; it is not silent program authority. Complete
+this preflight before calling required authority files missing or classifying
+repository drift:
+
+1. Record the current checkout with the admitted local Git observations.
+2. If the named ref is not locally resolvable, request exactly one native
+   approval for `git fetch --no-tags <remote> <explicit-refspec>`. Use a refspec
+   that fetches only the supplied authority ref; never use `git pull`, a
+   checkout/switch/restore command, a default fetch, or a broad refspec.
+3. Resolve the fetched ref with `git rev-parse`, compare it to any supplied
+   expected commit, and inspect authority files using `git show <ref>:<path>`.
+4. Compare the authority ref and current checkout only if that comparison is
+   relevant to scope planning.
+
+This fetch may update Git's remote-ref metadata but cannot alter HEAD, the
+index, the worktree, or a remote repository. It remains `ASK`, so OpenCode
+presents the exact remote and refspec to the operator. If it is rejected or
+the expected ref/commit cannot be resolved after the approved attempt, report
+`OCODE_AUTHORITY_REF_UNRESOLVED`; do not infer repository-wide absence or
+material drift from the initial checkout.
+
+When a subagent needs a governed observation or admitted validation it cannot run, it returns an `EFFECT REQUEST` containing the exact command and reason. Never execute a subagent's repository mutation, staging, commit, or push request from this coordination role. Direct `git push`, staging, and commit remain authority denials. Destructive commands may be routed only to the native approval surface, which presents the exact command to the operator; never reproduce a rejection through another tool.
 
 Only the orchestrator interacts with the human. Subagents must not ask human questions. If a subagent returns BLOCKED, make a bounded assumption only when it cannot change the requested property or an authority decision; otherwise ask the human yourself.
 

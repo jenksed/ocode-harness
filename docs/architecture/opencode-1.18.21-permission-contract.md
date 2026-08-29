@@ -32,6 +32,17 @@ These declarations establish transport shape only. The observations below establ
 - Exact `npm test: allow` executed a repository fixture test with zero requests.
 - A trailing `git push *: deny` rejected a harmless nonexistent push fixture with zero requests.
 - A bounded loop of `pwd`, `rg needle fixture.txt`, and two `npm test` runs completed with zero permission requests under Ocode's rule ordering.
+- A local plugin `tool.execute.before` hook ran for Bash before native `*: ask`
+  requested permission. Throwing from it produced a tool error, zero native
+  requests, and no Git index effect. The hook received the exact Bash command.
+- `chat.message` supplied the configured agent identity before Bash, and the
+  same identity was retrievable from the session's user message. The hook also
+  ran and rejected a Bash request in an exercised child session.
+- The production Ocode guard rejected direct, `-C`, `--git-dir`, environment,
+  `env`, `command`, and executable-path forms of Git stage, commit, and push
+  with `OCODE_ROLE_EFFECT_DENIED`; index, HEAD, and fixture remote state were
+  unchanged. A harmless `uname -a` passed through the guard and reached one
+  native `ASK`, which the fixture rejected.
 
 ## Ocode projection contract
 
@@ -55,10 +66,22 @@ layer.
 
 This projection changes execution permission only. It grants no capability, edit, stage, commit, push, review, or acceptance authority.
 
+## Pre-execution authority contract
+
+The source-owned `pre-execution-authority-guard` plugin is installed in the
+same server configuration that `ocode .` passes to the pinned runtime. Its
+authority options are derived at launch from parsed manifest contracts. It is
+deny-only: stage, commit, push, and a read-only role's repository edit are
+rejected before execution; all other commands continue to the native matcher.
+It never implements an approval prompt, permission response, or command
+executor. Native `*: ask` remains unchanged in this phase.
+
 ## Unproven
 
 - `always` persistence across a new session, process restart, or machine restart;
 - primary/child sharing of an `always` reply;
+- native child-session `ASK` propagation or its TUI behavior (the guard's
+  child-session rejection is qualified, not child approval propagation);
 - permission behavior for edit, external directory, web, skill, and task tools;
 - every possible shell grammar form or quoting edge case; and
 - TUI behavior not shared with the exercised SDK/server permission service.

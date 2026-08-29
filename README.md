@@ -115,7 +115,7 @@ git show
 git rev-parse
 ```
 
-Consequential operations remain `ASK` where the role is allowed to request them. Structural denials remain `DENY`; they do not become approvable merely to reduce friction.
+Destructive operations remain `ASK` and show their exact command in OpenCode's native approval UI. Structural authority denials remain `DENY`; direct stage, commit, push, redirection, and input-composition operations do not become approvable merely to reduce friction.
 
 The OpenCode `1.18.21` permission characterization in `docs/architecture/opencode-1.18.21-permission-contract.md` qualifies only the native Bash properties Ocode projects. In particular, wildcard observation rules require trailing structural redirection denials; do not generalize the record to untested tools or shell grammar.
 

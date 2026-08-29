@@ -142,19 +142,19 @@ permission:
     "git push *": deny
     "git add": deny
     "git add *": deny
-    "git reset --hard": deny
-    "git reset --hard *": deny
-    "git clean": deny
-    "git clean *": deny
+    "git reset --hard": ask
+    "git reset --hard *": ask
+    "git clean": ask
+    "git clean *": ask
     "git commit": deny
     "git commit *": deny
-    "rm -rf *": deny
+    "rm -rf *": ask
 ```
 
 **Security Features:**
 - **edit: allow**: Coder can modify source files
-- **Denies dangerous git commands**: Cannot stage, push, reset, clean, or commit
-- **Denies destructive commands**: Cannot remove directories with `rm -rf`
+- **Denies authority-violating Git commands**: Cannot stage, push, or commit
+- **Approval-gates destructive commands**: `reset`, `clean`, and `rm -rf` require one native approval showing the exact command
 - **Allowed skills**: Only TDD, diagnosing-bugs, prototype
 
 ### Verifier Permissions

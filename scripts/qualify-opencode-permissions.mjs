@@ -6,6 +6,7 @@ import { join, resolve } from 'node:path';
 import { createOpencodeClient, createOpencodeServer } from '@opencode-ai/sdk';
 import { loadAgentContracts } from '../packages/harness-runtime/lib/agent-contract.mjs';
 import { createNativeBashPermissionRules } from '../packages/harness-runtime/lib/command-admission.mjs';
+import { createPreExecutionAuthorityGuardOptions } from '../packages/harness-runtime/lib/pre-execution-authority-guard.mjs';
 
 const runtimeVersion = '1.18.21';
 const root = resolve('.');
@@ -128,7 +129,7 @@ const governedGitEffectProbes = {
   },
 };
 
-async function runScenario({ id, command, commands = [command], rules, reply = null, files = {}, git = false, effectProbe = null, agent = 'probe', sourceAgents = false }) {
+async function runScenario({ id, command, commands = [command], rules, reply = null, files = {}, git = false, effectProbe = null, agent = 'probe', sourceAgents = false, plugin = null, childSession = false }) {
   const fixture = mkdtempSync(join(tmpdir(), `ocode-permission-${id}-`));
   for (const [path, content] of Object.entries(files)) writeFileSync(join(fixture, path), content);
   if (git) initializeGitFixture(fixture);
@@ -137,9 +138,11 @@ async function runScenario({ id, command, commands = [command], rules, reply = n
   for (const name of ['config', 'data', 'state', 'cache']) mkdirSync(join(xdg, name), { recursive: true });
   if (sourceAgents) cpSync(join(root, 'agents'), join(xdg, 'config', 'opencode', 'agents'), { recursive: true });
   const provider = await startMockProvider(commands);
+  const pluginLogPath = plugin ? join(fixture, 'plugin-events.jsonl') : null;
   const config = {
     provider: { fixture: { npm: '@ai-sdk/openai-compatible', name: 'Permission Fixture', options: { baseURL: provider.baseURL, apiKey: 'fixture-key' }, models: { fixture: { name: 'Fixture' } } } },
     agent: { [agent]: { mode: 'primary', model: 'fixture/fixture', permission: { bash: rules } } },
+    ...(plugin ? { plugin: [[plugin.path, { ...plugin.options, logPath: pluginLogPath }]] } : {}),
   };
   const environment = {
     XDG_CONFIG_HOME: join(xdg, 'config'), XDG_DATA_HOME: join(xdg, 'data'), XDG_STATE_HOME: join(xdg, 'state'), XDG_CACHE_HOME: join(xdg, 'cache'),
@@ -153,7 +156,10 @@ async function runScenario({ id, command, commands = [command], rules, reply = n
     const client = createOpencodeClient({ baseUrl: opencode.url, directory: fixture });
     const abort = new AbortController();
     const subscription = await client.event.subscribe({ query: { directory: fixture }, signal: abort.signal });
-    const created = responseData(await client.session.create({ query: { directory: fixture }, body: { title: id } }), 'SESSION_CREATE');
+    const parent = childSession
+      ? responseData(await client.session.create({ query: { directory: fixture }, body: { title: `${id}-parent` } }), 'PARENT_SESSION_CREATE')
+      : null;
+    const created = responseData(await client.session.create({ query: { directory: fixture }, body: { title: id, ...(parent ? { parentID: parent.id } : {}) } }), 'SESSION_CREATE');
     let resolveIdle;
     let rejectIdle;
     const idle = new Promise((resolvePromise, rejectPromise) => { resolveIdle = resolvePromise; rejectIdle = rejectPromise; });
@@ -183,13 +189,16 @@ async function runScenario({ id, command, commands = [command], rules, reply = n
     const toolParts = events.filter((event) => event.type === 'message.part.updated' && event.properties?.part?.type === 'tool').map((event) => event.properties.part);
     const tool_results = toolParts
       .filter((part) => part.state?.status)
-      .map((part) => ({ command: part.state?.input?.command ?? null, status: part.state.status }));
+      .map((part) => ({ command: part.state?.input?.command ?? null, status: part.state.status, error: part.state?.error ?? null }));
     // Preserve observable fixture state as well as the permission decision.  In
     // particular, a denied `find . -delete` must leave its pre-existing file
     // in place; absence of only a marker would not prove that.
     const fixture_file_exists = Object.fromEntries(Object.keys(files).map((path) => [path, existsSync(join(fixture, path))]));
     const effect_after = effectProbe?.observe(fixture) ?? null;
-    return { id, commands, rules, reply, git_fixture: git, permission_request_count: permissionEvents.length, permission_reply: permissionReply, tool_states: tool_results.map((entry) => entry.status), tool_results, request_count: provider.requests.length, marker_created: existsSync(join(fixture, 'marker.txt')), fixture_file_exists, effect_before, effect_after, session_abort: 'SUPPORTED' };
+    const plugin_events = pluginLogPath && existsSync(pluginLogPath)
+      ? readFileSync(pluginLogPath, 'utf8').trim().split('\n').filter(Boolean).map((line) => JSON.parse(line))
+      : [];
+    return { id, commands, rules, reply, git_fixture: git, child_session: childSession, plugin: plugin ? { path: plugin.path } : null, plugin_events, permission_request_count: permissionEvents.length, permission_reply: permissionReply, tool_states: tool_results.map((entry) => entry.status), tool_results, request_count: provider.requests.length, marker_created: existsSync(join(fixture, 'marker.txt')), fixture_file_exists, effect_before, effect_after, session_abort: 'SUPPORTED' };
   } finally {
     await opencode?.close?.();
     await new Promise((resolveClose) => provider.server.close(resolveClose));
@@ -200,6 +209,9 @@ const scenarios = [];
 const requestedScenarios = new Set((process.env.OCODE_PERMISSION_SCENARIOS || '').split(',').filter(Boolean));
 const { contracts } = loadAgentContracts({ baseDir: root });
 const orchestrator = contracts.get('orchestrator');
+const preExecutionQualificationPlugin = resolve('test/fixtures/opencode-pre-execution-qualification-plugin.mjs');
+const productionPreExecutionAuthorityGuard = resolve('packages/harness-runtime/plugins/pre-execution-authority-guard.mjs');
+const preExecutionAuthorityGuardOptions = createPreExecutionAuthorityGuardOptions({ contracts });
 const orchestratorRules = createNativeBashPermissionRules({
   baseRules: orchestrator.permissions.bash,
   roleAuthority: orchestrator.authority,
@@ -225,10 +237,77 @@ for (const scenario of [
   { id: 'reply-reject', command: 'pwd', rules: { '*': 'ask' }, reply: 'reject' },
   { id: 'admitted-validation', command: 'npm test', rules: { '*': 'ask', 'npm test': 'allow', '*>*': 'deny', '*<*': 'deny' }, files: { 'package.json': '{"scripts":{"test":"node -e \\"process.exit(0)\\""}}' } },
   { id: 'remote-deny', command: 'git push origin fixture', rules: { '*': 'ask', 'git push *': 'deny' } },
+  {
+    id: 'pre-execution-plugin-denies-before-native-ask',
+    command: 'git add README.md',
+    rules: { '*': 'ask' },
+    git: true,
+    files: { 'README.md': '# fixture\n' },
+    effectProbe: governedGitEffectProbes.add,
+    agent: 'coder',
+    plugin: { path: preExecutionQualificationPlugin, options: { denyCommand: 'git add README.md' } },
+  },
+  {
+    id: 'pre-execution-plugin-passes-to-native-ask',
+    command: 'uname -a',
+    rules: { '*': 'ask' },
+    reply: 'reject',
+    agent: 'coder',
+    plugin: { path: preExecutionQualificationPlugin, options: { denyCommand: 'git add README.md' } },
+  },
+  {
+    id: 'production-guard-stage-alternates-before-native-ask',
+    commands: ['git add README.md', 'git -C . add README.md', 'git --git-dir=.git add README.md', 'GIT_DIR=.git git add README.md', 'env GIT_OPTIONAL_LOCKS=0 git add README.md', '/usr/bin/git add README.md', 'command git add README.md', '/usr/bin/env git add README.md'],
+    rules: { '*': 'ask' },
+    git: true,
+    files: { 'README.md': '# fixture\n' },
+    effectProbe: governedGitEffectProbes.add,
+    agent: 'coder',
+    plugin: { path: productionPreExecutionAuthorityGuard, options: preExecutionAuthorityGuardOptions },
+  },
+  {
+    id: 'production-guard-commit-alternates-before-native-ask',
+    commands: ['git commit -m denied', 'git -C . commit -m denied', 'git --git-dir=.git commit -m denied', 'env git commit -m denied', '/usr/bin/git commit -m denied'],
+    rules: { '*': 'ask' },
+    git: true,
+    files: { 'README.md': '# fixture\n' },
+    effectProbe: governedGitEffectProbes.commit,
+    agent: 'coder',
+    plugin: { path: productionPreExecutionAuthorityGuard, options: preExecutionAuthorityGuardOptions },
+  },
+  {
+    id: 'production-guard-push-alternates-before-native-ask',
+    commands: ['git push origin main', 'git -C . push origin main', 'git --git-dir=.git push origin main', 'env git push origin main', '/usr/bin/git push origin main'],
+    rules: { '*': 'ask' },
+    git: true,
+    files: { 'README.md': '# fixture\n' },
+    effectProbe: governedGitEffectProbes.push,
+    agent: 'coder',
+    plugin: { path: productionPreExecutionAuthorityGuard, options: preExecutionAuthorityGuardOptions },
+  },
+  {
+    id: 'production-guard-passes-unknown-command-to-native-ask',
+    command: 'uname -a',
+    rules: { '*': 'ask' },
+    reply: 'reject',
+    agent: 'coder',
+    plugin: { path: productionPreExecutionAuthorityGuard, options: preExecutionAuthorityGuardOptions },
+  },
+  {
+    id: 'production-guard-child-stage-before-native-ask',
+    command: 'env git add README.md',
+    rules: { '*': 'ask' },
+    git: true,
+    files: { 'README.md': '# fixture\n' },
+    effectProbe: governedGitEffectProbes.add,
+    agent: 'coder',
+    childSession: true,
+    plugin: { path: productionPreExecutionAuthorityGuard, options: preExecutionAuthorityGuardOptions },
+  },
   { id: 'low-interruption-loop', commands: ['pwd', 'rg needle fixture.txt', 'npm test', 'npm test'], rules: { '*': 'ask', pwd: 'allow', 'rg *': 'allow', 'npm test': 'allow', '*>*': 'deny', '*<*': 'deny' }, files: { 'fixture.txt': 'needle\n', 'package.json': '{"scripts":{"test":"node -e \\"process.exit(0)\\""}}' } },
   {
     id: 'orchestrator-safe-observation',
-    commands: ['pwd', 'ls', 'ls -la', 'rg needle fixture.txt', 'grep needle fixture.txt', 'find . -maxdepth 1', 'head fixture.txt', 'tail fixture.txt', 'wc fixture.txt', 'file fixture.txt', 'stat fixture.txt', 'tree .', 'which git', 'command -v git', 'git status --short', 'git diff', 'git log --oneline -5', 'git show HEAD:README.md', 'git rev-parse HEAD', 'git branch --show-current', 'git branch --list', 'git worktree list'],
+    commands: ['pwd', 'ls', 'ls -la', 'rg needle fixture.txt', 'grep needle fixture.txt', 'head fixture.txt', 'tail fixture.txt', 'wc fixture.txt', 'file fixture.txt', 'stat fixture.txt', 'tree .', 'which git', 'command -v git', 'git status --short', 'git diff', 'git log --oneline -5', 'git show HEAD:README.md', 'git rev-parse HEAD', 'git branch --show-current', 'git branch --list', 'git worktree list'],
     rules: orchestratorRules,
     git: true,
     files: { 'README.md': '# fixture\n', 'fixture.txt': 'needle\n' },
@@ -250,6 +329,10 @@ for (const scenario of [
   { id: 'orchestrator-pipeline-write-probe', command: 'rg needle fixture.txt | tee marker.txt', rules: orchestratorRules, files: { 'fixture.txt': 'needle\n' } },
   { id: 'orchestrator-and-write-probe', command: 'git status --short && touch marker.txt', rules: orchestratorRules, git: true, files: { 'README.md': '# fixture\n' } },
   { id: 'orchestrator-semicolon-write-probe', command: 'find . -maxdepth 1; touch marker.txt', rules: orchestratorRules, files: { 'fixture.txt': 'needle\n' } },
+  { id: 'orchestrator-git-reset-approval-rejected', command: 'git reset --hard', rules: orchestratorRules, reply: 'reject', git: true, files: { 'README.md': '# fixture\n' }, effectProbe: governedGitEffectProbes.reset },
+  { id: 'orchestrator-git-clean-approval-rejected', command: 'git clean -fd', rules: orchestratorRules, reply: 'reject', git: true, files: { 'README.md': '# fixture\n' }, effectProbe: governedGitEffectProbes.clean },
+  { id: 'orchestrator-find-delete-approval-rejected', command: 'find . -delete', rules: orchestratorRules, reply: 'reject', files: { 'fixture.txt': 'needle\n' } },
+  { id: 'orchestrator-authority-ref-fetch-approval-rejected', command: 'git fetch --no-tags origin refs/heads/program:refs/remotes/origin/program', rules: orchestratorRules, reply: 'reject', git: true, files: { 'README.md': '# fixture\n' } },
   { id: 'orchestrator-safe-observation-matrix', commands: ['pwd', 'ls', 'rg needle fixture.txt', 'grep needle fixture.txt', 'git status --short', 'git rev-parse HEAD', 'git branch --show-current', 'git worktree list'], rules: orchestratorRules, git: true, files: { 'README.md': '# fixture\n', 'fixture.txt': 'needle\n' } },
   ...[
     ['orchestrator-pwd-observation', 'pwd', false, {}],
@@ -262,15 +345,12 @@ for (const scenario of [
     ['orchestrator-git-show-output-denied', 'git show --output=marker.txt HEAD', true, { 'README.md': '# fixture\n' }],
     ['orchestrator-git-diff-output-denied', 'git diff --output=marker.txt', true, { 'README.md': '# fixture\n' }],
     ['orchestrator-git-log-output-denied', 'git log --output=marker.txt', true, { 'README.md': '# fixture\n' }],
-    ['orchestrator-find-delete-denied', 'find . -delete', false, { 'fixture.txt': 'needle\n' }],
     ['orchestrator-find-exec-denied', 'find . -exec touch marker.txt \\;', false, { 'fixture.txt': 'needle\n' }],
     ['orchestrator-tree-output-denied', 'tree -o marker.txt', false, { 'fixture.txt': 'needle\n' }],
     ['orchestrator-redirection-denied', 'rg needle fixture.txt > marker.txt', false, { 'fixture.txt': 'needle\n' }],
     ['orchestrator-pwd-redirection-denied', 'pwd > marker.txt', false, {}],
     ['orchestrator-git-commit-denied', 'git commit -m denied', true, { 'README.md': '# fixture\n' }, governedGitEffectProbes.commit],
     ['orchestrator-git-push-denied', 'git push origin main', true, { 'README.md': '# fixture\n' }, governedGitEffectProbes.push],
-    ['orchestrator-git-reset-denied', 'git reset --hard', true, { 'README.md': '# fixture\n' }, governedGitEffectProbes.reset],
-    ['orchestrator-git-clean-denied', 'git clean -fd', true, { 'README.md': '# fixture\n' }, governedGitEffectProbes.clean],
     ['orchestrator-unknown-command-denied', 'uname -a', false, {}],
   ].map(([id, command, git, files, effectProbe]) => ({ id, command, rules: orchestratorRules, git, files, effectProbe })),
 ]) {
@@ -279,8 +359,16 @@ for (const scenario of [
 
 const baseEvidencePath = process.env.OCODE_PERMISSION_BASE_EVIDENCE ? resolve(process.env.OCODE_PERMISSION_BASE_EVIDENCE) : null;
 const baseEvidence = baseEvidencePath && existsSync(baseEvidencePath) ? JSON.parse(readFileSync(baseEvidencePath, 'utf8')) : null;
+// These scenario IDs described the previous hard-deny policy. Never retain
+// them when incrementally refreshing evidence: their conclusion would be
+// materially false under the approval-gated destructive-command contract.
+const retiredScenarioIDs = new Set([
+  'orchestrator-git-reset-denied',
+  'orchestrator-git-clean-denied',
+  'orchestrator-find-delete-denied',
+]);
 const mergedScenarios = baseEvidence
-  ? [...baseEvidence.scenarios.filter((entry) => !scenarios.some((next) => next.id === entry.id)), ...scenarios]
+  ? [...baseEvidence.scenarios.filter((entry) => !retiredScenarioIDs.has(entry.id) && !scenarios.some((next) => next.id === entry.id)), ...scenarios]
   : scenarios;
 const artifact = { schema_version: 1, runtime: { opencode: runtimeVersion, sdk: runtimeVersion }, observed_at: new Date().toISOString(), method: 'local OpenAI-compatible non-inference fixture through installed SDK/server', lifecycle: { server_start: 'SUPPORTED', sdk_endpoint: 'SUPPORTED', session_create: 'SUPPORTED', event_subscribe: 'SUPPORTED', prompt_submit: 'SUPPORTED', session_completion: 'SUPPORTED', session_abort: 'SUPPORTED', clean_shutdown: 'SUPPORTED' }, scenarios: mergedScenarios };
 mkdirSync(resolve('qualification'), { recursive: true });

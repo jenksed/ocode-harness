@@ -4,7 +4,7 @@
     "opencode": "1.18.21",
     "sdk": "1.18.21"
   },
-  "observed_at": "2026-08-28T23:51:21.256Z",
+  "observed_at": "2026-08-29T12:51:10.666Z",
   "method": "local OpenAI-compatible non-inference fixture through installed SDK/server",
   "lifecycle": {
     "server_start": "SUPPORTED",
@@ -2127,96 +2127,6 @@
       "session_abort": "SUPPORTED"
     },
     {
-      "id": "orchestrator-find-delete-denied",
-      "commands": [
-        "find . -delete"
-      ],
-      "rules": {
-        "*": "deny",
-        "git *": "deny",
-        "ls": "allow",
-        "ls *": "allow",
-        "pwd": "allow",
-        "rg": "allow",
-        "rg *": "allow",
-        "grep": "allow",
-        "grep *": "allow",
-        "find": "allow",
-        "head": "allow",
-        "head *": "allow",
-        "tail": "allow",
-        "tail *": "allow",
-        "wc": "allow",
-        "wc *": "allow",
-        "file": "allow",
-        "file *": "allow",
-        "stat": "allow",
-        "stat *": "allow",
-        "tree": "allow",
-        "which": "allow",
-        "which *": "allow",
-        "command -v": "allow",
-        "command -v *": "allow",
-        "git status": "allow",
-        "git status *": "allow",
-        "git diff": "allow",
-        "git log": "allow",
-        "git show": "allow",
-        "git rev-parse": "allow",
-        "git rev-parse *": "allow",
-        "git worktree list": "allow",
-        "git worktree list *": "allow",
-        "git branch --show-current": "allow",
-        "git branch --list": "allow",
-        "git branch --list *": "allow",
-        "git branch -a": "allow",
-        "git branch -r": "allow",
-        "git push": "deny",
-        "git push *": "deny",
-        "git reset --hard": "deny",
-        "git reset --hard *": "deny",
-        "git clean": "deny",
-        "git clean *": "deny",
-        "git add": "deny",
-        "git add *": "deny",
-        "git commit": "deny",
-        "git commit *": "deny",
-        "rm -rf *": "deny",
-        "find *": "deny",
-        "*>*": "deny",
-        "*<*": "deny"
-      },
-      "reply": null,
-      "git_fixture": false,
-      "permission_request_count": 0,
-      "permission_reply": null,
-      "tool_states": [
-        "pending",
-        "running",
-        "error"
-      ],
-      "tool_results": [
-        {
-          "command": null,
-          "status": "pending"
-        },
-        {
-          "command": "find . -delete",
-          "status": "running"
-        },
-        {
-          "command": "find . -delete",
-          "status": "error"
-        }
-      ],
-      "request_count": 2,
-      "marker_created": false,
-      "fixture_file_exists": {
-        "fixture.txt": true
-      },
-      "session_abort": "SUPPORTED"
-    },
-    {
       "id": "orchestrator-find-exec-denied",
       "commands": [
         "find . -exec touch marker.txt \\;"
@@ -2769,198 +2679,6 @@
       },
       "effect_after": {
         "remote_main": "ee640a351092fee44d49dfecbd213f020140c36d"
-      },
-      "session_abort": "SUPPORTED"
-    },
-    {
-      "id": "orchestrator-git-reset-denied",
-      "commands": [
-        "git reset --hard"
-      ],
-      "rules": {
-        "*": "deny",
-        "git *": "deny",
-        "ls": "allow",
-        "ls *": "allow",
-        "pwd": "allow",
-        "rg": "allow",
-        "rg *": "allow",
-        "grep": "allow",
-        "grep *": "allow",
-        "find": "allow",
-        "head": "allow",
-        "head *": "allow",
-        "tail": "allow",
-        "tail *": "allow",
-        "wc": "allow",
-        "wc *": "allow",
-        "file": "allow",
-        "file *": "allow",
-        "stat": "allow",
-        "stat *": "allow",
-        "tree": "allow",
-        "which": "allow",
-        "which *": "allow",
-        "command -v": "allow",
-        "command -v *": "allow",
-        "git status": "allow",
-        "git status *": "allow",
-        "git diff": "allow",
-        "git log": "allow",
-        "git show": "allow",
-        "git rev-parse": "allow",
-        "git rev-parse *": "allow",
-        "git worktree list": "allow",
-        "git worktree list *": "allow",
-        "git branch --show-current": "allow",
-        "git branch --list": "allow",
-        "git branch --list *": "allow",
-        "git branch -a": "allow",
-        "git branch -r": "allow",
-        "git push": "deny",
-        "git push *": "deny",
-        "git reset --hard": "deny",
-        "git reset --hard *": "deny",
-        "git clean": "deny",
-        "git clean *": "deny",
-        "git add": "deny",
-        "git add *": "deny",
-        "git commit": "deny",
-        "git commit *": "deny",
-        "rm -rf *": "deny",
-        "find *": "deny",
-        "*>*": "deny",
-        "*<*": "deny"
-      },
-      "reply": null,
-      "git_fixture": true,
-      "permission_request_count": 0,
-      "permission_reply": null,
-      "tool_states": [
-        "pending",
-        "running",
-        "error"
-      ],
-      "tool_results": [
-        {
-          "command": null,
-          "status": "pending"
-        },
-        {
-          "command": "git reset --hard",
-          "status": "running"
-        },
-        {
-          "command": "git reset --hard",
-          "status": "error"
-        }
-      ],
-      "request_count": 2,
-      "marker_created": false,
-      "fixture_file_exists": {
-        "README.md": true
-      },
-      "effect_before": {
-        "readme": "# modified before denied reset\n"
-      },
-      "effect_after": {
-        "readme": "# modified before denied reset\n"
-      },
-      "session_abort": "SUPPORTED"
-    },
-    {
-      "id": "orchestrator-git-clean-denied",
-      "commands": [
-        "git clean -fd"
-      ],
-      "rules": {
-        "*": "deny",
-        "git *": "deny",
-        "ls": "allow",
-        "ls *": "allow",
-        "pwd": "allow",
-        "rg": "allow",
-        "rg *": "allow",
-        "grep": "allow",
-        "grep *": "allow",
-        "find": "allow",
-        "head": "allow",
-        "head *": "allow",
-        "tail": "allow",
-        "tail *": "allow",
-        "wc": "allow",
-        "wc *": "allow",
-        "file": "allow",
-        "file *": "allow",
-        "stat": "allow",
-        "stat *": "allow",
-        "tree": "allow",
-        "which": "allow",
-        "which *": "allow",
-        "command -v": "allow",
-        "command -v *": "allow",
-        "git status": "allow",
-        "git status *": "allow",
-        "git diff": "allow",
-        "git log": "allow",
-        "git show": "allow",
-        "git rev-parse": "allow",
-        "git rev-parse *": "allow",
-        "git worktree list": "allow",
-        "git worktree list *": "allow",
-        "git branch --show-current": "allow",
-        "git branch --list": "allow",
-        "git branch --list *": "allow",
-        "git branch -a": "allow",
-        "git branch -r": "allow",
-        "git push": "deny",
-        "git push *": "deny",
-        "git reset --hard": "deny",
-        "git reset --hard *": "deny",
-        "git clean": "deny",
-        "git clean *": "deny",
-        "git add": "deny",
-        "git add *": "deny",
-        "git commit": "deny",
-        "git commit *": "deny",
-        "rm -rf *": "deny",
-        "find *": "deny",
-        "*>*": "deny",
-        "*<*": "deny"
-      },
-      "reply": null,
-      "git_fixture": true,
-      "permission_request_count": 0,
-      "permission_reply": null,
-      "tool_states": [
-        "pending",
-        "running",
-        "error"
-      ],
-      "tool_results": [
-        {
-          "command": null,
-          "status": "pending"
-        },
-        {
-          "command": "git clean -fd",
-          "status": "running"
-        },
-        {
-          "command": "git clean -fd",
-          "status": "error"
-        }
-      ],
-      "request_count": 2,
-      "marker_created": false,
-      "fixture_file_exists": {
-        "README.md": true
-      },
-      "effect_before": {
-        "untracked_exists": true
-      },
-      "effect_after": {
-        "untracked_exists": true
       },
       "session_abort": "SUPPORTED"
     },
@@ -3841,6 +3559,1099 @@
       },
       "effect_before": null,
       "effect_after": null,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "orchestrator-git-reset-approval-rejected",
+      "commands": [
+        "git reset --hard"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "git fetch --no-tags": "ask",
+        "git fetch --no-tags *": "ask",
+        "git push": "deny",
+        "git push *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "git reset --hard": "ask",
+        "git reset --hard *": "ask",
+        "git clean": "ask",
+        "git clean *": "ask",
+        "rm -rf *": "ask",
+        "find *": "ask",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": "reject",
+      "git_fixture": true,
+      "permission_request_count": 1,
+      "permission_reply": {
+        "id": "per_04b63fbda001WfXVJQgOkT6k94",
+        "response": "reject",
+        "pattern": null,
+        "metadata": {
+          "command": "git reset --hard"
+        }
+      },
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "git reset --hard",
+          "status": "running"
+        },
+        {
+          "command": "git reset --hard",
+          "status": "error"
+        }
+      ],
+      "request_count": 1,
+      "marker_created": false,
+      "fixture_file_exists": {
+        "README.md": true
+      },
+      "effect_before": {
+        "readme": "# modified before denied reset\n"
+      },
+      "effect_after": {
+        "readme": "# modified before denied reset\n"
+      },
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "orchestrator-git-clean-approval-rejected",
+      "commands": [
+        "git clean -fd"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "git fetch --no-tags": "ask",
+        "git fetch --no-tags *": "ask",
+        "git push": "deny",
+        "git push *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "git reset --hard": "ask",
+        "git reset --hard *": "ask",
+        "git clean": "ask",
+        "git clean *": "ask",
+        "rm -rf *": "ask",
+        "find *": "ask",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": "reject",
+      "git_fixture": true,
+      "permission_request_count": 1,
+      "permission_reply": {
+        "id": "per_04b6408b80015mMkSNeglaBNV7",
+        "response": "reject",
+        "pattern": null,
+        "metadata": {
+          "command": "git clean -fd"
+        }
+      },
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "git clean -fd",
+          "status": "running"
+        },
+        {
+          "command": "git clean -fd",
+          "status": "error"
+        }
+      ],
+      "request_count": 1,
+      "marker_created": false,
+      "fixture_file_exists": {
+        "README.md": true
+      },
+      "effect_before": {
+        "untracked_exists": true
+      },
+      "effect_after": {
+        "untracked_exists": true
+      },
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "orchestrator-find-delete-approval-rejected",
+      "commands": [
+        "find . -delete"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "git fetch --no-tags": "ask",
+        "git fetch --no-tags *": "ask",
+        "git push": "deny",
+        "git push *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "git reset --hard": "ask",
+        "git reset --hard *": "ask",
+        "git clean": "ask",
+        "git clean *": "ask",
+        "rm -rf *": "ask",
+        "find *": "ask",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": "reject",
+      "git_fixture": false,
+      "permission_request_count": 1,
+      "permission_reply": {
+        "id": "per_04b641341001llPzkaXqcJPJYp",
+        "response": "reject",
+        "pattern": null,
+        "metadata": {
+          "command": "find . -delete"
+        }
+      },
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "find . -delete",
+          "status": "running"
+        },
+        {
+          "command": "find . -delete",
+          "status": "error"
+        }
+      ],
+      "request_count": 1,
+      "marker_created": false,
+      "fixture_file_exists": {
+        "fixture.txt": true
+      },
+      "effect_before": null,
+      "effect_after": null,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "orchestrator-authority-ref-fetch-approval-rejected",
+      "commands": [
+        "git fetch --no-tags origin refs/heads/program:refs/remotes/origin/program"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "git fetch --no-tags": "ask",
+        "git fetch --no-tags *": "ask",
+        "git push": "deny",
+        "git push *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "git reset --hard": "ask",
+        "git reset --hard *": "ask",
+        "git clean": "ask",
+        "git clean *": "ask",
+        "rm -rf *": "ask",
+        "find *": "ask",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": "reject",
+      "git_fixture": true,
+      "permission_request_count": 1,
+      "permission_reply": {
+        "id": "per_04b641e31001mI821gOrf74ne4",
+        "response": "reject",
+        "pattern": null,
+        "metadata": {
+          "command": "git fetch --no-tags origin refs/heads/program:refs/remotes/origin/program"
+        }
+      },
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending"
+        },
+        {
+          "command": "git fetch --no-tags origin refs/heads/program:refs/remotes/origin/program",
+          "status": "running"
+        },
+        {
+          "command": "git fetch --no-tags origin refs/heads/program:refs/remotes/origin/program",
+          "status": "error"
+        }
+      ],
+      "request_count": 1,
+      "marker_created": false,
+      "fixture_file_exists": {
+        "README.md": true
+      },
+      "effect_before": null,
+      "effect_after": null,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "pre-execution-plugin-denies-before-native-ask",
+      "commands": [
+        "git add README.md"
+      ],
+      "rules": {
+        "*": "ask"
+      },
+      "reply": null,
+      "git_fixture": true,
+      "child_session": false,
+      "plugin": {
+        "path": "/Users/jenksed/Projects/ocode-harness/test/fixtures/opencode-pre-execution-qualification-plugin.mjs"
+      },
+      "plugin_events": [
+        {
+          "event": "chat.message",
+          "sessionID": "ses_fb2702b89ffek5rHX9a6EDP4bp",
+          "agent": "coder"
+        },
+        {
+          "event": "before",
+          "tool": "bash",
+          "sessionID": "ses_fb2702b89ffek5rHX9a6EDP4bp",
+          "callID": "call-1",
+          "command": "git add README.md",
+          "agent_from_chat_message": "coder",
+          "agent_from_session_messages": "coder"
+        }
+      ],
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "git add README.md",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "git add README.md",
+          "status": "error",
+          "error": "OCODE_QUALIFICATION_PRE_EXECUTION_DENY"
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "fixture_file_exists": {
+        "README.md": true
+      },
+      "effect_before": {
+        "index_entry": "100644 9741694d75caeb49d3b7c1f59451c0c56bf6216c 0\tREADME.md"
+      },
+      "effect_after": {
+        "index_entry": "100644 9741694d75caeb49d3b7c1f59451c0c56bf6216c 0\tREADME.md"
+      },
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "pre-execution-plugin-passes-to-native-ask",
+      "commands": [
+        "uname -a"
+      ],
+      "rules": {
+        "*": "ask"
+      },
+      "reply": "reject",
+      "git_fixture": false,
+      "child_session": false,
+      "plugin": {
+        "path": "/Users/jenksed/Projects/ocode-harness/test/fixtures/opencode-pre-execution-qualification-plugin.mjs"
+      },
+      "plugin_events": [
+        {
+          "event": "chat.message",
+          "sessionID": "ses_fb2701558ffe6rzcUrEFpiiXZC",
+          "agent": "coder"
+        },
+        {
+          "event": "before",
+          "tool": "bash",
+          "sessionID": "ses_fb2701558ffe6rzcUrEFpiiXZC",
+          "callID": "call-1",
+          "command": "uname -a",
+          "agent_from_chat_message": "coder",
+          "agent_from_session_messages": "coder"
+        }
+      ],
+      "permission_request_count": 1,
+      "permission_reply": {
+        "id": "per_04d8feee8001963bCueaLOgdET",
+        "response": "reject",
+        "pattern": null,
+        "metadata": {
+          "command": "uname -a"
+        }
+      },
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "uname -a",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "uname -a",
+          "status": "error",
+          "error": "The user rejected permission to use this specific tool call."
+        }
+      ],
+      "request_count": 1,
+      "marker_created": false,
+      "fixture_file_exists": {},
+      "effect_before": null,
+      "effect_after": null,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "production-guard-stage-alternates-before-native-ask",
+      "commands": [
+        "git add README.md",
+        "git -C . add README.md",
+        "git --git-dir=.git add README.md",
+        "GIT_DIR=.git git add README.md",
+        "env GIT_OPTIONAL_LOCKS=0 git add README.md",
+        "/usr/bin/git add README.md",
+        "command git add README.md",
+        "/usr/bin/env git add README.md"
+      ],
+      "rules": {
+        "*": "ask"
+      },
+      "reply": null,
+      "git_fixture": true,
+      "child_session": false,
+      "plugin": {
+        "path": "/Users/jenksed/Projects/ocode-harness/packages/harness-runtime/plugins/pre-execution-authority-guard.mjs"
+      },
+      "plugin_events": [],
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "error",
+        "pending",
+        "running",
+        "error",
+        "pending",
+        "running",
+        "error",
+        "pending",
+        "running",
+        "error",
+        "pending",
+        "running",
+        "error",
+        "pending",
+        "running",
+        "error",
+        "pending",
+        "running",
+        "error",
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "git add README.md",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "git add README.md",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: stage\nowner: deterministic-runtime\ncommand: git add README.md\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        },
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "git -C . add README.md",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "git -C . add README.md",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: stage\nowner: deterministic-runtime\ncommand: git -C . add README.md\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        },
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "git --git-dir=.git add README.md",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "git --git-dir=.git add README.md",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: stage\nowner: deterministic-runtime\ncommand: git --git-dir=.git add README.md\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        },
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "GIT_DIR=.git git add README.md",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "GIT_DIR=.git git add README.md",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: stage\nowner: deterministic-runtime\ncommand: GIT_DIR=.git git add README.md\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        },
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "env GIT_OPTIONAL_LOCKS=0 git add README.md",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "env GIT_OPTIONAL_LOCKS=0 git add README.md",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: stage\nowner: deterministic-runtime\ncommand: env GIT_OPTIONAL_LOCKS=0 git add README.md\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        },
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "/usr/bin/git add README.md",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "/usr/bin/git add README.md",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: stage\nowner: deterministic-runtime\ncommand: /usr/bin/git add README.md\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        },
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "command git add README.md",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "command git add README.md",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: stage\nowner: deterministic-runtime\ncommand: command git add README.md\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        },
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "/usr/bin/env git add README.md",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "/usr/bin/env git add README.md",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: stage\nowner: deterministic-runtime\ncommand: /usr/bin/env git add README.md\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        }
+      ],
+      "request_count": 9,
+      "marker_created": false,
+      "fixture_file_exists": {
+        "README.md": true
+      },
+      "effect_before": {
+        "index_entry": "100644 9741694d75caeb49d3b7c1f59451c0c56bf6216c 0\tREADME.md"
+      },
+      "effect_after": {
+        "index_entry": "100644 9741694d75caeb49d3b7c1f59451c0c56bf6216c 0\tREADME.md"
+      },
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "production-guard-commit-alternates-before-native-ask",
+      "commands": [
+        "git commit -m denied",
+        "git -C . commit -m denied",
+        "git --git-dir=.git commit -m denied",
+        "env git commit -m denied",
+        "/usr/bin/git commit -m denied"
+      ],
+      "rules": {
+        "*": "ask"
+      },
+      "reply": null,
+      "git_fixture": true,
+      "child_session": false,
+      "plugin": {
+        "path": "/Users/jenksed/Projects/ocode-harness/packages/harness-runtime/plugins/pre-execution-authority-guard.mjs"
+      },
+      "plugin_events": [],
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "error",
+        "pending",
+        "running",
+        "error",
+        "pending",
+        "running",
+        "error",
+        "pending",
+        "running",
+        "error",
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "git commit -m denied",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "git commit -m denied",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: commit\nowner: deterministic-runtime\ncommand: git commit -m denied\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        },
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "git -C . commit -m denied",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "git -C . commit -m denied",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: commit\nowner: deterministic-runtime\ncommand: git -C . commit -m denied\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        },
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "git --git-dir=.git commit -m denied",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "git --git-dir=.git commit -m denied",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: commit\nowner: deterministic-runtime\ncommand: git --git-dir=.git commit -m denied\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        },
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "env git commit -m denied",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "env git commit -m denied",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: commit\nowner: deterministic-runtime\ncommand: env git commit -m denied\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        },
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "/usr/bin/git commit -m denied",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "/usr/bin/git commit -m denied",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: commit\nowner: deterministic-runtime\ncommand: /usr/bin/git commit -m denied\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        }
+      ],
+      "request_count": 6,
+      "marker_created": false,
+      "fixture_file_exists": {
+        "README.md": true
+      },
+      "effect_before": {
+        "head": "78e0ba3188d1f0dfef5b799330e878eac082cbc5"
+      },
+      "effect_after": {
+        "head": "78e0ba3188d1f0dfef5b799330e878eac082cbc5"
+      },
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "production-guard-push-alternates-before-native-ask",
+      "commands": [
+        "git push origin main",
+        "git -C . push origin main",
+        "git --git-dir=.git push origin main",
+        "env git push origin main",
+        "/usr/bin/git push origin main"
+      ],
+      "rules": {
+        "*": "ask"
+      },
+      "reply": null,
+      "git_fixture": true,
+      "child_session": false,
+      "plugin": {
+        "path": "/Users/jenksed/Projects/ocode-harness/packages/harness-runtime/plugins/pre-execution-authority-guard.mjs"
+      },
+      "plugin_events": [],
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "error",
+        "pending",
+        "running",
+        "error",
+        "pending",
+        "running",
+        "error",
+        "pending",
+        "running",
+        "error",
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "git push origin main",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "git push origin main",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: push\nowner: deterministic-runtime\ncommand: git push origin main\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        },
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "git -C . push origin main",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "git -C . push origin main",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: push\nowner: deterministic-runtime\ncommand: git -C . push origin main\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        },
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "git --git-dir=.git push origin main",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "git --git-dir=.git push origin main",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: push\nowner: deterministic-runtime\ncommand: git --git-dir=.git push origin main\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        },
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "env git push origin main",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "env git push origin main",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: push\nowner: deterministic-runtime\ncommand: env git push origin main\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        },
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "/usr/bin/git push origin main",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "/usr/bin/git push origin main",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: push\nowner: deterministic-runtime\ncommand: /usr/bin/git push origin main\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        }
+      ],
+      "request_count": 6,
+      "marker_created": false,
+      "fixture_file_exists": {
+        "README.md": true
+      },
+      "effect_before": {
+        "remote_main": "474012b492c0b6a4e49848ef88a29e870fb20a41"
+      },
+      "effect_after": {
+        "remote_main": "474012b492c0b6a4e49848ef88a29e870fb20a41"
+      },
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "production-guard-passes-unknown-command-to-native-ask",
+      "commands": [
+        "uname -a"
+      ],
+      "rules": {
+        "*": "ask"
+      },
+      "reply": "reject",
+      "git_fixture": false,
+      "child_session": false,
+      "plugin": {
+        "path": "/Users/jenksed/Projects/ocode-harness/packages/harness-runtime/plugins/pre-execution-authority-guard.mjs"
+      },
+      "plugin_events": [],
+      "permission_request_count": 1,
+      "permission_reply": {
+        "id": "per_04d92daeb001qMqYZ0HCSK4mjS",
+        "response": "reject",
+        "pattern": null,
+        "metadata": {
+          "command": "uname -a"
+        }
+      },
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "uname -a",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "uname -a",
+          "status": "error",
+          "error": "The user rejected permission to use this specific tool call."
+        }
+      ],
+      "request_count": 1,
+      "marker_created": false,
+      "fixture_file_exists": {},
+      "effect_before": null,
+      "effect_after": null,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "production-guard-child-stage-before-native-ask",
+      "commands": [
+        "env git add README.md"
+      ],
+      "rules": {
+        "*": "ask"
+      },
+      "reply": null,
+      "git_fixture": true,
+      "child_session": true,
+      "plugin": {
+        "path": "/Users/jenksed/Projects/ocode-harness/packages/harness-runtime/plugins/pre-execution-authority-guard.mjs"
+      },
+      "plugin_events": [],
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "env git add README.md",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "env git add README.md",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: stage\nowner: deterministic-runtime\ncommand: env git add README.md\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "fixture_file_exists": {
+        "README.md": true
+      },
+      "effect_before": {
+        "index_entry": "100644 9741694d75caeb49d3b7c1f59451c0c56bf6216c 0\tREADME.md"
+      },
+      "effect_after": {
+        "index_entry": "100644 9741694d75caeb49d3b7c1f59451c0c56bf6216c 0\tREADME.md"
+      },
       "session_abort": "SUPPORTED"
     }
   ]

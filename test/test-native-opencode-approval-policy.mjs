@@ -38,8 +38,12 @@ for (const [role, contract] of contracts) {
 assert.equal(projectBashCommand(createNativeBashPermissionRules({ baseRules: orchestrator.permissions.bash, roleAuthority: orchestrator.authority }), 'uname -a').state, 'DENY');
 assert.equal(projectBashCommand(createNativeBashPermissionRules({ baseRules: orchestrator.permissions.bash, roleAuthority: orchestrator.authority }), 'npm test').state, 'DENY');
 assert.equal(projectBashCommand(createNativeBashPermissionRules({ baseRules: orchestrator.permissions.bash, roleAuthority: orchestrator.authority }), 'git add test.txt').state, 'DENY');
-for (const command of ['git push origin main', 'git reset --hard', 'git clean -fd', 'rm -rf tmp']) {
+assert.equal(projectBashCommand(createNativeBashPermissionRules({ baseRules: orchestrator.permissions.bash, roleAuthority: orchestrator.authority }), 'git fetch --no-tags origin refs/heads/program:refs/remotes/origin/program').state, 'ASK');
+for (const command of ['git push origin main']) {
   assert.equal(projectBashCommand(orchestrator.permissions.bash, command).state, 'DENY', command);
+}
+for (const command of ['git reset --hard', 'git clean -fd', 'rm -rf tmp']) {
+  assert.equal(projectBashCommand(orchestrator.permissions.bash, command).state, 'ASK', command);
 }
 assert.equal(projectBashCommand(coder.permissions.bash, 'git add test.txt').state, 'DENY');
 assert.equal(decideEffectAdmission({ effect: 'repository.edit', role: 'orchestrator', authority: orchestrator.authority }).code, 'OCODE_ROLE_EFFECT_DENIED');
@@ -50,6 +54,8 @@ const order = Object.keys(projected.agents.orchestrator.permission.bash);
 const before = (left, right) => assert.ok(order.indexOf(left) < order.indexOf(right), `${left} must precede ${right}: ${order.join(', ')}`);
 before('*', 'git *');
 before('git *', 'git status');
+before('git status *', 'git fetch --no-tags');
+before('git fetch --no-tags *', 'git push');
 before('git status *', 'git push');
 before('git push *', '*>*');
 before('*>*', '*<*');
@@ -59,6 +65,11 @@ assert.equal(projectBashCommand(projected.agents.orchestrator.permission.bash, '
 assert.equal(projectBashCommand(projected.agents.orchestrator.permission.bash, 'git add file').state, 'DENY');
 assert.equal(projectBashCommand(projected.agents.orchestrator.permission.bash, 'git commit -m x').state, 'DENY');
 assert.equal(projectBashCommand(projected.agents.orchestrator.permission.bash, 'git push origin main').state, 'DENY');
+for (const command of ['git reset --hard', 'git clean -fd', 'rm -rf tmp', 'find . -delete']) {
+  assert.equal(projectBashCommand(projected.agents.orchestrator.permission.bash, command).state, 'ASK', command);
+}
+assert.equal(projectBashCommand(projected.agents.verifier.permission.bash, 'rm -rf tmp').state, 'DENY', 'read-only verifier remains fail-closed for destructive commands');
+assert.equal(projectBashCommand(projected.agents.orchestrator.permission.bash, 'git fetch --no-tags origin refs/heads/program:refs/remotes/origin/program').state, 'ASK');
 assert.equal(projectBashCommand(projected.agents.orchestrator.permission.bash, 'git status --short').state, 'ALLOW');
 assert.equal(projectBashCommand(projected.agents.orchestrator.permission.bash, 'git worktree list').state, 'ALLOW');
 for (const command of ['ls . && touch marker.txt', 'rg needle fixture.txt | tee marker.txt', 'git status --short && touch marker.txt', 'git diff | tee marker.txt', 'find . -maxdepth 1; touch marker.txt']) {

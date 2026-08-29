@@ -18,7 +18,7 @@ import {
 } from '../packages/harness-runtime/lib/interactive-activity.mjs';
 import { loadAgentContracts } from '../packages/harness-runtime/lib/agent-contract.mjs';
 import { createRuntimePermissionProjection } from '../packages/harness-runtime/lib/command-admission.mjs';
-import { applyInteractiveRuntimePermissions, createSourceBoundOpenCodeEnvironment } from '../packages/harness-runtime/lib/interactive-configuration.mjs';
+import { applyInteractiveRuntimePermissions, applyPreExecutionAuthorityGuard, createSourceBoundOpenCodeEnvironment } from '../packages/harness-runtime/lib/interactive-configuration.mjs';
 import { loadBindingProfile, serializeOpenCodeRuntimeOverlay } from '../packages/harness-runtime/lib/opencode-integration.mjs';
 import { projectBashCommand } from '../packages/harness-runtime/lib/permission-projection.mjs';
 
@@ -33,6 +33,9 @@ const root = resolve('.');
   const profile = loadBindingProfile('free', { profilesDir: resolve(root, 'profiles'), manifest }).profile;
   const overlay = JSON.parse(serializeOpenCodeRuntimeOverlay(profile));
   applyInteractiveRuntimePermissions(overlay, createRuntimePermissionProjection({ contracts, projectDir: root }));
+  applyPreExecutionAuthorityGuard(overlay, { harnessRoot: root, contracts });
+  assert.match(overlay.plugin[0][0], /packages\/harness-runtime\/plugins\/pre-execution-authority-guard\.mjs$/);
+  assert.equal(overlay.plugin[0][1].authorityByRole.coder.may_stage, false);
   const sourceBound = createSourceBoundOpenCodeEnvironment({ harnessRoot: root });
   try {
     const resolved = JSON.parse(execFileSync('opencode', ['debug', 'agent', 'orchestrator'], {
@@ -56,8 +59,11 @@ const root = resolve('.');
     for (const command of ['git status --short', 'git rev-parse HEAD', 'git branch --show-current', 'git worktree list']) {
       assert.equal(projectBashCommand(bash, command).state, 'ALLOW', command);
     }
-    for (const command of ['git add README.md', 'git commit -m denied', 'git push origin main', 'git reset --hard', 'git clean -fd']) {
+    for (const command of ['git add README.md', 'git commit -m denied', 'git push origin main']) {
       assert.equal(projectBashCommand(bash, command).state, 'DENY', command);
+    }
+    for (const command of ['git reset --hard', 'git clean -fd', 'rm -rf tmp', 'git fetch --no-tags origin refs/heads/program:refs/remotes/origin/program']) {
+      assert.equal(projectBashCommand(bash, command).state, 'ASK', command);
     }
     console.log('✓ Source-bound interactive OpenCode config preserves Git observation exceptions after family denial');
   } finally {

@@ -10,6 +10,22 @@ The runtime retains the pre-execution Git authority guard ahead of native Bash
 permission matching. Validation admission never grants stage, commit, push,
 repository-edit, arbitrary Bash, or destructive-command authority.
 
+## Runtime availability
+
+Discovery and availability are deliberately separate. `discovered_validation_registry`
+records every exact command justified by root-level repository configuration.
+At launch, Ocode resolves each command's executable from the original absolute
+PATH entries before adding its validation wrapper. The effective
+`validation_registry` contains only commands with a resolved executable;
+`validation_availability.unavailable_commands` retains each omitted command,
+its executable name, and `OCODE_VALIDATION_EXECUTABLE_UNAVAILABLE`.
+
+Therefore a repository that declares both `npm test` and `cargo test` still
+starts on a machine with only npm: npm receives exact native admission, Cargo
+remains discovered but receives no validation `allow`, and no toolchain is
+downloaded or substituted. If no registered executables are present, Ocode
+starts without a validation wrapper and retains ordinary governed behavior.
+
 ## Registry
 
 `ValidationRegistry` v2 is canonical JSON with a schema version, `project_root`

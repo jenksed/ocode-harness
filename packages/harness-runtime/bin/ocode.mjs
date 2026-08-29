@@ -32,7 +32,7 @@ import {
 } from '../lib/activity.mjs';
 import { runInteractiveOpenCode } from '../lib/interactive-activity.mjs';
 import { renderActivityView, renderAgentsView, renderAnnouncement } from '../lib/work-view.mjs';
-import { createRuntimePermissionProjection, createValidationWrapperEnvironment, resolveValidationExecutables } from '../lib/command-admission.mjs';
+import { createRuntimePermissionProjection, createValidationWrapperEnvironment } from '../lib/command-admission.mjs';
 import { applyInteractiveRuntimePermissions, applyPreExecutionAuthorityGuard, createSourceBoundOpenCodeEnvironment } from '../lib/interactive-configuration.mjs';
 import { createRepositorySnapshot, repositorySnapshotFingerprint } from '../lib/repository-snapshot.mjs';
 
@@ -483,7 +483,7 @@ async function main() {
     env: process.env,
   });
   const overlayConfig = JSON.parse(serializeOpenCodeRuntimeOverlay(context.profile, process.env.OPENCODE_CONFIG_CONTENT));
-  const runtimePermissions = createRuntimePermissionProjection({ contracts: context.contracts, projectDir: projectRoot });
+  const runtimePermissions = createRuntimePermissionProjection({ contracts: context.contracts, projectDir: projectRoot, environment: process.env });
   applyInteractiveRuntimePermissions(overlayConfig, runtimePermissions);
   applyPreExecutionAuthorityGuard(overlayConfig, { harnessRoot: context.harnessRoot, contracts: context.contracts });
   const overlay = JSON.stringify(overlayConfig);
@@ -511,7 +511,7 @@ async function main() {
         projectDir: projectRoot,
         registry: runtimePermissions.validation_registry,
         environment,
-        executables: resolveValidationExecutables({ registry: runtimePermissions.validation_registry, environment }),
+        executables: runtimePermissions.validation_executables,
       });
     }
     // Test-only escape hatch for the launcher compatibility fixture. Normal

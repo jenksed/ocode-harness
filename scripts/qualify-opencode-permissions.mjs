@@ -1,11 +1,11 @@
 import { createServer } from 'node:http';
 import { execFileSync } from 'node:child_process';
-import { cpSync, existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { chmodSync, cpSync, existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createOpencodeClient, createOpencodeServer } from '@opencode-ai/sdk';
 import { loadAgentContracts } from '../packages/harness-runtime/lib/agent-contract.mjs';
-import { createNativeBashPermissionRules } from '../packages/harness-runtime/lib/command-admission.mjs';
+import { createNativeBashPermissionRules, createRuntimePermissionProjection, createValidationWrapperEnvironment } from '../packages/harness-runtime/lib/command-admission.mjs';
 import { createPreExecutionAuthorityGuardOptions } from '../packages/harness-runtime/lib/pre-execution-authority-guard.mjs';
 
 const runtimeVersion = '1.18.21';
@@ -129,7 +129,7 @@ const governedGitEffectProbes = {
   },
 };
 
-async function runScenario({ id, command, commands = [command], rules, reply = null, files = {}, git = false, effectProbe = null, agent = 'probe', sourceAgents = false, plugin = null, childSession = false }) {
+async function runScenario({ id, command, commands = [command], rules, reply = null, files = {}, git = false, effectProbe = null, agent = 'probe', sourceAgents = false, plugin = null, childSession = false, runtimeValidation = null }) {
   const fixture = mkdtempSync(join(tmpdir(), `ocode-permission-${id}-`));
   for (const [path, content] of Object.entries(files)) writeFileSync(join(fixture, path), content);
   if (git) initializeGitFixture(fixture);
@@ -139,14 +139,38 @@ async function runScenario({ id, command, commands = [command], rules, reply = n
   if (sourceAgents) cpSync(join(root, 'agents'), join(xdg, 'config', 'opencode', 'agents'), { recursive: true });
   const provider = await startMockProvider(commands);
   const pluginLogPath = plugin ? join(fixture, 'plugin-events.jsonl') : null;
+  let environment = {
+    XDG_CONFIG_HOME: join(xdg, 'config'), XDG_DATA_HOME: join(xdg, 'data'), XDG_STATE_HOME: join(xdg, 'state'), XDG_CACHE_HOME: join(xdg, 'cache'),
+    OPENCODE_DISABLE_PROJECT_CONFIG: '1', OPENCODE_DISABLE_EXTERNAL_SKILLS: '1', OPENCODE_DISABLE_CLAUDE_CODE_SKILLS: '1',
+  };
+  let runtime_validation = null;
+  if (runtimeValidation) {
+    const trustedBin = join(fixture, 'trusted-bin');
+    mkdirSync(trustedBin);
+    for (const executable of runtimeValidation.executables) {
+      const target = join(trustedBin, executable);
+      writeFileSync(target, `#!/bin/sh\nprintf '${id}:${executable}\\n' >> "$OCODE_VALIDATION_MARKER"\nexit 0\n`);
+      chmodSync(target, 0o755);
+    }
+    const originalEnvironment = { ...environment, PATH: `${trustedBin}:${process.env.PATH ?? ''}`, OCODE_VALIDATION_MARKER: join(fixture, 'validation-executed.log') };
+    const projection = createRuntimePermissionProjection({ contracts, projectDir: fixture, environment: originalEnvironment });
+    if (!projection.validation_registry) throw new Error(`VALIDATION_FIXTURE_NOT_AVAILABLE:${id}`);
+    rules = projection.agents[agent].permission.bash;
+    environment = createValidationWrapperEnvironment({
+      baseDir: root, projectDir: fixture, registry: projection.validation_registry,
+      environment: originalEnvironment, executables: projection.validation_executables,
+    });
+    runtime_validation = {
+      discovered_commands: projection.discovered_validation_registry.commands,
+      available_commands: projection.validation_registry.commands,
+      unavailable_commands: projection.validation_availability.unavailable_commands,
+      executables: projection.validation_executables,
+    };
+  }
   const config = {
     provider: { fixture: { npm: '@ai-sdk/openai-compatible', name: 'Permission Fixture', options: { baseURL: provider.baseURL, apiKey: 'fixture-key' }, models: { fixture: { name: 'Fixture' } } } },
     agent: { [agent]: { mode: 'primary', model: 'fixture/fixture', permission: { bash: rules } } },
     ...(plugin ? { plugin: [[plugin.path, { ...plugin.options, logPath: pluginLogPath }]] } : {}),
-  };
-  const environment = {
-    XDG_CONFIG_HOME: join(xdg, 'config'), XDG_DATA_HOME: join(xdg, 'data'), XDG_STATE_HOME: join(xdg, 'state'), XDG_CACHE_HOME: join(xdg, 'cache'),
-    OPENCODE_DISABLE_PROJECT_CONFIG: '1', OPENCODE_DISABLE_EXTERNAL_SKILLS: '1', OPENCODE_DISABLE_CLAUDE_CODE_SKILLS: '1',
   };
   let opencode;
   const events = [];
@@ -194,7 +218,7 @@ async function runScenario({ id, command, commands = [command], rules, reply = n
     const fixture_file_exists = Object.fromEntries(Object.keys(files).map((path) => [path, existsSync(join(fixture, path))]));
     const effect_after = effectProbe?.observe(fixture) ?? null;
     const plugin_events = pluginLogPath && existsSync(pluginLogPath) ? readFileSync(pluginLogPath, 'utf8').trim().split('\n').filter(Boolean).map((line) => JSON.parse(line)) : [];
-    return { id, commands, rules, reply, git_fixture: git, child_session: childSession, plugin: plugin ? { path: plugin.path } : null, plugin_events, permission_request_count: permissionEvents.length, permission_reply: permissionReply, tool_states: tool_results.map((entry) => entry.status), tool_results, request_count: provider.requests.length, marker_created: existsSync(join(fixture, 'marker.txt')), fixture_file_exists, effect_before, effect_after, session_abort: 'SUPPORTED' };
+    return { id, commands, rules, reply, git_fixture: git, child_session: childSession, plugin: plugin ? { path: plugin.path } : null, plugin_events, permission_request_count: permissionEvents.length, permission_reply: permissionReply, tool_states: tool_results.map((entry) => entry.status), tool_results, request_count: provider.requests.length, marker_created: existsSync(join(fixture, 'marker.txt')), validation_execution: existsSync(join(fixture, 'validation-executed.log')) ? readFileSync(join(fixture, 'validation-executed.log'), 'utf8').trim().split('\n') : [], runtime_validation, fixture_file_exists, effect_before, effect_after, session_abort: 'SUPPORTED' };
   } finally {
     await opencode?.close?.();
     await new Promise((resolveClose) => provider.server.close(resolveClose));
@@ -232,6 +256,12 @@ for (const scenario of [
   { id: 'reply-always-scope', commands: ['pwd', 'pwd'], rules: { '*': 'ask' }, reply: 'always' },
   { id: 'reply-reject', command: 'pwd', rules: { '*': 'ask' }, reply: 'reject' },
   { id: 'admitted-validation', command: 'npm test', rules: { '*': 'ask', 'npm test': 'allow', '*>*': 'deny', '*<*': 'deny' }, files: { 'package.json': '{"scripts":{"test":"node -e \\"process.exit(0)\\""}}' } },
+  { id: 'runtime-validation-node-coder', command: 'npm test', files: { 'package.json': '{"scripts":{"test":"fixture"}}' }, agent: 'coder', runtimeValidation: { executables: ['npm'] } },
+  { id: 'runtime-validation-elixir-coder', command: 'mix test', files: { 'mix.exs': 'defmodule Fixture.MixProject do\nend\n' }, agent: 'coder', runtimeValidation: { executables: ['mix'] } },
+  { id: 'runtime-validation-python-coder', command: 'pytest', files: { 'pytest.ini': '[pytest]\n' }, agent: 'coder', runtimeValidation: { executables: ['pytest'] } },
+  { id: 'runtime-validation-go-coder', command: 'go test ./...', files: { 'go.mod': 'module fixture.test/validation\n\ngo 1.22\n' }, agent: 'coder', runtimeValidation: { executables: ['go'] } },
+  { id: 'runtime-validation-rust-verifier', command: 'cargo test', files: { 'Cargo.toml': '[package]\nname = "fixture"\nversion = "0.1.0"\nedition = "2021"\n' }, agent: 'verifier', runtimeValidation: { executables: ['cargo'] } },
+  { id: 'runtime-validation-node-negative', command: 'npm install fixture', reply: 'reject', files: { 'package.json': '{"scripts":{"test":"fixture"}}' }, agent: 'coder', runtimeValidation: { executables: ['npm'] } },
   { id: 'remote-deny', command: 'git push origin fixture', rules: { '*': 'ask', 'git push *': 'deny' } },
   {
     id: 'pre-execution-plugin-denies-before-native-ask', command: 'git add README.md', rules: { '*': 'ask' }, git: true,

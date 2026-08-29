@@ -27,6 +27,27 @@ assert.equal(scenario('reply-once-scope').permission_request_count, 2);
 assert.equal(scenario('reply-always-scope').permission_request_count, 1);
 assert.equal(scenario('reply-reject').tool_states.at(-1), 'error');
 assert.equal(scenario('admitted-validation').permission_request_count, 0);
+for (const [id, command, role] of [
+  ['runtime-validation-node-coder', 'npm test', 'coder'],
+  ['runtime-validation-elixir-coder', 'mix test', 'coder'],
+  ['runtime-validation-python-coder', 'pytest', 'coder'],
+  ['runtime-validation-go-coder', 'go test ./...', 'coder'],
+  ['runtime-validation-rust-verifier', 'cargo test', 'verifier'],
+]) {
+  const observed = scenario(id);
+  assert.equal(observed.permission_request_count, 0, `${id} has no native permission friction`);
+  assert.equal(observed.tool_states.at(-1), 'completed', `${id} completes through pinned runtime`);
+  assert.equal(projectBashCommand(observed.rules, command).state, 'ALLOW', `${id} uses effective runtime projection`);
+  assert.ok(observed.runtime_validation.available_commands.includes(command), `${id} retains its executable-backed registry command`);
+  assert.ok(observed.validation_execution.some((entry) => entry.startsWith(`${id}:`)), `${id} reaches the controlled original-PATH executable`);
+  assert.equal(observed.runtime_validation.unavailable_commands.some((entry) => entry.command === command), false, `${id} does not admit an unavailable command`);
+  assert.ok(observed.rules[command] === 'allow', `${id} ${role} has exact native allow`);
+}
+const validationNegative = scenario('runtime-validation-node-negative');
+assert.notEqual(projectBashCommand(validationNegative.rules, 'npm install fixture').state, 'ALLOW');
+assert.equal(validationNegative.permission_request_count, 0);
+assert.equal(validationNegative.tool_states.at(-1), 'error');
+assert.deepEqual(validationNegative.validation_execution, []);
 assert.equal(scenario('remote-deny').permission_request_count, 0);
 assert.equal(scenario('remote-deny').tool_states.at(-1), 'error');
 assert.equal(scenario('low-interruption-loop').permission_request_count, 0);

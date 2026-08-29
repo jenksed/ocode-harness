@@ -1,5 +1,5 @@
-import { delimiter, resolve } from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { statSync } from 'node:fs';
+import { delimiter, isAbsolute, resolve } from 'node:path';
 import {
   VALIDATION_REGISTRY_SCHEMA_VERSION,
   createValidationRegistry,
@@ -152,11 +152,49 @@ export function createNativeBashPermissionRules({ baseRules = {}, validationRegi
   return rules;
 }
 
-export function createRuntimePermissionProjection({ contracts, projectDir } = {}) {
+/**
+ * Availability is intentionally a runtime observation, distinct from the
+ * repository-derived registry. A missing optional toolchain narrows only the
+ * effective zero-prompt surface; it never erases what the repository declared.
+ */
+export function resolveValidationAvailability({ registry, environment = process.env } = {}) {
+  const normalized = validateValidationRegistry(registry);
+  const executables = {};
+  const unavailable = [];
+  const resolved = new Map();
+  for (const executable of [...new Set(normalized.commands.map((command) => command.split(' ')[0]))].sort()) {
+    const path = (environment.PATH ?? '').split(delimiter)
+      .filter((directory) => isAbsolute(directory))
+      .map((directory) => resolve(directory, executable))
+      .find((candidate) => {
+        try { return statSync(candidate).isFile() && (statSync(candidate).mode & 0o111) !== 0; } catch { return false; }
+      });
+    if (path) resolved.set(executable, path);
+  }
+  const available_commands = [];
+  for (const command of normalized.commands) {
+    const executable = command.split(' ')[0];
+    const path = resolved.get(executable);
+    if (path) {
+      available_commands.push(command);
+      executables[executable] = path;
+    } else {
+      unavailable.push({ command, executable, reason: 'OCODE_VALIDATION_EXECUTABLE_UNAVAILABLE' });
+    }
+  }
+  return { available_commands, unavailable_commands: unavailable, executables };
+}
+
+export function createRuntimePermissionProjection({ contracts, projectDir, environment = process.env } = {}) {
   if (!(contracts instanceof Map)) throw new Error('contracts must be a Map');
   let candidate = null;
   try { candidate = createValidationRegistry({ projectDir }); } catch { candidate = null; }
-  const validationRegistry = candidate?.commands.length ? candidate : null;
+  const availability = candidate ? resolveValidationAvailability({ registry: candidate, environment }) : { available_commands: [], unavailable_commands: [], executables: {} };
+  // Recreate the registry with only executable-backed commands. It retains the
+  // original providers/governing files and therefore the same freshness scope.
+  const validationRegistry = availability.available_commands.length
+    ? createValidationRegistry({ projectDir, commands: availability.available_commands })
+    : null;
   const agents = {};
   for (const [role, contract] of contracts) {
     agents[role] = {
@@ -170,7 +208,13 @@ export function createRuntimePermissionProjection({ contracts, projectDir } = {}
       },
     };
   }
-  return { agents, validation_registry: validationRegistry };
+  return {
+    agents,
+    discovered_validation_registry: candidate,
+    validation_registry: validationRegistry,
+    validation_availability: availability,
+    validation_executables: availability.executables,
+  };
 }
 
 export function createValidationWrapperEnvironment({ baseDir, projectDir, registry, environment = process.env, executables = {} } = {}) {
@@ -191,14 +235,7 @@ export function createValidationWrapperEnvironment({ baseDir, projectDir, regist
  * the validation wrapper is placed on PATH. This prevents a repository-local
  * basename shadow from becoming the tool that an admitted command executes. */
 export function resolveValidationExecutables({ registry, environment = process.env } = {}) {
-  const normalized = validateValidationRegistry(registry);
-  const executables = {};
-  for (const executable of [...new Set(normalized.commands.map((command) => command.split(' ')[0]))].sort()) {
-    const found = spawnSync('which', [executable], { encoding: 'utf8', env: environment });
-    if (found.status !== 0 || !found.stdout.trim()) throw new Error(`OCODE_VALIDATION_EXECUTABLE_NOT_FOUND:${executable}`);
-    executables[executable] = found.stdout.trim();
-  }
-  return executables;
+  return resolveValidationAvailability({ registry, environment }).executables;
 }
 
 export function decideCommandAdmission({ command, role, roleCapabilities = [], roleAuthority = null, validationRegistry = null, projectDir = null } = {}) {

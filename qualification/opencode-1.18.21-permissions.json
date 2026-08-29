@@ -4,7 +4,7 @@
     "opencode": "1.18.21",
     "sdk": "1.18.21"
   },
-  "observed_at": "2026-08-29T14:50:03.419Z",
+  "observed_at": "2026-08-29T15:28:21.568Z",
   "method": "local OpenAI-compatible non-inference fixture through installed SDK/server",
   "lifecycle": {
     "server_start": "SUPPORTED",
@@ -4522,6 +4522,746 @@
       "effect_after": {
         "index_entry": "100644 9741694d75caeb49d3b7c1f59451c0c56bf6216c 0\tREADME.md"
       },
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "runtime-validation-node-coder",
+      "commands": [
+        "npm test"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "npm run test": "allow",
+        "npm test": "allow",
+        "git push": "deny",
+        "git push *": "deny",
+        "git reset --hard": "deny",
+        "git reset --hard *": "deny",
+        "git clean": "deny",
+        "git clean *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "rm -rf *": "deny",
+        "find *": "deny",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "git_fixture": false,
+      "child_session": false,
+      "plugin": null,
+      "plugin_events": [],
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "running",
+        "completed"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "npm test",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "npm test",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "npm test",
+          "status": "completed",
+          "error": null
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "validation_execution": [
+        "runtime-validation-node-coder:npm"
+      ],
+      "runtime_validation": {
+        "discovered_commands": [
+          "npm run test",
+          "npm test"
+        ],
+        "available_commands": [
+          "npm run test",
+          "npm test"
+        ],
+        "unavailable_commands": [],
+        "executables": {
+          "npm": "/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-permission-runtime-validation-node-coder-w6wMVc/trusted-bin/npm"
+        }
+      },
+      "fixture_file_exists": {
+        "package.json": true
+      },
+      "effect_before": null,
+      "effect_after": null,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "runtime-validation-elixir-coder",
+      "commands": [
+        "mix test"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "mix compile": "allow",
+        "mix test": "allow",
+        "git push": "deny",
+        "git push *": "deny",
+        "git reset --hard": "deny",
+        "git reset --hard *": "deny",
+        "git clean": "deny",
+        "git clean *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "rm -rf *": "deny",
+        "find *": "deny",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "git_fixture": false,
+      "child_session": false,
+      "plugin": null,
+      "plugin_events": [],
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "running",
+        "completed"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "mix test",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "mix test",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "mix test",
+          "status": "completed",
+          "error": null
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "validation_execution": [
+        "runtime-validation-elixir-coder:mix"
+      ],
+      "runtime_validation": {
+        "discovered_commands": [
+          "mix compile",
+          "mix test"
+        ],
+        "available_commands": [
+          "mix compile",
+          "mix test"
+        ],
+        "unavailable_commands": [],
+        "executables": {
+          "mix": "/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-permission-runtime-validation-elixir-coder-hGW6Zw/trusted-bin/mix"
+        }
+      },
+      "fixture_file_exists": {
+        "mix.exs": true
+      },
+      "effect_before": null,
+      "effect_after": null,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "runtime-validation-python-coder",
+      "commands": [
+        "pytest"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "pytest": "allow",
+        "git push": "deny",
+        "git push *": "deny",
+        "git reset --hard": "deny",
+        "git reset --hard *": "deny",
+        "git clean": "deny",
+        "git clean *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "rm -rf *": "deny",
+        "find *": "deny",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "git_fixture": false,
+      "child_session": false,
+      "plugin": null,
+      "plugin_events": [],
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "running",
+        "completed"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "pytest",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "pytest",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "pytest",
+          "status": "completed",
+          "error": null
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "validation_execution": [
+        "runtime-validation-python-coder:pytest"
+      ],
+      "runtime_validation": {
+        "discovered_commands": [
+          "pytest",
+          "python -m pytest"
+        ],
+        "available_commands": [
+          "pytest"
+        ],
+        "unavailable_commands": [
+          {
+            "command": "python -m pytest",
+            "executable": "python",
+            "reason": "OCODE_VALIDATION_EXECUTABLE_UNAVAILABLE"
+          }
+        ],
+        "executables": {
+          "pytest": "/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-permission-runtime-validation-python-coder-saXA0d/trusted-bin/pytest"
+        }
+      },
+      "fixture_file_exists": {
+        "pytest.ini": true
+      },
+      "effect_before": null,
+      "effect_after": null,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "runtime-validation-go-coder",
+      "commands": [
+        "go test ./..."
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "go build": "allow",
+        "go build ./...": "allow",
+        "go test": "allow",
+        "go test ./...": "allow",
+        "git push": "deny",
+        "git push *": "deny",
+        "git reset --hard": "deny",
+        "git reset --hard *": "deny",
+        "git clean": "deny",
+        "git clean *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "rm -rf *": "deny",
+        "find *": "deny",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "git_fixture": false,
+      "child_session": false,
+      "plugin": null,
+      "plugin_events": [],
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "running",
+        "completed"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "go test ./...",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "go test ./...",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "go test ./...",
+          "status": "completed",
+          "error": null
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "validation_execution": [
+        "runtime-validation-go-coder:go"
+      ],
+      "runtime_validation": {
+        "discovered_commands": [
+          "go build",
+          "go build ./...",
+          "go test",
+          "go test ./..."
+        ],
+        "available_commands": [
+          "go build",
+          "go build ./...",
+          "go test",
+          "go test ./..."
+        ],
+        "unavailable_commands": [],
+        "executables": {
+          "go": "/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-permission-runtime-validation-go-coder-3wjpvm/trusted-bin/go"
+        }
+      },
+      "fixture_file_exists": {
+        "go.mod": true
+      },
+      "effect_before": null,
+      "effect_after": null,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "runtime-validation-rust-verifier",
+      "commands": [
+        "cargo test"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "cargo build": "allow",
+        "cargo test": "allow",
+        "git push": "deny",
+        "git push *": "deny",
+        "git reset --hard": "deny",
+        "git reset --hard *": "deny",
+        "git clean": "deny",
+        "git clean *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "rm -rf *": "deny",
+        "find *": "deny",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": null,
+      "git_fixture": false,
+      "child_session": false,
+      "plugin": null,
+      "plugin_events": [],
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "running",
+        "completed"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "cargo test",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "cargo test",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "cargo test",
+          "status": "completed",
+          "error": null
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "validation_execution": [
+        "runtime-validation-rust-verifier:cargo"
+      ],
+      "runtime_validation": {
+        "discovered_commands": [
+          "cargo build",
+          "cargo test"
+        ],
+        "available_commands": [
+          "cargo build",
+          "cargo test"
+        ],
+        "unavailable_commands": [],
+        "executables": {
+          "cargo": "/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-permission-runtime-validation-rust-verifier-W9xaDO/trusted-bin/cargo"
+        }
+      },
+      "fixture_file_exists": {
+        "Cargo.toml": true
+      },
+      "effect_before": null,
+      "effect_after": null,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "runtime-validation-node-negative",
+      "commands": [
+        "npm install fixture"
+      ],
+      "rules": {
+        "*": "deny",
+        "git *": "deny",
+        "ls": "allow",
+        "ls *": "allow",
+        "pwd": "allow",
+        "rg": "allow",
+        "rg *": "allow",
+        "grep": "allow",
+        "grep *": "allow",
+        "find": "allow",
+        "head": "allow",
+        "head *": "allow",
+        "tail": "allow",
+        "tail *": "allow",
+        "wc": "allow",
+        "wc *": "allow",
+        "file": "allow",
+        "file *": "allow",
+        "stat": "allow",
+        "stat *": "allow",
+        "tree": "allow",
+        "which": "allow",
+        "which *": "allow",
+        "command -v": "allow",
+        "command -v *": "allow",
+        "git status": "allow",
+        "git status *": "allow",
+        "git diff": "allow",
+        "git log": "allow",
+        "git show": "allow",
+        "git rev-parse": "allow",
+        "git rev-parse *": "allow",
+        "git worktree list": "allow",
+        "git worktree list *": "allow",
+        "git branch --show-current": "allow",
+        "git branch --list": "allow",
+        "git branch --list *": "allow",
+        "git branch -a": "allow",
+        "git branch -r": "allow",
+        "npm run test": "allow",
+        "npm test": "allow",
+        "git push": "deny",
+        "git push *": "deny",
+        "git reset --hard": "deny",
+        "git reset --hard *": "deny",
+        "git clean": "deny",
+        "git clean *": "deny",
+        "git add": "deny",
+        "git add *": "deny",
+        "git commit": "deny",
+        "git commit *": "deny",
+        "rm -rf *": "deny",
+        "find *": "deny",
+        "*>*": "deny",
+        "*<*": "deny"
+      },
+      "reply": "reject",
+      "git_fixture": false,
+      "child_session": false,
+      "plugin": null,
+      "plugin_events": [],
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "npm install fixture",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "npm install fixture",
+          "status": "error",
+          "error": "The user has specified a rule which prevents you from using this specific tool call. Here are some of the relevant rules [{\"permission\":\"*\",\"action\":\"allow\",\"pattern\":\"*\"},{\"permission\":\"bash\",\"pattern\":\"*\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"ls\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"ls *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"pwd\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"rg\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"rg *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"grep\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"grep *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"find\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"head\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"head *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tail\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tail *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"wc\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"wc *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"file\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"file *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"stat\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"stat *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tree\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"which\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"which *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"command -v\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"command -v *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git status\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git status *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git diff\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git log\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git show\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-parse\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-parse *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git worktree list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git worktree list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch --show-current\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch --list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch --list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch -a\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch -r\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"npm run test\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"npm test\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git push\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git push *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git reset --hard\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git reset --hard *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git clean\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git clean *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git add\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git add *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git commit\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git commit *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"rm -rf *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"find *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"*>*\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"*<*\",\"action\":\"deny\"}]"
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "validation_execution": [],
+      "runtime_validation": {
+        "discovered_commands": [
+          "npm run test",
+          "npm test"
+        ],
+        "available_commands": [
+          "npm run test",
+          "npm test"
+        ],
+        "unavailable_commands": [],
+        "executables": {
+          "npm": "/var/folders/bq/zfk_hy5x2wq1tv23x8kvz5x40000gn/T/ocode-permission-runtime-validation-node-negative-3lq8gI/trusted-bin/npm"
+        }
+      },
+      "fixture_file_exists": {
+        "package.json": true
+      },
+      "effect_before": null,
+      "effect_after": null,
       "session_abort": "SUPPORTED"
     }
   ]

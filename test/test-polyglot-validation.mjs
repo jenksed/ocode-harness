@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { delimiter, join, resolve } from 'node:path';
 import { loadAgentContracts } from '../packages/harness-runtime/lib/agent-contract.mjs';
 import { createRuntimePermissionProjection, createValidationRegistry, createValidationWrapperEnvironment, decideCommandAdmission, evaluateValidationRegistryFreshness, validateValidationRegistry } from '../packages/harness-runtime/lib/command-admission.mjs';
 import { projectBashCommand } from '../packages/harness-runtime/lib/permission-projection.mjs';
@@ -10,6 +10,14 @@ import { projectBashCommand } from '../packages/harness-runtime/lib/permission-p
 const root = mkdtempSync(join(tmpdir(), 'ocode-polyglot-validation-'));
 const harnessRoot = resolve(import.meta.dirname, '..');
 const { contracts } = loadAgentContracts({ baseDir: harnessRoot });
+const toolDir = join(root, 'trusted-tools');
+mkdirSync(toolDir);
+for (const executable of ['npm', 'mix', 'pytest', 'python', 'go', 'cargo']) {
+  const path = join(toolDir, executable);
+  writeFileSync(path, '#!/bin/sh\nexit 0\n');
+  chmodSync(path, 0o755);
+}
+const allToolsEnvironment = { ...process.env, PATH: `${toolDir}${delimiter}${process.env.PATH ?? ''}` };
 const fixture = (name) => join(root, name);
 const write = (name, path, source) => writeFileSync(join(fixture(name), path), source, 'utf8');
 const make = (name) => {
@@ -57,7 +65,7 @@ try {
       assert.notEqual(decideCommandAdmission({ command, role: 'orchestrator', roleCapabilities: contract.capabilities.provides, roleAuthority: contract.authority, validationRegistry: registry, projectDir: dir }).decision, 'ALLOW', `${entry.id}: capability gate`);
     }
     for (const command of entry.absent) assert.notEqual(decideCommandAdmission({ command, role: 'coder', roleCapabilities: ['test.execute'], validationRegistry: registry, projectDir: dir }).decision, 'ALLOW', `${entry.id}: ${command}`);
-    const projection = createRuntimePermissionProjection({ contracts, projectDir: dir });
+    const projection = createRuntimePermissionProjection({ contracts, projectDir: dir, environment: allToolsEnvironment });
     for (const role of ['coder', 'verifier', 'reviewer']) {
       for (const command of entry.commands) assert.equal(projectBashCommand(projection.agents[role].permission.bash, command).state, 'ALLOW', `${entry.id}: native ${role} ${command}`);
     }
@@ -77,6 +85,24 @@ try {
   const noPytest = make('python-without-pytest');
   write('python-without-pytest', 'pyproject.toml', '[project]\nname = "plain-python"\n');
   assert.equal(createValidationRegistry({ projectDir: noPytest }).commands.includes('pytest'), false, 'plain Python metadata does not invent pytest');
+  const mixed = make('mixed-partial-tools');
+  write('mixed-partial-tools', 'package.json', JSON.stringify({ scripts: { test: 'node test.mjs' } }));
+  write('mixed-partial-tools', 'Cargo.toml', '[package]\nname = "mixed"\nversion = "0.1.0"\nedition = "2021"\n');
+  const npmOnlyEnvironment = { ...process.env, PATH: `${toolDir}${delimiter}${process.env.PATH ?? ''}` };
+  // Remove cargo from this trusted PATH without altering the fixture executable.
+  const npmOnlyDir = join(root, 'npm-only'); mkdirSync(npmOnlyDir);
+  writeFileSync(join(npmOnlyDir, 'npm'), '#!/bin/sh\nexit 0\n'); chmodSync(join(npmOnlyDir, 'npm'), 0o755);
+  npmOnlyEnvironment.PATH = `${npmOnlyDir}`;
+  const partial = createRuntimePermissionProjection({ contracts, projectDir: mixed, environment: npmOnlyEnvironment });
+  assert.deepEqual(partial.discovered_validation_registry.commands, ['cargo build', 'cargo test', 'npm run test', 'npm test']);
+  assert.deepEqual(partial.validation_registry.commands, ['npm run test', 'npm test']);
+  assert.equal(partial.validation_availability.unavailable_commands.filter((entry) => entry.executable === 'cargo').length, 2);
+  assert.equal(projectBashCommand(partial.agents.coder.permission.bash, 'npm test').state, 'ALLOW');
+  assert.notEqual(projectBashCommand(partial.agents.coder.permission.bash, 'cargo test').state, 'ALLOW');
+  const noTools = createRuntimePermissionProjection({ contracts, projectDir: mixed, environment: { ...process.env, PATH: join(root, 'empty-path') } });
+  assert.equal(noTools.validation_registry, null, 'no optional toolchain does not block runtime construction');
+  assert.equal(noTools.discovered_validation_registry.commands.length, 4, 'discovery remains visible without tools');
+  assert.equal(noTools.validation_availability.unavailable_commands.length, 4, 'every unavailable command is recorded');
   console.log(JSON.stringify({ status: 'POLYGLOT_VALIDATION_PROVEN', providers: cases.map((entry) => entry.id), native_projection: 'PROVEN', stale_registries: cases.length }));
 } finally {
   rmSync(root, { recursive: true, force: true });

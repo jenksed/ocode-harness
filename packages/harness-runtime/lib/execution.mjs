@@ -23,15 +23,15 @@ import {
   finishActivityExecution,
   startActivityExecution,
 } from './activity.mjs';
-import { createRuntimePermissionProjection, createValidationWrapperEnvironment, resolveValidationExecutables } from './command-admission.mjs';
+import { createRuntimePermissionProjection, createValidationWrapperEnvironment } from './command-admission.mjs';
 
 function prepareLowInterruptionRuntime({ baseDir, projectDir, contracts, environment }) {
-  const projection = createRuntimePermissionProjection({ contracts, projectDir });
+  const projection = createRuntimePermissionProjection({ contracts, projectDir, environment });
   let env = { ...environment };
   if (projection.validation_registry) {
     env = createValidationWrapperEnvironment({
       baseDir, projectDir, registry: projection.validation_registry, environment: env,
-      executables: resolveValidationExecutables({ registry: projection.validation_registry, environment }),
+      executables: projection.validation_executables,
     });
   }
   return { ...projection, environment: env };

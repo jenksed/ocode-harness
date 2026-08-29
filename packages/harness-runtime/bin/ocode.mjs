@@ -33,7 +33,7 @@ import {
 import { runInteractiveOpenCode } from '../lib/interactive-activity.mjs';
 import { renderActivityView, renderAgentsView, renderAnnouncement } from '../lib/work-view.mjs';
 import { createRuntimePermissionProjection, createValidationWrapperEnvironment } from '../lib/command-admission.mjs';
-import { applyInteractiveRuntimePermissions, createSourceBoundOpenCodeEnvironment } from '../lib/interactive-configuration.mjs';
+import { applyInteractiveRuntimePermissions, applyPreExecutionAuthorityGuard, createSourceBoundOpenCodeEnvironment } from '../lib/interactive-configuration.mjs';
 import { createRepositorySnapshot, repositorySnapshotFingerprint } from '../lib/repository-snapshot.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -485,6 +485,7 @@ async function main() {
   const overlayConfig = JSON.parse(serializeOpenCodeRuntimeOverlay(context.profile, process.env.OPENCODE_CONFIG_CONTENT));
   const runtimePermissions = createRuntimePermissionProjection({ contracts: context.contracts, projectDir: projectRoot });
   applyInteractiveRuntimePermissions(overlayConfig, runtimePermissions);
+  applyPreExecutionAuthorityGuard(overlayConfig, { harnessRoot: context.harnessRoot, contracts: context.contracts });
   const overlay = JSON.stringify(overlayConfig);
   console.log(`=== EXECUTION PROFILE: ${context.profile.name} (${short(fingerprintBindingProfile(context.profile))}) ===\n`);
   const interactiveActivity = createActivityExecutionContext({ activity_store_path: activityStorePath(projectRoot) }, { projectDir: projectRoot, role: 'orchestrator' });

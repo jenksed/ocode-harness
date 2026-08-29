@@ -1,6 +1,7 @@
 import { copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { createPreExecutionAuthorityGuardOptions } from './pre-execution-authority-guard.mjs';
 
 /**
  * OpenCode deep-merges agent frontmatter with OPENCODE_CONFIG_CONTENT while
@@ -55,5 +56,17 @@ export function applyInteractiveRuntimePermissions(overlayConfig, runtimePermiss
       },
     };
   }
+  return overlayConfig;
+}
+
+/** Install the source-owned, deny-only guard into Ocode's owned overlay. */
+export function applyPreExecutionAuthorityGuard(overlayConfig, { harnessRoot, contracts } = {}) {
+  if (!overlayConfig || typeof overlayConfig !== 'object' || Array.isArray(overlayConfig)) throw new Error('OpenCode runtime overlay must be an object');
+  if (overlayConfig.plugin !== undefined && !Array.isArray(overlayConfig.plugin)) throw new Error('OpenCode runtime overlay plugin field must be an array');
+  const guard = [
+    resolve(harnessRoot, 'packages', 'harness-runtime', 'plugins', 'pre-execution-authority-guard.mjs'),
+    createPreExecutionAuthorityGuardOptions({ contracts }),
+  ];
+  overlayConfig.plugin = [guard, ...(overlayConfig.plugin ?? [])];
   return overlayConfig;
 }

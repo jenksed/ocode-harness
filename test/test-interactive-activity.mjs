@@ -18,7 +18,7 @@ import {
 } from '../packages/harness-runtime/lib/interactive-activity.mjs';
 import { loadAgentContracts } from '../packages/harness-runtime/lib/agent-contract.mjs';
 import { createRuntimePermissionProjection } from '../packages/harness-runtime/lib/command-admission.mjs';
-import { applyInteractiveRuntimePermissions, createSourceBoundOpenCodeEnvironment } from '../packages/harness-runtime/lib/interactive-configuration.mjs';
+import { applyInteractiveRuntimePermissions, applyPreExecutionAuthorityGuard, createSourceBoundOpenCodeEnvironment } from '../packages/harness-runtime/lib/interactive-configuration.mjs';
 import { loadBindingProfile, serializeOpenCodeRuntimeOverlay } from '../packages/harness-runtime/lib/opencode-integration.mjs';
 import { projectBashCommand } from '../packages/harness-runtime/lib/permission-projection.mjs';
 
@@ -33,6 +33,9 @@ const root = resolve('.');
   const profile = loadBindingProfile('free', { profilesDir: resolve(root, 'profiles'), manifest }).profile;
   const overlay = JSON.parse(serializeOpenCodeRuntimeOverlay(profile));
   applyInteractiveRuntimePermissions(overlay, createRuntimePermissionProjection({ contracts, projectDir: root }));
+  applyPreExecutionAuthorityGuard(overlay, { harnessRoot: root, contracts });
+  assert.match(overlay.plugin[0][0], /packages\/harness-runtime\/plugins\/pre-execution-authority-guard\.mjs$/);
+  assert.equal(overlay.plugin[0][1].authorityByRole.coder.may_stage, false);
   const sourceBound = createSourceBoundOpenCodeEnvironment({ harnessRoot: root });
   try {
     const resolved = JSON.parse(execFileSync('opencode', ['debug', 'agent', 'orchestrator'], {

@@ -4,7 +4,7 @@
     "opencode": "1.18.21",
     "sdk": "1.18.21"
   },
-  "observed_at": "2026-08-28T23:51:21.256Z",
+  "observed_at": "2026-08-29T14:50:03.419Z",
   "method": "local OpenAI-compatible non-inference fixture through installed SDK/server",
   "lifecycle": {
     "server_start": "SUPPORTED",
@@ -3841,6 +3841,687 @@
       },
       "effect_before": null,
       "effect_after": null,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "pre-execution-plugin-denies-before-native-ask",
+      "commands": [
+        "git add README.md"
+      ],
+      "rules": {
+        "*": "ask"
+      },
+      "reply": null,
+      "git_fixture": true,
+      "child_session": false,
+      "plugin": {
+        "path": "/Users/jenksed/Projects/ocode-harness/test/fixtures/opencode-pre-execution-qualification-plugin.mjs"
+      },
+      "plugin_events": [
+        {
+          "event": "chat.message",
+          "sessionID": "ses_fb20363f4ffe5CcJn5q4lH5B79",
+          "agent": "coder"
+        },
+        {
+          "event": "before",
+          "tool": "bash",
+          "sessionID": "ses_fb20363f4ffe5CcJn5q4lH5B79",
+          "callID": "call-1",
+          "command": "git add README.md",
+          "agent_from_chat_message": "coder",
+          "agent_from_session_messages": "coder"
+        }
+      ],
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "git add README.md",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "git add README.md",
+          "status": "error",
+          "error": "OCODE_QUALIFICATION_PRE_EXECUTION_DENY"
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "fixture_file_exists": {
+        "README.md": true
+      },
+      "effect_before": {
+        "index_entry": "100644 9741694d75caeb49d3b7c1f59451c0c56bf6216c 0\tREADME.md"
+      },
+      "effect_after": {
+        "index_entry": "100644 9741694d75caeb49d3b7c1f59451c0c56bf6216c 0\tREADME.md"
+      },
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "pre-execution-plugin-passes-to-native-ask",
+      "commands": [
+        "uname -a"
+      ],
+      "rules": {
+        "*": "ask"
+      },
+      "reply": "reject",
+      "git_fixture": false,
+      "child_session": false,
+      "plugin": {
+        "path": "/Users/jenksed/Projects/ocode-harness/test/fixtures/opencode-pre-execution-qualification-plugin.mjs"
+      },
+      "plugin_events": [
+        {
+          "event": "chat.message",
+          "sessionID": "ses_fb2034d5effeeRo3C7ob6ybRlX",
+          "agent": "coder"
+        },
+        {
+          "event": "before",
+          "tool": "bash",
+          "sessionID": "ses_fb2034d5effeeRo3C7ob6ybRlX",
+          "callID": "call-1",
+          "command": "uname -a",
+          "agent_from_chat_message": "coder",
+          "agent_from_session_messages": "coder"
+        }
+      ],
+      "permission_request_count": 1,
+      "permission_reply": {
+        "id": "per_04dfcb6bc001e79R4P24fYid58",
+        "response": "reject",
+        "pattern": null,
+        "metadata": {
+          "command": "uname -a"
+        }
+      },
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "uname -a",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "uname -a",
+          "status": "error",
+          "error": "The user rejected permission to use this specific tool call."
+        }
+      ],
+      "request_count": 1,
+      "marker_created": false,
+      "fixture_file_exists": {},
+      "effect_before": null,
+      "effect_after": null,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "production-guard-stage-alternates-before-native-ask",
+      "commands": [
+        "git add README.md",
+        "git -C . add README.md",
+        "git --git-dir=.git add README.md",
+        "GIT_DIR=.git git add README.md",
+        "env GIT_OPTIONAL_LOCKS=0 git add README.md",
+        "/usr/bin/git add README.md",
+        "command git add README.md",
+        "/usr/bin/env git add README.md"
+      ],
+      "rules": {
+        "*": "ask"
+      },
+      "reply": null,
+      "git_fixture": true,
+      "child_session": false,
+      "plugin": {
+        "path": "/Users/jenksed/Projects/ocode-harness/packages/harness-runtime/plugins/pre-execution-authority-guard.mjs"
+      },
+      "plugin_events": [],
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "error",
+        "pending",
+        "running",
+        "error",
+        "pending",
+        "running",
+        "error",
+        "pending",
+        "running",
+        "error",
+        "pending",
+        "running",
+        "error",
+        "pending",
+        "running",
+        "error",
+        "pending",
+        "running",
+        "error",
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "git add README.md",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "git add README.md",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: stage\nowner: deterministic-runtime\ncommand: git add README.md\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        },
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "git -C . add README.md",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "git -C . add README.md",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: stage\nowner: deterministic-runtime\ncommand: git -C . add README.md\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        },
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "git --git-dir=.git add README.md",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "git --git-dir=.git add README.md",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: stage\nowner: deterministic-runtime\ncommand: git --git-dir=.git add README.md\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        },
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "GIT_DIR=.git git add README.md",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "GIT_DIR=.git git add README.md",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: stage\nowner: deterministic-runtime\ncommand: GIT_DIR=.git git add README.md\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        },
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "env GIT_OPTIONAL_LOCKS=0 git add README.md",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "env GIT_OPTIONAL_LOCKS=0 git add README.md",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: stage\nowner: deterministic-runtime\ncommand: env GIT_OPTIONAL_LOCKS=0 git add README.md\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        },
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "/usr/bin/git add README.md",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "/usr/bin/git add README.md",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: stage\nowner: deterministic-runtime\ncommand: /usr/bin/git add README.md\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        },
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "command git add README.md",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "command git add README.md",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: stage\nowner: deterministic-runtime\ncommand: command git add README.md\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        },
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "/usr/bin/env git add README.md",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "/usr/bin/env git add README.md",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: stage\nowner: deterministic-runtime\ncommand: /usr/bin/env git add README.md\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        }
+      ],
+      "request_count": 9,
+      "marker_created": false,
+      "fixture_file_exists": {
+        "README.md": true
+      },
+      "effect_before": {
+        "index_entry": "100644 9741694d75caeb49d3b7c1f59451c0c56bf6216c 0\tREADME.md"
+      },
+      "effect_after": {
+        "index_entry": "100644 9741694d75caeb49d3b7c1f59451c0c56bf6216c 0\tREADME.md"
+      },
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "production-guard-commit-alternates-before-native-ask",
+      "commands": [
+        "git commit -m denied",
+        "git -C . commit -m denied",
+        "git --git-dir=.git commit -m denied",
+        "env git commit -m denied",
+        "/usr/bin/git commit -m denied"
+      ],
+      "rules": {
+        "*": "ask"
+      },
+      "reply": null,
+      "git_fixture": true,
+      "child_session": false,
+      "plugin": {
+        "path": "/Users/jenksed/Projects/ocode-harness/packages/harness-runtime/plugins/pre-execution-authority-guard.mjs"
+      },
+      "plugin_events": [],
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "error",
+        "pending",
+        "running",
+        "error",
+        "pending",
+        "running",
+        "error",
+        "pending",
+        "running",
+        "error",
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "git commit -m denied",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "git commit -m denied",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: commit\nowner: deterministic-runtime\ncommand: git commit -m denied\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        },
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "git -C . commit -m denied",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "git -C . commit -m denied",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: commit\nowner: deterministic-runtime\ncommand: git -C . commit -m denied\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        },
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "git --git-dir=.git commit -m denied",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "git --git-dir=.git commit -m denied",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: commit\nowner: deterministic-runtime\ncommand: git --git-dir=.git commit -m denied\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        },
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "env git commit -m denied",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "env git commit -m denied",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: commit\nowner: deterministic-runtime\ncommand: env git commit -m denied\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        },
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "/usr/bin/git commit -m denied",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "/usr/bin/git commit -m denied",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: commit\nowner: deterministic-runtime\ncommand: /usr/bin/git commit -m denied\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        }
+      ],
+      "request_count": 6,
+      "marker_created": false,
+      "fixture_file_exists": {
+        "README.md": true
+      },
+      "effect_before": {
+        "head": "3c8112c79f99efd6b0dcafb742e242493e620e1a"
+      },
+      "effect_after": {
+        "head": "3c8112c79f99efd6b0dcafb742e242493e620e1a"
+      },
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "production-guard-push-alternates-before-native-ask",
+      "commands": [
+        "git push origin main",
+        "git -C . push origin main",
+        "git --git-dir=.git push origin main",
+        "env git push origin main",
+        "/usr/bin/git push origin main"
+      ],
+      "rules": {
+        "*": "ask"
+      },
+      "reply": null,
+      "git_fixture": true,
+      "child_session": false,
+      "plugin": {
+        "path": "/Users/jenksed/Projects/ocode-harness/packages/harness-runtime/plugins/pre-execution-authority-guard.mjs"
+      },
+      "plugin_events": [],
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "error",
+        "pending",
+        "running",
+        "error",
+        "pending",
+        "running",
+        "error",
+        "pending",
+        "running",
+        "error",
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "git push origin main",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "git push origin main",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: push\nowner: deterministic-runtime\ncommand: git push origin main\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        },
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "git -C . push origin main",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "git -C . push origin main",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: push\nowner: deterministic-runtime\ncommand: git -C . push origin main\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        },
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "git --git-dir=.git push origin main",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "git --git-dir=.git push origin main",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: push\nowner: deterministic-runtime\ncommand: git --git-dir=.git push origin main\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        },
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "env git push origin main",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "env git push origin main",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: push\nowner: deterministic-runtime\ncommand: env git push origin main\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        },
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "/usr/bin/git push origin main",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "/usr/bin/git push origin main",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: push\nowner: deterministic-runtime\ncommand: /usr/bin/git push origin main\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        }
+      ],
+      "request_count": 6,
+      "marker_created": false,
+      "fixture_file_exists": {
+        "README.md": true
+      },
+      "effect_before": {
+        "remote_main": "d392993b38dbfc0b021e81994e7f6d67039364cc"
+      },
+      "effect_after": {
+        "remote_main": "d392993b38dbfc0b021e81994e7f6d67039364cc"
+      },
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "production-guard-passes-unknown-command-to-native-ask",
+      "commands": [
+        "uname -a"
+      ],
+      "rules": {
+        "*": "ask"
+      },
+      "reply": "reject",
+      "git_fixture": false,
+      "child_session": false,
+      "plugin": {
+        "path": "/Users/jenksed/Projects/ocode-harness/packages/harness-runtime/plugins/pre-execution-authority-guard.mjs"
+      },
+      "plugin_events": [],
+      "permission_request_count": 1,
+      "permission_reply": {
+        "id": "per_04dffb17b001bH2YEGtjiu8tRL",
+        "response": "reject",
+        "pattern": null,
+        "metadata": {
+          "command": "uname -a"
+        }
+      },
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "uname -a",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "uname -a",
+          "status": "error",
+          "error": "The user rejected permission to use this specific tool call."
+        }
+      ],
+      "request_count": 1,
+      "marker_created": false,
+      "fixture_file_exists": {},
+      "effect_before": null,
+      "effect_after": null,
+      "session_abort": "SUPPORTED"
+    },
+    {
+      "id": "production-guard-child-stage-before-native-ask",
+      "commands": [
+        "env git add README.md"
+      ],
+      "rules": {
+        "*": "ask"
+      },
+      "reply": null,
+      "git_fixture": true,
+      "child_session": true,
+      "plugin": {
+        "path": "/Users/jenksed/Projects/ocode-harness/packages/harness-runtime/plugins/pre-execution-authority-guard.mjs"
+      },
+      "plugin_events": [],
+      "permission_request_count": 0,
+      "permission_reply": null,
+      "tool_states": [
+        "pending",
+        "running",
+        "error"
+      ],
+      "tool_results": [
+        {
+          "command": null,
+          "status": "pending",
+          "error": null
+        },
+        {
+          "command": "env git add README.md",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "env git add README.md",
+          "status": "error",
+          "error": "OCODE_ROLE_EFFECT_DENIED\nrole: coder\neffect: stage\nowner: deterministic-runtime\ncommand: env git add README.md\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
+        }
+      ],
+      "request_count": 2,
+      "marker_created": false,
+      "fixture_file_exists": {
+        "README.md": true
+      },
+      "effect_before": {
+        "index_entry": "100644 9741694d75caeb49d3b7c1f59451c0c56bf6216c 0\tREADME.md"
+      },
+      "effect_after": {
+        "index_entry": "100644 9741694d75caeb49d3b7c1f59451c0c56bf6216c 0\tREADME.md"
+      },
       "session_abort": "SUPPORTED"
     }
   ]

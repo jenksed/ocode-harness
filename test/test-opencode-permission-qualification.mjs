@@ -32,6 +32,31 @@ assert.equal(scenario('remote-deny').tool_states.at(-1), 'error');
 assert.equal(scenario('low-interruption-loop').permission_request_count, 0);
 assert.equal(scenario('low-interruption-loop').tool_states.filter((state) => state === 'completed').length, 4);
 
+const hookDenied = scenario('pre-execution-plugin-denies-before-native-ask');
+assert.equal(hookDenied.permission_request_count, 0);
+assert.equal(hookDenied.tool_states.at(-1), 'error');
+assert.equal(hookDenied.plugin_events.find((event) => event.event === 'before')?.agent_from_chat_message, 'coder');
+assert.equal(hookDenied.plugin_events.find((event) => event.event === 'before')?.agent_from_session_messages, 'coder');
+assert.deepEqual(hookDenied.effect_after, hookDenied.effect_before);
+const hookPassed = scenario('pre-execution-plugin-passes-to-native-ask');
+assert.equal(hookPassed.permission_request_count, 1);
+assert.equal(hookPassed.tool_results.at(-1).error, 'The user rejected permission to use this specific tool call.');
+for (const id of [
+  'production-guard-stage-alternates-before-native-ask',
+  'production-guard-commit-alternates-before-native-ask',
+  'production-guard-push-alternates-before-native-ask',
+  'production-guard-child-stage-before-native-ask',
+]) {
+  const observed = scenario(id);
+  assert.equal(observed.permission_request_count, 0, `${id} must not reach native approval`);
+  assert.equal(observed.tool_states.filter((state) => state === 'error').length, observed.commands.length, `${id} rejects every governed request`);
+  assert.deepEqual(observed.effect_after, observed.effect_before, `${id} leaves fixture state unchanged`);
+  assert.equal(observed.tool_results.filter((entry) => entry.status === 'error').every((entry) => entry.error?.startsWith('OCODE_ROLE_EFFECT_DENIED\nrole: coder\n')), true, `${id} is a constitutional denial`);
+}
+const productionUnknown = scenario('production-guard-passes-unknown-command-to-native-ask');
+assert.equal(productionUnknown.permission_request_count, 1);
+assert.equal(productionUnknown.tool_results.at(-1).error, 'The user rejected permission to use this specific tool call.');
+
 const runtimeParity = [
   ['orchestrator-git-status-observation', 'git status --short', 'ALLOW', 'completed'],
   ['interactive-source-orchestrator-git-status-observation', 'git status --short', 'ALLOW', 'completed'],

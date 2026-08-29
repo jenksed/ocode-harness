@@ -55,6 +55,23 @@ layer.
 
 This projection changes execution permission only. It grants no capability, edit, stage, commit, push, review, or acceptance authority.
 
+## Pre-execution authority guard
+
+The pinned SDK/server was also qualified with a source-owned
+`tool.execute.before` plugin. For a fixture `bash: "*": ask`, the hook saw
+the exact Bash command and agent identity before native permission handling.
+Throwing from the hook produced zero permission requests and left fixture
+index, HEAD, and remote state unchanged. The production guard derives role
+authority from parsed contracts, rejects missing constitutional Git authority,
+and otherwise leaves the command to native policy. It is not an approval
+owner, command executor, or safety classifier.
+
+The guard was exercised in a synthetic child session, but native child-session
+`ASK` propagation remains unqualified. It also does not observe Git spawned by
+an approved opaque child process such as `node`, `python`, `make`, or npm.
+Consequently this qualification does not authorize a generic coder
+`bash: "*": ask` fallback.
+
 ## Unproven
 
 - `always` persistence across a new session, process restart, or machine restart;

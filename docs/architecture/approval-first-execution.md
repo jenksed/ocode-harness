@@ -6,6 +6,12 @@ Ocode is a governed harness around OpenCode. Ocode owns semantic roles, task rou
 
 There is one approval owner and one operator interaction: OpenCode's native permission UI.
 
+Before native permission evaluation, Ocode installs a source-owned,
+manifest-derived pre-execution Git authority guard. It is deny-only: it throws
+`OCODE_ROLE_EFFECT_DENIED` for a Git effect the executing role does not own,
+then otherwise continues to OpenCode's native policy. It never prompts,
+answers a permission request, executes Bash, or grants authority.
+
 ## Primary-session policy
 
 The interactive `orchestrator` is a primary OpenCode agent with:
@@ -52,6 +58,12 @@ Create test.txt, then return it to deterministic closeout for staging.
 ```
 
 Expected behavior: repository edits use the coder's native edit mechanism and Git staging is performed by deterministic closeout runtime; no `request_effect`, no `ocode effect`, and no Ocode terminal `Allow once? [y/N]` prompt. Direct `git add`, `git commit`, and `git push` are denied without an approval escalation, including executable- and environment-prefixed forms.
+
+The guard is not a general safety classifier. It preserves coder's
+constitutional `repository.edit` authority while rejecting stage, commit, and
+push; read-only roles are also rejected for repository-edit Git commands. It
+does not make a generic coder `bash: "*": ask` safe: an approved interpreter
+or child process can still invoke Git after the outer Bash request.
 
 ## Limitation
 

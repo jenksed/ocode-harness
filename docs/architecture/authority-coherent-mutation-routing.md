@@ -12,3 +12,11 @@ The runtime projection derives this boundary from the manifest authority. Read-o
 | Coder | Native edit allowed | Deny; deterministic runtime | Allow | Allow through the fingerprinted registry |
 
 This is not a second authority system: the manifest remains the authority owner, and OpenCode permissions are only the effective runtime projection. Human `ASK` cannot manufacture a missing `may_*` grant. The effect boundary is intentionally scoped to mutation routing and adjacent permission friction; it does not redesign release identity, model routing, Context Engine, or external machine state.
+
+The source-owned pre-execution guard enforces that boundary before OpenCode
+evaluates a Bash request. It derives its runtime options from the parsed role
+contracts, calls `decideEffectAdmission()` for `repository.edit`, `stage`,
+`commit`, and `push`, and only returns `CONTINUE` or `DENY`. Explicit branch
+observations (`--show-current`, `--list`, `-a`, `-r`) and worktree listing are
+outside the guard; branch/worktree mutation is `repository.edit`. This is a
+bounded Git authority check, not shell safety analysis or approval mediation.

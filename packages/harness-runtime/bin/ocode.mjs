@@ -32,7 +32,7 @@ import {
 } from '../lib/activity.mjs';
 import { runInteractiveOpenCode } from '../lib/interactive-activity.mjs';
 import { renderActivityView, renderAgentsView, renderAnnouncement } from '../lib/work-view.mjs';
-import { createRuntimePermissionProjection, createValidationWrapperEnvironment } from '../lib/command-admission.mjs';
+import { createRuntimePermissionProjection, createValidationWrapperEnvironment, resolveValidationExecutables } from '../lib/command-admission.mjs';
 import { applyInteractiveRuntimePermissions, applyPreExecutionAuthorityGuard, createSourceBoundOpenCodeEnvironment } from '../lib/interactive-configuration.mjs';
 import { createRepositorySnapshot, repositorySnapshotFingerprint } from '../lib/repository-snapshot.mjs';
 
@@ -506,14 +506,12 @@ async function main() {
       OPENCODE_CONFIG_CONTENT: overlay,
     };
     if (runtimePermissions.validation_registry) {
-      const foundNpm = spawnSync('which', ['npm'], { encoding: 'utf8', env: process.env });
-      if (foundNpm.status !== 0 || !foundNpm.stdout.trim()) throw new Error('OCODE_VALIDATION_NPM_NOT_FOUND');
       environment = createValidationWrapperEnvironment({
         baseDir: context.harnessRoot,
         projectDir: projectRoot,
         registry: runtimePermissions.validation_registry,
         environment,
-        realNpm: foundNpm.stdout.trim(),
+        executables: resolveValidationExecutables({ registry: runtimePermissions.validation_registry, environment }),
       });
     }
     // Test-only escape hatch for the launcher compatibility fixture. Normal

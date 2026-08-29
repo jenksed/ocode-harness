@@ -1,9 +1,15 @@
-import { createHash } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
 import { delimiter, resolve } from 'node:path';
-import { canonicalJSONStringify } from './agent-contract.mjs';
+import { spawnSync } from 'node:child_process';
+import {
+  VALIDATION_REGISTRY_SCHEMA_VERSION,
+  createValidationRegistry,
+  evaluateValidationRegistryFreshness,
+  validateValidationRegistry,
+} from './validation-registry.mjs';
 
-export const COMMAND_ADMISSION_SCHEMA_VERSION = 1;
+export { createValidationRegistry, evaluateValidationRegistryFreshness, validateValidationRegistry } from './validation-registry.mjs';
+
+export const COMMAND_ADMISSION_SCHEMA_VERSION = VALIDATION_REGISTRY_SCHEMA_VERSION;
 export const COMMAND_RISK_CLASSES = Object.freeze({
   OBSERVE: 'OBSERVE', VALIDATE: 'VALIDATE', WORKSPACE_EFFECT: 'WORKSPACE_EFFECT',
   REPOSITORY_EFFECT: 'REPOSITORY_EFFECT', REMOTE_EFFECT: 'REMOTE_EFFECT',
@@ -54,7 +60,6 @@ const OBSERVATION_PATTERNS = new Set([
 
 function ensureObject(value, label) { if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error(`${label} must be an object`); return value; }
 function ensureString(value, label) { if (typeof value !== 'string' || !value.trim()) throw new Error(`${label} must be a non-empty string`); return value; }
-function sha(value) { return createHash('sha256').update(value).digest('hex'); }
 function normalizedCommand(command) { return ensureString(command, 'command').trim().replace(/\s+/g, ' '); }
 
 function gitEffect(command) {
@@ -83,54 +88,6 @@ export function classifyCommand(command) {
   return { risk_class: COMMAND_RISK_CLASSES.UNKNOWN, normalized, reason: 'UNRECOGNIZED_COMMAND' };
 }
 
-function packageSnapshot(projectDir) {
-  const packagePath = resolve(projectDir, 'package.json');
-  const source = readFileSync(packagePath, 'utf8');
-  const parsed = JSON.parse(source);
-  if (!parsed.scripts || typeof parsed.scripts !== 'object' || Array.isArray(parsed.scripts)) return { package_path: 'package.json', package_fingerprint: sha(source), scripts: {} };
-  const scripts = Object.fromEntries(Object.entries(parsed.scripts).filter(([name, body]) => typeof name === 'string' && typeof body === 'string').sort(([a], [b]) => a.localeCompare(b)));
-  return { package_path: 'package.json', package_fingerprint: sha(source), scripts };
-}
-
-function isValidationScriptName(name) {
-  return /^(?:test|build|typecheck|lint)(?::[a-zA-Z0-9._-]+)*$/.test(name);
-}
-
-export function createValidationRegistry({ projectDir, commands = null } = {}) {
-  const snapshot = packageSnapshot(projectDir);
-  const admitted = new Set();
-  if (snapshot.scripts.test) admitted.add('npm test');
-  for (const name of Object.keys(snapshot.scripts)) if (isValidationScriptName(name)) admitted.add(`npm run ${name}`);
-  const selected = commands === null ? [...admitted].sort() : [...commands].map(normalizedCommand).sort();
-  for (const command of selected) if (!admitted.has(command)) throw new Error(`Validation command is not repository-defined: ${command}`);
-  const registry = { schema_version: COMMAND_ADMISSION_SCHEMA_VERSION, project_package: snapshot.package_path, package_fingerprint: snapshot.package_fingerprint, commands: selected, script_definitions: snapshot.scripts };
-  return { ...registry, fingerprint: sha(canonicalJSONStringify(registry)) };
-}
-
-export function validateValidationRegistry(registry) {
-  ensureObject(registry, 'ValidationRegistry');
-  const allowed = new Set(['schema_version', 'project_package', 'package_fingerprint', 'commands', 'script_definitions', 'fingerprint']);
-  for (const key of Object.keys(registry)) if (!allowed.has(key)) throw new Error(`Unknown ValidationRegistry field: ${key}`);
-  if (registry.schema_version !== COMMAND_ADMISSION_SCHEMA_VERSION) throw new Error('ValidationRegistry schema_version invalid');
-  if (registry.project_package !== 'package.json') throw new Error('ValidationRegistry project_package invalid');
-  if (!/^[a-f0-9]{64}$/.test(registry.package_fingerprint) || !/^[a-f0-9]{64}$/.test(registry.fingerprint)) throw new Error('ValidationRegistry fingerprint invalid');
-  if (!Array.isArray(registry.commands) || !registry.commands.length || new Set(registry.commands).size !== registry.commands.length) throw new Error('ValidationRegistry commands invalid');
-  ensureObject(registry.script_definitions, 'ValidationRegistry script_definitions');
-  const canonical = { schema_version: registry.schema_version, project_package: registry.project_package, package_fingerprint: registry.package_fingerprint, commands: [...registry.commands].sort(), script_definitions: Object.fromEntries(Object.entries(registry.script_definitions).sort(([a], [b]) => a.localeCompare(b))) };
-  if (sha(canonicalJSONStringify(canonical)) !== registry.fingerprint) throw new Error('ValidationRegistry fingerprint mismatch');
-  return { ...canonical, fingerprint: registry.fingerprint };
-}
-
-export function evaluateValidationRegistryFreshness(registry, { projectDir } = {}) {
-  const normalized = validateValidationRegistry(registry);
-  try {
-    const current = createValidationRegistry({ projectDir, commands: normalized.commands });
-    return { status: current.fingerprint === normalized.fingerprint ? 'CURRENT' : 'STALE', current_fingerprint: current.fingerprint, admitted_fingerprint: normalized.fingerprint };
-  } catch (error) {
-    return { status: 'STALE', current_fingerprint: null, admitted_fingerprint: normalized.fingerprint, reason: error.message };
-  }
-}
-
 /**
  * Project the already-governed role policy into OpenCode's observed last-match
  * rule order. Repository-defined validation is added only for test.execute
@@ -149,10 +106,8 @@ export function createNativeBashPermissionRules({ baseRules = {}, validationRegi
     if (Object.hasOwn(rules, pattern)) delete rules[pattern];
     rules[pattern] = action;
   };
-  const validationPatterns = new Set();
   for (const [pattern, action] of Object.entries(baseRules)) {
     if (typeof pattern !== 'string' || !pattern || !['allow', 'ask', 'deny'].includes(action)) throw new Error('baseRules contains an invalid native permission rule');
-    if (/^(?:npm test|npm run |pnpm |yarn |pytest|python -m pytest|go (?:test|build)|mix (?:test|compile)|cargo (?:test|build))/.test(pattern)) validationPatterns.add(pattern);
   }
   // A role missing any governed Git closeout authority receives a native
   // catch-all denial. This remains intentionally fail-closed until native
@@ -185,7 +140,9 @@ export function createNativeBashPermissionRules({ baseRules = {}, validationRegi
     const registry = validateValidationRegistry(validationRegistry);
     for (const command of registry.commands) append(command, 'allow');
   } else {
-    for (const pattern of validationPatterns) append(pattern, unadmitted);
+    for (const pattern of Object.keys(baseRules)) {
+      if (/^(?:npm|pnpm|yarn|pytest|python|go|mix|cargo)(?:\s|$)/.test(pattern)) append(pattern, unadmitted);
+    }
   }
 
   // 5. Specific remote/destructive denials, then composition denials last.
@@ -197,8 +154,8 @@ export function createNativeBashPermissionRules({ baseRules = {}, validationRegi
 
 export function createRuntimePermissionProjection({ contracts, projectDir } = {}) {
   if (!(contracts instanceof Map)) throw new Error('contracts must be a Map');
-  const packagePath = resolve(projectDir, 'package.json');
-  const candidate = existsSync(packagePath) ? createValidationRegistry({ projectDir }) : null;
+  let candidate = null;
+  try { candidate = createValidationRegistry({ projectDir }); } catch { candidate = null; }
   const validationRegistry = candidate?.commands.length ? candidate : null;
   const agents = {};
   for (const [role, contract] of contracts) {
@@ -216,19 +173,32 @@ export function createRuntimePermissionProjection({ contracts, projectDir } = {}
   return { agents, validation_registry: validationRegistry };
 }
 
-export function createValidationWrapperEnvironment({ baseDir, projectDir, registry, environment = process.env, realNpm } = {}) {
+export function createValidationWrapperEnvironment({ baseDir, projectDir, registry, environment = process.env, executables = {} } = {}) {
   if (!registry) return { ...environment };
   validateValidationRegistry(registry);
-  ensureString(realNpm, 'realNpm');
   const wrapperDir = resolve(baseDir, 'packages', 'harness-runtime', 'bin', 'validation');
   return {
     ...environment,
     PATH: `${wrapperDir}${delimiter}${environment.PATH ?? ''}`,
-    OCODE_REAL_NPM: realNpm,
+    OCODE_VALIDATION_EXECUTABLES: JSON.stringify(executables),
     OCODE_VALIDATION_ORIGINAL_PATH: environment.PATH ?? '',
     OCODE_VALIDATION_PROJECT: resolve(projectDir),
     OCODE_VALIDATION_REGISTRY: JSON.stringify(registry),
   };
+}
+
+/** Resolve only executables named by the current exact-command registry before
+ * the validation wrapper is placed on PATH. This prevents a repository-local
+ * basename shadow from becoming the tool that an admitted command executes. */
+export function resolveValidationExecutables({ registry, environment = process.env } = {}) {
+  const normalized = validateValidationRegistry(registry);
+  const executables = {};
+  for (const executable of [...new Set(normalized.commands.map((command) => command.split(' ')[0]))].sort()) {
+    const found = spawnSync('which', [executable], { encoding: 'utf8', env: environment });
+    if (found.status !== 0 || !found.stdout.trim()) throw new Error(`OCODE_VALIDATION_EXECUTABLE_NOT_FOUND:${executable}`);
+    executables[executable] = found.stdout.trim();
+  }
+  return executables;
 }
 
 export function decideCommandAdmission({ command, role, roleCapabilities = [], roleAuthority = null, validationRegistry = null, projectDir = null } = {}) {
@@ -242,6 +212,16 @@ export function decideCommandAdmission({ command, role, roleCapabilities = [], r
     if (effect && roleAuthority) return { ...decideEffectAdmission({ effect, role, authority: roleAuthority }), ...provenance };
     return { decision: COMMAND_DECISIONS.ASK, ...provenance };
   }
+  // An exact registry match is a repository-defined validation operation, not
+  // an unclassified workspace mutation. This must precede the read-only-role
+  // unknown-command fail-close path so verifier/reviewer test.execute remains
+  // usable without granting any broader Bash authority.
+  if (validationRegistry && validationRegistry.commands?.includes(classified.normalized) && roleCapabilities.includes('test.execute')) {
+    const freshness = projectDir ? evaluateValidationRegistryFreshness(validationRegistry, { projectDir }) : { status: 'CURRENT' };
+    return freshness.status === 'CURRENT'
+      ? { decision: COMMAND_DECISIONS.ALLOW, ...provenance, registry_fingerprint: validationRegistry.fingerprint, registry_status: freshness.status }
+      : { decision: COMMAND_DECISIONS.ASK, ...provenance, registry_fingerprint: validationRegistry.fingerprint, registry_status: freshness.status, reason: 'STALE_VALIDATION_REGISTRY' };
+  }
   if (classified.risk_class === COMMAND_RISK_CLASSES.WORKSPACE_EFFECT && roleAuthority?.may_edit === false) {
     return { ...decideEffectAdmission({ effect: 'repository.edit', role, authority: roleAuthority }), ...provenance };
   }
@@ -249,12 +229,6 @@ export function decideCommandAdmission({ command, role, roleCapabilities = [], r
     return { ...decideEffectAdmission({ effect: 'repository.edit', role, authority: roleAuthority }), ...provenance };
   }
   if (classified.risk_class === COMMAND_RISK_CLASSES.OBSERVE) return { decision: COMMAND_DECISIONS.ALLOW, ...provenance };
-  if (validationRegistry && validationRegistry.commands?.includes(classified.normalized) && roleCapabilities.includes('test.execute')) {
-    const freshness = projectDir ? evaluateValidationRegistryFreshness(validationRegistry, { projectDir }) : { status: 'CURRENT' };
-    return freshness.status === 'CURRENT'
-      ? { decision: COMMAND_DECISIONS.ALLOW, ...provenance, registry_fingerprint: validationRegistry.fingerprint, registry_status: freshness.status }
-      : { decision: COMMAND_DECISIONS.ASK, ...provenance, registry_fingerprint: validationRegistry.fingerprint, registry_status: freshness.status, reason: 'STALE_VALIDATION_REGISTRY' };
-  }
   return { decision: COMMAND_DECISIONS.ASK, ...provenance };
 }
 

@@ -41,7 +41,7 @@ try {
   assert.equal(evaluateValidationRegistryFreshness(registry, { projectDir: root }).status, 'STALE');
   assert.equal(decideCommandAdmission({ command: 'npm test', role: 'coder', roleCapabilities: ['test.execute'], validationRegistry: registry, projectDir: root }).decision, 'ASK');
   writeFileSync(join(root, 'package.json'), packageSource, 'utf8');
-  const wrapperEnv = createValidationWrapperEnvironment({ baseDir: resolve('.'), projectDir: root, registry, environment: process.env, realNpm: '/usr/bin/true' });
+  const wrapperEnv = createValidationWrapperEnvironment({ baseDir: resolve('.'), projectDir: root, registry, environment: process.env, executables: { npm: '/usr/bin/true' } });
   const wrapper = resolve('packages/harness-runtime/bin/validation/npm');
   assert.equal(spawnSync(wrapper, ['test'], { cwd: root, env: wrapperEnv }).status, 0);
   writeFileSync(join(root, 'package.json'), JSON.stringify({ scripts: { test: 'changed' } }), 'utf8');

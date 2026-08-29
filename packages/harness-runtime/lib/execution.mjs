@@ -23,15 +23,16 @@ import {
   finishActivityExecution,
   startActivityExecution,
 } from './activity.mjs';
-import { createRuntimePermissionProjection, createValidationWrapperEnvironment } from './command-admission.mjs';
+import { createRuntimePermissionProjection, createValidationWrapperEnvironment, resolveValidationExecutables } from './command-admission.mjs';
 
 function prepareLowInterruptionRuntime({ baseDir, projectDir, contracts, environment }) {
   const projection = createRuntimePermissionProjection({ contracts, projectDir });
   let env = { ...environment };
   if (projection.validation_registry) {
-    const found = spawnSync('which', ['npm'], { encoding: 'utf8', env: environment });
-    if (found.status !== 0 || !found.stdout.trim()) throw new Error('OCODE_VALIDATION_NPM_NOT_FOUND');
-    env = createValidationWrapperEnvironment({ baseDir, projectDir, registry: projection.validation_registry, environment: env, realNpm: found.stdout.trim() });
+    env = createValidationWrapperEnvironment({
+      baseDir, projectDir, registry: projection.validation_registry, environment: env,
+      executables: resolveValidationExecutables({ registry: projection.validation_registry, environment }),
+    });
   }
   return { ...projection, environment: env };
 }

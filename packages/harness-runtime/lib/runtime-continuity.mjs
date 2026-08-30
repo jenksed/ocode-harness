@@ -80,6 +80,39 @@ export function recordNativeApprovalEvent({ session, request, event } = {}) {
   return recordOperatorDecision({ session, request, decision, decision_id: typeof properties.id === 'string' ? properties.id : randomUUID() });
 }
 
+/**
+ * The single production owner of native permission correlation.  It retains
+ * structured pending request/session bindings; activity is deliberately not
+ * consulted for authority.
+ */
+export function createRuntimeAuthorityBridge({ session } = {}) {
+  if (!session?.[SESSION]) throw new Error('authority bridge requires runtime session');
+  const pending = new Map();
+  return Object.freeze({
+    registerRequest({ request, permission_id, session_id }) {
+      if (!isRuntimeEffectRequest(request)) throw new Error('bridge requires runtime EffectRequest');
+      requireString(permission_id, 'permission_id'); requireString(session_id, 'session_id');
+      if (pending.has(permission_id)) throw new Error('native permission is already bound');
+      const admission = evaluateAuthorityRequest({ session, request });
+      pending.set(permission_id, { request, session_id, terminal: false });
+      return admission;
+    },
+    handleNativeEvent(event) {
+      if (event?.type !== 'permission.replied') return null;
+      const properties = event.properties ?? event.data;
+      const record = pending.get(properties?.permissionID);
+      if (!record) return Object.freeze({ status: 'IGNORED', code: 'UNKNOWN_PERMISSION' });
+      if (properties.sessionID && properties.sessionID !== record.session_id) return Object.freeze({ status: 'IGNORED', code: 'SESSION_MISMATCH' });
+      if (record.terminal) return Object.freeze({ status: 'IGNORED', code: 'DUPLICATE_REPLY', request_id: record.request.request_id });
+      record.terminal = true;
+      const response = String(properties.response ?? '').toLowerCase();
+      const decision = ['allow', 'always', 'once', 'approved', 'grant'].includes(response) ? 'APPROVE' : 'REJECT';
+      return recordOperatorDecision({ session, request: record.request, decision, decision_id: typeof properties.id === 'string' ? properties.id : randomUUID() });
+    },
+    admissionFor({ request }) { return evaluateAuthorityRequest({ session, request }); },
+  });
+}
+
 /** A serializable handoff is only a reference; the runtime rechecks it against its session grant store. */
 export function createAuthorityContext({ session } = {}) {
   if (!session?.[SESSION]) throw new Error('authority context requires runtime session');

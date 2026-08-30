@@ -45,7 +45,7 @@ function errorSummary(event) {
  * does not receive terminal output or assistant text. Subtask agent IDs and
  * session.parentID are the only sources used for delegation/role attribution.
  */
-export function createInteractiveActivityCapture({ projectDir, activity }) {
+export function createInteractiveActivityCapture({ projectDir, activity, authorityBridge = null }) {
   const sessions = new Map();
   const contexts = new Map();
   const projectors = new Map();
@@ -180,6 +180,9 @@ export function createInteractiveActivityCapture({ projectDir, activity }) {
   const project = (input) => {
     const event = unwrapOpenCodeRuntimeEvent(input);
     if (!event?.type) return;
+    // This is the live OpenCode subscription seam.  The authority bridge owns
+    // correlation and grants; activity projection below remains observational.
+    authorityBridge?.handleNativeEvent(event);
     if (event.type === 'session.created' || event.type === 'session.updated') {
       const info = sessionInfo(event);
       if (info) registerSession(info);
@@ -281,7 +284,7 @@ export async function runInteractiveOpenCode(options) {
   const abort = new AbortController();
   let server = null;
   let streamTask = null;
-  const capture = createInteractiveActivityCapture({ projectDir: options.projectDir, activity: options.activity });
+  const capture = createInteractiveActivityCapture({ projectDir: options.projectDir, activity: options.activity, authorityBridge: options.authorityBridge ?? null });
   try {
     const port = options.port ?? await reserveLoopbackPort();
     server = await applyServerEnvironment(serverRuntime.environment, () => sdk.createOpencodeServer({

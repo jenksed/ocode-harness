@@ -14,6 +14,7 @@
     "test:command-authority": "node test/test-command-authority.mjs",
     "test:installed-command-authority": "node test/test-installed-command-authority.mjs",
     "test:opencode-composition": "node test/test-opencode-composition.mjs",
+    "test:installed-opencode-skill-discovery": "node test/test-installed-opencode-skill-discovery.mjs",
     "test:polyglot-validation": "node test/test-polyglot-validation.mjs",
     "test:authority-hardening": "node test/test-authority-hardening.mjs",
     "test:agents": "node test/test-agents.mjs",

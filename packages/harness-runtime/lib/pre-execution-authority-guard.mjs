@@ -1,4 +1,4 @@
-import { decideEffectAdmission } from './command-admission.mjs';
+import { decideCommandAdmission } from './command-admission.mjs';
 
 export const PRE_EXECUTION_GUARD_DECISIONS = Object.freeze({ CONTINUE: 'CONTINUE', DENY: 'DENY' });
 
@@ -103,13 +103,21 @@ export function resolvePreExecutionGuardTarget(command) {
 }
 
 /** Deny-only decision: CONTINUE never means native execution is allowed. */
-export function decidePreExecutionAuthority({ command, role = null, authorityByRole = null } = {}) {
+export function decidePreExecutionAuthority({ command, role = null, authorityByRole = null, capabilitiesByRole = null, validationRegistry = null, projectDir = null } = {}) {
+  const authority = authorityRecord(authorityByRole, role);
+  const semantic = authority
+    ? decideCommandAdmission({ command, role, roleAuthority: authority, roleCapabilities: capabilitiesByRole?.[role] ?? [], validationRegistry, projectDir })
+    : null;
+  if (semantic?.decision === 'DENY') return { ...semantic, decision: PRE_EXECUTION_GUARD_DECISIONS.DENY, code: semantic.code ?? 'OCODE_COMMAND_DENIED', effect: semantic.effect ?? (semantic.reason === 'UNCLASSIFIED_GIT_EFFECT' ? 'governed-git-unknown' : null), command: semantic.normalized ?? command };
+  // The canonical model is authoritative for every ordinary command. Retain
+  // the legacy Git parser below solely to preserve explicit diagnostic detail
+  // for malformed Git wrappers until it can be removed with its old tests.
+  if (semantic) return { decision: PRE_EXECUTION_GUARD_DECISIONS.CONTINUE, effect: semantic.effect ?? null, role, reason: semantic.reason };
   let target;
   try { target = resolvePreExecutionGuardTarget(command); } catch (error) {
     return { decision: PRE_EXECUTION_GUARD_DECISIONS.DENY, code: 'OCODE_ROLE_EFFECT_DENIED', effect: 'governed-git-unknown', role: role ?? 'UNKNOWN', owner: 'deterministic-runtime', action: 'ROUTE_TO_DETERMINISTIC_RUNTIME', reason: error.message };
   }
   if (!target) return { decision: PRE_EXECUTION_GUARD_DECISIONS.CONTINUE, reason: 'OUTSIDE_GOVERNED_GIT_SCOPE' };
-  const authority = authorityRecord(authorityByRole, role);
   if (!authority) return { decision: PRE_EXECUTION_GUARD_DECISIONS.DENY, code: 'OCODE_ROLE_EFFECT_DENIED', effect: target.effect ?? 'governed-git-unknown', role: role ?? 'UNKNOWN', owner: 'deterministic-runtime', action: 'ROUTE_TO_DETERMINISTIC_RUNTIME', reason: 'ROLE_AUTHORITY_UNAVAILABLE', command: target.command };
   if (target.suspicious) return { decision: PRE_EXECUTION_GUARD_DECISIONS.DENY, code: 'OCODE_ROLE_EFFECT_DENIED', effect: 'governed-git-unknown', role, owner: 'deterministic-runtime', action: 'ROUTE_TO_DETERMINISTIC_RUNTIME', reason: target.reason, command: target.command };
   const effectDecision = decideEffectAdmission({ effect: target.effect, role, authority });
@@ -121,9 +129,9 @@ export function decidePreExecutionAuthority({ command, role = null, authorityByR
 /** A launch-time projection from parsed contracts, not a new authority table. */
 export function createPreExecutionAuthorityGuardOptions({ contracts } = {}) {
   if (!(contracts instanceof Map)) throw new Error('contracts must be a Map');
-  const authorityByRole = {};
-  for (const [role, contract] of contracts) authorityByRole[role] = { ...contract.authority };
-  return { authorityByRole };
+  const authorityByRole = {}, capabilitiesByRole = {};
+  for (const [role, contract] of contracts) { authorityByRole[role] = { ...contract.authority }; capabilitiesByRole[role] = [...(contract.capabilities?.provides ?? [])]; }
+  return { authorityByRole, capabilitiesByRole };
 }
 
 export function formatPreExecutionAuthorityError(decision) {

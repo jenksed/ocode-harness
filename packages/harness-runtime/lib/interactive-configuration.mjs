@@ -61,12 +61,12 @@ export function applyInteractiveRuntimePermissions(overlayConfig, runtimePermiss
 }
 
 /** Install the runtime-owned, deny-only guard into Ocode's owned overlay. */
-export function applyPreExecutionAuthorityGuard(overlayConfig, { contracts } = {}) {
+export function applyPreExecutionAuthorityGuard(overlayConfig, { contracts, validationRegistry = null } = {}) {
   if (!overlayConfig || typeof overlayConfig !== 'object' || Array.isArray(overlayConfig)) throw new Error('OpenCode runtime overlay must be an object');
   if (overlayConfig.plugin !== undefined && !Array.isArray(overlayConfig.plugin)) throw new Error('OpenCode runtime overlay plugin field must be an array');
   const guard = [
     runtimeResourcePath('plugins', 'pre-execution-authority-guard.mjs'),
-    createPreExecutionAuthorityGuardOptions({ contracts }),
+    { ...createPreExecutionAuthorityGuardOptions({ contracts }), validationRegistry },
   ];
   overlayConfig.plugin = [guard, ...(overlayConfig.plugin ?? [])];
   return overlayConfig;

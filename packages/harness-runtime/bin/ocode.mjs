@@ -458,7 +458,7 @@ async function main() {
   const overlayConfig = JSON.parse(serializeOpenCodeRuntimeOverlay(context.profile, process.env.OPENCODE_CONFIG_CONTENT));
   const runtimePermissions = createRuntimePermissionProjection({ contracts: context.contracts, projectDir: projectRoot, environment: process.env });
   applyInteractiveRuntimePermissions(overlayConfig, runtimePermissions);
-  applyPreExecutionAuthorityGuard(overlayConfig, { contracts: context.contracts });
+  applyPreExecutionAuthorityGuard(overlayConfig, { contracts: context.contracts, validationRegistry: runtimePermissions.validation_registry });
   const overlay = JSON.stringify(overlayConfig);
   console.log(`=== EXECUTION PROFILE: ${context.profile.name} (${short(fingerprintBindingProfile(context.profile))}) ===\n`);
   const interactiveActivity = createActivityExecutionContext({ activity_store_path: activityStorePath(projectRoot) }, { projectDir: projectRoot, role: 'orchestrator' });

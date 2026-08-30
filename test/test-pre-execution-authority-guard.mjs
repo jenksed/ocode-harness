@@ -53,7 +53,7 @@ for (const command of ['git branch -D stale', 'git branch -d stale', 'git branch
 for (const command of ['git status && git add file', 'git status ; git add file', 'git status || git commit -m x', 'git status | git add file', "sh -c 'git add file'", "bash -c 'git add file'", "zsh -c 'git add file'"]) {
   assert.equal(decide(command).decision, PRE_EXECUTION_GUARD_DECISIONS.DENY, command);
 }
-assert.equal(decide('uname -a').decision, PRE_EXECUTION_GUARD_DECISIONS.CONTINUE);
+assert.equal(decide('uname -a').decision, PRE_EXECUTION_GUARD_DECISIONS.DENY);
 assert.equal(decide('git add file', null).reason, 'ROLE_AUTHORITY_UNAVAILABLE');
 assert.equal(decide('uname -a', null).decision, PRE_EXECUTION_GUARD_DECISIONS.CONTINUE);
 

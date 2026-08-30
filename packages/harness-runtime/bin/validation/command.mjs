@@ -16,12 +16,14 @@ if (!projectDir || !registry || typeof realExecutable !== 'string' || !resolve(r
   process.exit(126);
 }
 const command = [executable, ...process.argv.slice(2)].join(' ').trim().replace(/\s+/g, ' ');
-if (registry.commands.includes(command)) {
-  const freshness = evaluateValidationRegistryFreshness(registry, { projectDir });
-  if (freshness.status !== 'CURRENT') {
-    console.error('OCODE_VALIDATION_REGISTRY_STALE: governing validation configuration changed after admission; restart Ocode to readmit validation.');
-    process.exit(125);
-  }
+if (!registry.commands.includes(command)) {
+  console.error(`OCODE_VALIDATION_COMMAND_NOT_ADMITTED: ${command}`);
+  process.exit(126);
+}
+const freshness = evaluateValidationRegistryFreshness(registry, { projectDir });
+if (freshness.status !== 'CURRENT') {
+  console.error('OCODE_VALIDATION_REGISTRY_STALE: governing validation configuration changed after admission; restart Ocode to readmit validation.');
+  process.exit(125);
 }
 const environment = { ...process.env };
 if (environment.OCODE_VALIDATION_ORIGINAL_PATH) environment.PATH = environment.OCODE_VALIDATION_ORIGINAL_PATH;

@@ -9,6 +9,8 @@
     "test:runtime-evolution": "node test/test-runtime-evolution.mjs && node test/test-opencode-permission-qualification.mjs",
     "test:runtime-closure": "node test/test-runtime-closure.mjs",
     "test:runtime-identity": "node test/test-runtime-identity.mjs",
+    "test:command-authority": "node test/test-command-authority.mjs",
+    "test:installed-command-authority": "node test/test-installed-command-authority.mjs",
     "test:polyglot-validation": "node test/test-polyglot-validation.mjs",
     "test:authority-hardening": "node test/test-authority-hardening.mjs",
     "test:agents": "node test/test-agents.mjs",

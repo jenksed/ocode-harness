@@ -18,13 +18,9 @@ export const COMMAND_RISK_CLASSES = Object.freeze({
 });
 export const COMMAND_DECISIONS = Object.freeze({ ALLOW: 'ALLOW', ASK: 'ASK', DENY: 'DENY' });
 
-const OBSERVE = new Set([
-  'pwd', 'ls', 'rg', 'grep', 'find', 'head', 'tail', 'wc', 'file', 'stat', 'tree', 'which', 'command -v',
-  'git status', 'git diff', 'git log', 'git show', 'git rev-parse', 'git worktree list', 'git branch --show-current', 'git branch --list',
-]);
+const OBSERVE = new Set(['pwd', 'ls', 'rg', 'grep', 'head', 'tail', 'wc', 'file', 'stat', 'which', 'command -v']);
 const DESTRUCTIVE = /^(?:rm\s+-[^\n]*r|git\s+(?:reset\s+--hard|clean\b)|find\b.*\s-delete\b)/;
 const REMOTE = /^(?:git\s+push\b|git\s+fetch\b|git\s+pull\b|curl\b|wget\b|ssh\b|scp\b)/;
-const REPOSITORY = /^(?:git\s+(?:add|commit|merge|rebase|checkout|switch|restore|cherry-pick)\b)/;
 const WORKSPACE = /^(?:mkdir|touch|cp|mv|sed\s+-i|perl\s+-i|npm\s+(?:install|ci)|pnpm\s+(?:install|add)|yarn\s+(?:add|install))\b/;
 const SHELL_COMPOSITION = /[\n\r;&|><`$\\]|\$\(|\)\s*\(/;
 const OBSERVATION_SHAPED_MUTATION = /^(?:git\s+(?:show|diff|log)\b.*(?:--output(?:=|\s)|-o\s)|find\b.*\s-(?:delete|exec|execdir|ok|okdir)\b|tree\b.*\s(?:-o\s|--output(?:=|\s)))/;
@@ -42,19 +38,22 @@ const NATIVE_STRUCTURAL_DENIES = Object.freeze({
   'git commit': 'deny',
   'git commit *': 'deny',
   'rm -rf *': 'deny',
-  'find *': 'deny',
 });
 
 const OBSERVATION_PATTERNS = new Set([
   // Native Bash ALLOW is deliberately narrower than semantic observation.
   // Commands with command-native output/action options stay outside wildcard
   // admission and receive the native policy's normal routing instead.
-  'ls', 'ls *', 'pwd', 'rg', 'rg *', 'grep', 'grep *', 'find',
+  'ls', 'ls *', 'pwd', 'rg', 'rg *', 'grep', 'grep *', 'find', 'find *',
   'head', 'head *', 'tail', 'tail *', 'wc', 'wc *', 'file', 'file *',
-  'stat', 'stat *', 'tree', 'which', 'which *', 'command -v', 'command -v *',
+  'stat', 'stat *', 'tree', 'tree *', 'which', 'which *', 'command -v', 'command -v *',
   'git status', 'git status *',
   'git diff', 'git log', 'git show',
   'git rev-parse', 'git rev-parse *', 'git worktree list', 'git worktree list *',
+  'git merge-base', 'git merge-base *', 'git rev-list', 'git rev-list *', 'git ls-tree', 'git ls-tree *',
+  'git cat-file', 'git cat-file *', 'git show-ref', 'git show-ref *', 'git ls-files', 'git ls-files *',
+  'git grep', 'git grep *', 'git blame', 'git blame *', 'git remote -v', 'git tag --list', 'git tag --list *',
+  'git config --get', 'git config --get *',
   'git branch --show-current', 'git branch --list', 'git branch --list *',
   'git branch -a', 'git branch -r',
 ]);
@@ -63,25 +62,45 @@ function ensureObject(value, label) { if (!value || typeof value !== 'object' ||
 function ensureString(value, label) { if (typeof value !== 'string' || !value.trim()) throw new Error(`${label} must be a non-empty string`); return value; }
 function normalizedCommand(command) { return ensureString(command, 'command').trim().replace(/\s+/g, ' '); }
 
-function gitEffect(command) {
-  const match = command.match(/(?:^|\s)(?:\S*\/)?git\s+(?:(?:-[A-Za-z-]+(?:\s+|=)[^\s]+)\s+)*(add|commit|push|merge|rebase|cherry-pick|checkout|restore|switch|update-index|tag|rm|mv|config)\b/);
-  return match?.[1] ?? null;
+function gitSubcommand(command) {
+  const tokens = command.split(' '); const index = tokens.findIndex((token) => /(?:^|\/)git$/.test(token));
+  if (index < 0) return null;
+  const valueOptions = new Set(['-C', '-c', '--git-dir', '--work-tree', '--namespace', '--exec-path', '--super-prefix', '--config-env']);
+  for (let i = index + 1; i < tokens.length; i += 1) {
+    if (valueOptions.has(tokens[i])) { i += 1; continue; }
+    if (!tokens[i].startsWith('-')) return { subcommand: tokens[i], args: tokens.slice(i + 1) };
+  }
+  return { subcommand: '', args: [] };
+}
+
+function gitClassification(normalized) {
+  const invocation = gitSubcommand(normalized); if (!invocation) return null;
+  const { subcommand, args } = invocation;
+  const safe = new Set(['status', 'diff', 'log', 'show', 'rev-parse', 'merge-base', 'rev-list', 'ls-tree', 'cat-file', 'show-ref', 'ls-files', 'grep', 'blame']);
+  if (safe.has(subcommand) && !args.some((arg) => arg === '-o' || arg.startsWith('--output'))) return { risk_class: COMMAND_RISK_CLASSES.OBSERVE, normalized, reason: `GIT_OBSERVE:${subcommand}` };
+  if (subcommand === 'remote' && args[0] === '-v') return { risk_class: COMMAND_RISK_CLASSES.OBSERVE, normalized, reason: 'GIT_OBSERVE:remote-v' };
+  if (subcommand === 'tag' && args[0] === '--list') return { risk_class: COMMAND_RISK_CLASSES.OBSERVE, normalized, reason: 'GIT_OBSERVE:tag-list' };
+  if (subcommand === 'config' && args[0] === '--get') return { risk_class: COMMAND_RISK_CLASSES.OBSERVE, normalized, reason: 'GIT_OBSERVE:config-get' };
+  if (subcommand === 'branch' && (args.length === 0 || ['--show-current', '--list', '-a', '-r'].includes(args[0]))) return { risk_class: COMMAND_RISK_CLASSES.OBSERVE, normalized, reason: 'GIT_OBSERVE:branch' };
+  if (subcommand === 'worktree' && args[0] === 'list') return { risk_class: COMMAND_RISK_CLASSES.OBSERVE, normalized, reason: 'GIT_OBSERVE:worktree-list' };
+  const effect = { add: 'stage', 'update-index': 'stage', commit: 'commit', merge: 'commit', rebase: 'commit', 'cherry-pick': 'commit', tag: 'commit', push: 'push', checkout: 'repository.edit', restore: 'repository.edit', switch: 'repository.edit', rm: 'repository.edit', mv: 'repository.edit', config: 'repository.edit', remote: 'repository.edit' }[subcommand];
+  return effect ? { risk_class: effect === 'push' ? COMMAND_RISK_CLASSES.REMOTE_EFFECT : COMMAND_RISK_CLASSES.REPOSITORY_EFFECT, normalized, git_effect: subcommand, effect, reason: `GIT_EFFECT:${subcommand}` } : { risk_class: COMMAND_RISK_CLASSES.UNKNOWN, normalized, reason: 'UNCLASSIFIED_GIT_EFFECT' };
 }
 
 /**
  * A conservative lexical classifier. It deliberately rejects shell composition
  * rather than pretending OpenCode's unqualified prefix matcher parsed argv.
  */
-export function classifyCommand(command) {
+export function classifyCommand(command, { validationRegistry = null } = {}) {
   const normalized = normalizedCommand(command);
   if (SHELL_COMPOSITION.test(normalized)) return { risk_class: COMMAND_RISK_CLASSES.UNKNOWN, normalized, reason: 'SHELL_COMPOSITION_OR_EXPANSION' };
+  if (validationRegistry?.commands?.includes(normalized)) return { risk_class: COMMAND_RISK_CLASSES.VALIDATE, normalized, reason: 'EXACT_VALIDATION_REGISTRY_MEMBER' };
   if (OBSERVATION_SHAPED_MUTATION.test(normalized)) return { risk_class: COMMAND_RISK_CLASSES.WORKSPACE_EFFECT, normalized, reason: 'OBSERVATION_SHAPED_MUTATION_PATTERN' };
-  const effect = gitEffect(normalized);
-  if (effect === 'push') return { risk_class: COMMAND_RISK_CLASSES.REMOTE_EFFECT, normalized, git_effect: effect, reason: 'REMOTE_OR_NETWORK_PATTERN' };
-  if (effect) return { risk_class: COMMAND_RISK_CLASSES.REPOSITORY_EFFECT, normalized, git_effect: effect, reason: 'REPOSITORY_MUTATION_PATTERN' };
+  const git = gitClassification(normalized); if (git) return git;
   if (DESTRUCTIVE.test(normalized)) return { risk_class: COMMAND_RISK_CLASSES.DESTRUCTIVE, normalized, reason: 'STRUCTURAL_DESTRUCTIVE_PATTERN' };
   if (REMOTE.test(normalized)) return { risk_class: COMMAND_RISK_CLASSES.REMOTE_EFFECT, normalized, reason: 'REMOTE_OR_NETWORK_PATTERN' };
-  if (REPOSITORY.test(normalized)) return { risk_class: COMMAND_RISK_CLASSES.REPOSITORY_EFFECT, normalized, reason: 'REPOSITORY_MUTATION_PATTERN' };
+  if (/^find\b/.test(normalized)) return /\s-(?:delete|exec|execdir|ok|okdir)\b/.test(normalized) ? { risk_class: COMMAND_RISK_CLASSES.UNKNOWN, normalized, reason: 'FIND_EXECUTION_OR_MUTATION' } : { risk_class: COMMAND_RISK_CLASSES.OBSERVE, normalized, reason: 'FIND_OBSERVATION' };
+  if (/^tree\b/.test(normalized)) return /(?:\s-o\s|--output(?:=|\s))/.test(normalized) ? { risk_class: COMMAND_RISK_CLASSES.WORKSPACE_EFFECT, normalized, reason: 'TREE_OUTPUT_MUTATION' } : { risk_class: COMMAND_RISK_CLASSES.OBSERVE, normalized, reason: 'TREE_OBSERVATION' };
   if (WORKSPACE.test(normalized)) return { risk_class: COMMAND_RISK_CLASSES.WORKSPACE_EFFECT, normalized, reason: 'WORKSPACE_MUTATION_PATTERN' };
   const firstTwo = normalized.split(' ').slice(0, 2).join(' ');
   const commandFamily = OBSERVE.has(normalized) ? normalized : OBSERVE.has(firstTwo) ? firstTwo : OBSERVE.has(normalized.split(' ')[0]) ? normalized.split(' ')[0] : null;
@@ -114,12 +133,7 @@ export function createNativeBashPermissionRules({ baseRules = {}, validationRegi
   // catch-all denial. This remains intentionally fail-closed until native
   // matching of executable/environment-prefixed Git forms is qualified;
   // otherwise an ASK could manufacture a missing stage/commit/push grant.
-  const restricted = roleAuthority && (
-    roleAuthority.may_edit === false
-    || roleAuthority.may_stage === false
-    || roleAuthority.may_commit === false
-    || roleAuthority.may_push === false
-  );
+  const restricted = roleAuthority?.may_edit !== true;
   const unadmitted = restricted || baseRules['*'] === 'deny' ? 'deny' : 'ask';
 
   // 1. Baseline catch-all. Restricted roles must never convert an unknown
@@ -132,8 +146,11 @@ export function createNativeBashPermissionRules({ baseRules = {}, validationRegi
   append('git *', 'deny');
 
   // 3. Explicit safe observations, in contract order.
-  for (const pattern of Object.keys(baseRules)) {
-    if (OBSERVATION_PATTERNS.has(pattern)) append(pattern, baseRules[pattern]);
+  for (const pattern of OBSERVATION_PATTERNS) append(pattern, baseRules[pattern] ?? 'allow');
+  // Precision lives in the canonical guard; these patterns only let a bounded
+  // coder-owned workspace request reach OpenCode's native consent UI.
+  if (roleAuthority?.may_edit === true) {
+    for (const pattern of ['touch *', 'mkdir *', 'cp *', 'mv *', 'sed -i *', 'perl -i *', 'git checkout *', 'git restore *', 'git switch *', 'git rm *', 'git mv *', 'git config *', 'git remote add *']) append(pattern, 'ask');
   }
 
   // 4. Repository-admitted validation only for test.execute roles.
@@ -241,33 +258,33 @@ export function resolveValidationExecutables({ registry, environment = process.e
 
 export function decideCommandAdmission({ command, role, roleCapabilities = [], roleAuthority = null, validationRegistry = null, projectDir = null } = {}) {
   ensureString(role, 'role');
-  const classified = classifyCommand(command);
+  const classified = classifyCommand(command, { validationRegistry });
   const provenance = { classifier: 'OCODE_COMMAND_ADMISSION_V1', role, risk_class: classified.risk_class, reason: classified.reason };
-  if (classified.risk_class === COMMAND_RISK_CLASSES.DESTRUCTIVE || classified.risk_class === COMMAND_RISK_CLASSES.REMOTE_EFFECT) return { decision: COMMAND_DECISIONS.DENY, ...provenance };
+  if (classified.risk_class === COMMAND_RISK_CLASSES.DESTRUCTIVE || classified.risk_class === COMMAND_RISK_CLASSES.REMOTE_EFFECT) return { decision: COMMAND_DECISIONS.DENY, effect: classified.effect ?? null, ...provenance };
   if (classified.risk_class === COMMAND_RISK_CLASSES.REPOSITORY_EFFECT) {
-    const gitCommand = classified.git_effect;
-    const effect = ['add', 'update-index'].includes(gitCommand) ? 'stage' : ['commit', 'merge', 'rebase', 'cherry-pick', 'tag'].includes(gitCommand) ? 'commit' : ['checkout', 'restore', 'switch', 'rm', 'mv', 'config'].includes(gitCommand) ? 'repository.edit' : gitCommand === 'push' ? 'push' : null;
-    if (effect && roleAuthority) return { ...decideEffectAdmission({ effect, role, authority: roleAuthority }), ...provenance };
+    if (classified.effect && roleAuthority) {
+      const effectDecision = decideEffectAdmission({ effect: classified.effect, role, authority: roleAuthority });
+      return effectDecision.decision === COMMAND_DECISIONS.DENY ? { ...effectDecision, ...provenance } : { decision: COMMAND_DECISIONS.ASK, effect: classified.effect, role, reason: 'MODELED_EFFECT_REQUIRES_OPERATOR_CONSENT', ...provenance };
+    }
     return { decision: COMMAND_DECISIONS.ASK, ...provenance };
   }
   // An exact registry match is a repository-defined validation operation, not
   // an unclassified workspace mutation. This must precede the read-only-role
   // unknown-command fail-close path so verifier/reviewer test.execute remains
   // usable without granting any broader Bash authority.
-  if (validationRegistry && validationRegistry.commands?.includes(classified.normalized) && roleCapabilities.includes('test.execute')) {
+  if (classified.risk_class === COMMAND_RISK_CLASSES.VALIDATE && roleCapabilities.includes('test.execute')) {
     const freshness = projectDir ? evaluateValidationRegistryFreshness(validationRegistry, { projectDir }) : { status: 'CURRENT' };
     return freshness.status === 'CURRENT'
       ? { decision: COMMAND_DECISIONS.ALLOW, ...provenance, registry_fingerprint: validationRegistry.fingerprint, registry_status: freshness.status }
-      : { decision: COMMAND_DECISIONS.ASK, ...provenance, registry_fingerprint: validationRegistry.fingerprint, registry_status: freshness.status, reason: 'STALE_VALIDATION_REGISTRY' };
+      : { decision: COMMAND_DECISIONS.DENY, ...provenance, registry_fingerprint: validationRegistry.fingerprint, registry_status: freshness.status, reason: 'STALE_VALIDATION_REGISTRY' };
   }
-  if (classified.risk_class === COMMAND_RISK_CLASSES.WORKSPACE_EFFECT && roleAuthority?.may_edit === false) {
-    return { ...decideEffectAdmission({ effect: 'repository.edit', role, authority: roleAuthority }), ...provenance };
-  }
-  if (classified.risk_class === COMMAND_RISK_CLASSES.UNKNOWN && roleAuthority?.may_edit === false) {
-    return { ...decideEffectAdmission({ effect: 'repository.edit', role, authority: roleAuthority }), ...provenance };
+  if (classified.risk_class === COMMAND_RISK_CLASSES.VALIDATE) return { decision: COMMAND_DECISIONS.DENY, ...provenance, reason: 'VALIDATION_CAPABILITY_MISSING' };
+  if (classified.risk_class === COMMAND_RISK_CLASSES.WORKSPACE_EFFECT) {
+    const effectDecision = decideEffectAdmission({ effect: 'repository.edit', role, authority: roleAuthority });
+    return effectDecision.decision === COMMAND_DECISIONS.DENY ? { ...effectDecision, ...provenance } : { decision: COMMAND_DECISIONS.ASK, effect: 'repository.edit', role, reason: 'MODELED_EFFECT_REQUIRES_OPERATOR_CONSENT', ...provenance };
   }
   if (classified.risk_class === COMMAND_RISK_CLASSES.OBSERVE) return { decision: COMMAND_DECISIONS.ALLOW, ...provenance };
-  return { decision: COMMAND_DECISIONS.ASK, ...provenance };
+  return { decision: COMMAND_DECISIONS.DENY, ...provenance };
 }
 
 /** Resolve an intended effect before selecting a tool. Permission cannot grant
@@ -275,6 +292,7 @@ export function decideCommandAdmission({ command, role, roleCapabilities = [], r
 export function decideEffectAdmission({ effect, role, authority = {}, owner = null } = {}) {
   ensureString(effect, 'effect');
   ensureString(role, 'role');
+  authority = authority ?? {};
   const authorityByEffect = { 'repository.edit': 'may_edit', stage: 'may_stage', commit: 'may_commit', push: 'may_push' };
   const field = authorityByEffect[effect];
   if (!field) return { decision: COMMAND_DECISIONS.ASK, effect, role, reason: 'EFFECT_NOT_CLASSIFIED' };

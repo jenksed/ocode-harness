@@ -30,7 +30,7 @@ try {
     assert.equal(classifyCommand(command).risk_class, 'WORKSPACE_EFFECT', command);
   }
   assert.equal(classifyCommand('rg x; rm -rf /').risk_class, 'UNKNOWN');
-  assert.equal(decideCommandAdmission({ command: 'unknown-command', role: 'coder' }).decision, 'ASK');
+  assert.equal(decideCommandAdmission({ command: 'unknown-command', role: 'coder' }).decision, 'DENY');
   assert.equal(decideCommandAdmission({ command: 'git push origin main', role: 'coder' }).decision, 'DENY');
   const registry = createValidationRegistry({ projectDir: root, commands: ['npm test', 'npm run test:unit'] });
   assert.equal(createValidationRegistry({ projectDir: root }).commands.includes('npm run deploy'), false);
@@ -39,7 +39,7 @@ try {
   assert.equal(decideCommandAdmission({ command: 'npm test', role: 'coder', roleCapabilities: ['test.execute'], validationRegistry: registry, projectDir: root }).decision, 'ALLOW');
   writeFileSync(join(root, 'package.json'), JSON.stringify({ scripts: { test: 'changed' } }), 'utf8');
   assert.equal(evaluateValidationRegistryFreshness(registry, { projectDir: root }).status, 'STALE');
-  assert.equal(decideCommandAdmission({ command: 'npm test', role: 'coder', roleCapabilities: ['test.execute'], validationRegistry: registry, projectDir: root }).decision, 'ASK');
+  assert.equal(decideCommandAdmission({ command: 'npm test', role: 'coder', roleCapabilities: ['test.execute'], validationRegistry: registry, projectDir: root }).decision, 'DENY');
   writeFileSync(join(root, 'package.json'), packageSource, 'utf8');
   const wrapperEnv = createValidationWrapperEnvironment({ baseDir: resolve('.'), projectDir: root, registry, environment: process.env, executables: { npm: '/usr/bin/true' } });
   const wrapper = resolve('packages/harness-runtime/bin/validation/npm');

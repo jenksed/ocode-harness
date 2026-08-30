@@ -19,7 +19,7 @@ export default async function preExecutionAuthorityGuard(plugin, options = {}) {
       if (!role) {
         try { role = await roleFromSession(plugin, input.sessionID); } catch { role = null; }
       }
-      const decision = decidePreExecutionAuthority({ command: output.args?.command, role, authorityByRole: options.authorityByRole });
+      const decision = decidePreExecutionAuthority({ command: output.args?.command, role, authorityByRole: options.authorityByRole, capabilitiesByRole: options.capabilitiesByRole, validationRegistry: options.validationRegistry, projectDir: plugin.directory });
       if (decision.decision === 'DENY') throw new Error(formatPreExecutionAuthorityError(decision));
     },
   };

@@ -6,6 +6,7 @@ import { loadAgentContracts } from '../packages/harness-runtime/lib/agent-contra
 import { removeLegacyRequestEffectTools } from '../packages/harness-runtime/lib/deploy.mjs';
 import { projectBashCommand } from '../packages/harness-runtime/lib/permission-projection.mjs';
 import { createNativeBashPermissionRules, decideEffectAdmission, createRuntimePermissionProjection } from '../packages/harness-runtime/lib/command-admission.mjs';
+import { createPreExecutionAuthorityGuardOptions, decidePreExecutionAuthority, PRE_EXECUTION_GUARD_DECISIONS } from '../packages/harness-runtime/lib/pre-execution-authority-guard.mjs';
 
 const root = resolve(import.meta.dirname, '..');
 const { contracts } = loadAgentContracts({ baseDir: root });
@@ -46,6 +47,7 @@ assert.equal(decideEffectAdmission({ effect: 'repository.edit', role: 'orchestra
 assert.equal(decideEffectAdmission({ effect: 'repository.edit', role: 'orchestrator', authority: orchestrator.authority }).owner, 'coder');
 assert.equal(decideEffectAdmission({ effect: 'repository.edit', role: 'coder', authority: coder.authority }).decision, 'ALLOW');
 const projected = createRuntimePermissionProjection({ contracts, projectDir: root });
+const guard = createPreExecutionAuthorityGuardOptions({ contracts });
 const order = Object.keys(projected.agents.orchestrator.permission.bash);
 const before = (left, right) => assert.ok(order.indexOf(left) < order.indexOf(right), `${left} must precede ${right}: ${order.join(', ')}`);
 before('*', 'git *');
@@ -65,7 +67,7 @@ for (const command of ['ls . && touch marker.txt', 'rg needle fixture.txt | tee 
   assert.equal(projectBashCommand(projected.agents.orchestrator.permission.bash, command).state, 'DENY', command);
 }
 for (const command of ['git show --output=marker.txt HEAD', 'git diff --output=marker.txt', 'git log --output=marker.txt', 'find . -delete', 'find . -exec touch marker.txt \\;', 'tree -o marker.txt']) {
-  assert.notEqual(projectBashCommand(projected.agents.orchestrator.permission.bash, command).state, 'ALLOW', command);
+  assert.equal(decidePreExecutionAuthority({ command, role: 'orchestrator', authorityByRole: guard.authorityByRole, capabilitiesByRole: guard.capabilitiesByRole }).decision, PRE_EXECUTION_GUARD_DECISIONS.DENY, command);
 }
 assert.equal(projectBashCommand(projected.agents.coder.permission.bash, 'git add file').state, 'DENY');
 assert.equal(projectBashCommand(projected.agents.coder.permission.bash, 'git commit -m x').state, 'DENY');

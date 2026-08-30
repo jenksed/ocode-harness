@@ -169,6 +169,8 @@ assert.equal(governed.ledger_record.model_telemetry.capability, 'implementation.
 assert.equal(governed.ledger_record.model_telemetry.acceptance_result, 'UNRESOLVED');
 assert.equal(governedFake.serverOptions.config.agent.coder.permission.bash['npm test'], 'allow');
 assert.equal(governedFake.serverOptions.config.agent.coder.permission.bash['*>*'], 'deny');
+assert.equal(governedFake.serverOptions.config.plugin.filter(([path]) => /pre-execution-authority-guard\.mjs$/.test(path)).length, 1);
+assert.ok(governedFake.serverOptions.config.plugin[0][1].validationRegistry);
 const activity = queryActivity(activityStorePath(projectDir), { workflow_id: 'sdk-observable-workflow' });
 assert.equal(activity.events.some((event) => event.event_type === 'DELEGATION_CREATED'), true);
 assert.equal(activity.events.some((event) => event.event_type === 'AGENT_STARTED' && event.agent_role === 'coder'), true);

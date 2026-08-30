@@ -9,6 +9,10 @@ import { ADMITTED_CANONICAL_SKILL_IDS } from '../packages/harness-runtime/lib/ad
 import { createRuntimeBoundOpenCodeEnvironment } from '../packages/harness-runtime/lib/interactive-configuration.mjs';
 import { OpenCodeCompositionError, inspectProjectOpenCodeOwnership } from '../packages/harness-runtime/lib/opencode-composition.mjs';
 import { checkProjectionDrift } from '../packages/harness-runtime/lib/skill-projection.mjs';
+import { finalizeGovernedOpenCodeOverlay } from '../packages/harness-runtime/lib/execution.mjs';
+import { createRuntimePermissionProjection } from '../packages/harness-runtime/lib/command-admission.mjs';
+import { loadBindingProfile } from '../packages/harness-runtime/lib/opencode-integration.mjs';
+import { runtimeResourcePath } from '../packages/harness-runtime/lib/runtime-paths.mjs';
 
 const root = resolve('.');
 const fixture = mkdtempSync(join(tmpdir(), 'ocode-composition-'));
@@ -33,6 +37,8 @@ try {
     ['skill', digest(join(project, '.opencode', 'skills', 'project-skill', 'SKILL.md'))],
   ]);
   const { manifest } = loadAgentContracts({ baseDir: root });
+  const { contracts } = loadAgentContracts({ baseDir: root });
+  const profile = loadBindingProfile('free', { profilesDir: join(root, 'profiles'), manifest }).profile;
   const runtime = createRuntimeBoundOpenCodeEnvironment({
     harnessRoot: root,
     projectRoot: project,
@@ -47,6 +53,13 @@ try {
       XDG_DATA_HOME: join(userHome, '.local', 'share'), XDG_STATE_HOME: join(userHome, '.local', 'state'), XDG_CACHE_HOME: join(userHome, '.cache'),
       OPENCODE_DISABLE_EXTERNAL_SKILLS: '1', OPENCODE_DISABLE_CLAUDE_CODE_SKILLS: '1',
     };
+    const governedRuntime = createRuntimePermissionProjection({ contracts, projectDir: project });
+    const governedOverlay = finalizeGovernedOpenCodeOverlay({ profile, role: 'coder', runtime: governedRuntime, contracts });
+    const governedAgent = JSON.parse(execFileSync('opencode', ['debug', 'agent', 'coder', '--pure'], {
+      cwd: project, env: { ...environment, OPENCODE_CONFIG_CONTENT: JSON.stringify(governedOverlay) }, encoding: 'utf8',
+    }));
+    assert.equal(governedAgent.name, 'coder');
+    assert.equal(governedOverlay.plugin.filter(([path]) => path === runtimeResourcePath('plugins', 'pre-execution-authority-guard.mjs')).length, 1);
     const config = JSON.parse(execFileSync('opencode', ['debug', 'config', '--pure'], { cwd: project, env: environment, encoding: 'utf8' }));
     assert.deepEqual(config.mcp.fixture.command, ['echo', 'fixture']);
     const projectAgent = JSON.parse(execFileSync('opencode', ['debug', 'agent', 'project-agent', '--pure'], { cwd: project, env: environment, encoding: 'utf8' }));
@@ -56,6 +69,7 @@ try {
     const skills = JSON.parse(execFileSync('opencode', ['debug', 'skill', '--pure'], { cwd: project, env: environment, encoding: 'utf8' }));
     for (const id of ['tdd', 'project-skill', 'relative-skill']) assert.equal(skills.some((skill) => skill.name === id), true, id);
     console.log('✓ OpenCode 1.18.21 composes project MCP, project agent, project-relative skills, and ephemeral canonical skills');
+    console.log('✓ OpenCode 1.18.21 resolved the governed pre-execution authority guard exactly once');
   } finally { runtime.cleanup(); }
   const preserved = { config: join(project, 'opencode.json'), agent: join(project, '.opencode', 'agents', 'project-agent.md'), skill: join(project, '.opencode', 'skills', 'project-skill', 'SKILL.md') };
   for (const [name, hash] of before) assert.equal(digest(preserved[name]), hash, `${name} remains byte-clean`);

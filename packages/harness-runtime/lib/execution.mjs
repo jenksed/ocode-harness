@@ -26,7 +26,7 @@ import {
 import { createRuntimePermissionProjection, createValidationWrapperEnvironment } from './command-admission.mjs';
 import { qualifyRuntimeIdentity, runtimeIdentityExecutable } from './runtime-identity.mjs';
 import { resolveRuntimeState } from './runtime-state.mjs';
-import { createRuntimeBoundOpenCodeEnvironment } from './interactive-configuration.mjs';
+import { applyPreExecutionAuthorityGuard, createRuntimeBoundOpenCodeEnvironment } from './interactive-configuration.mjs';
 
 function prepareLowInterruptionRuntime({ baseDir, projectDir, contracts, environment, governedAgentIds }) {
   const runtimeBound = createRuntimeBoundOpenCodeEnvironment({
@@ -51,6 +51,21 @@ function applyRuntimePermissions(config, projectedAgents) {
   for (const [role, projected] of Object.entries(projectedAgents)) {
     config.agent[role] = { ...(config.agent[role] ?? {}), permission: { ...(config.agent[role]?.permission ?? {}), ...projected.permission } };
   }
+  return config;
+}
+
+/**
+ * The sole governed overlay finalizer. All governed transports consume this
+ * exact authority projection, including the same guard helper used by the
+ * interactive launcher.
+ */
+export function finalizeGovernedOpenCodeOverlay({ profile, role, existingConfigContent, runtime, contracts }) {
+  const config = applyRuntimePermissions(JSON.parse(serializeGovernedExecutionOverlay(
+    profile,
+    role,
+    existingConfigContent,
+  )), runtime.agents);
+  applyPreExecutionAuthorityGuard(config, { contracts, validationRegistry: runtime.validation_registry });
   return config;
 }
 
@@ -392,11 +407,11 @@ export function executeGovernedRole(options) {
   });
 
   const runtime = prepareLowInterruptionRuntime({ baseDir, projectDir, contracts, governedAgentIds: manifest.roles.map((role) => role.id), environment: options.env || process.env });
-  const overlayConfig = applyRuntimePermissions(JSON.parse(serializeGovernedExecutionOverlay(
-    loaded.profile,
-    options.role,
-    (options.env || process.env).OPENCODE_CONFIG_CONTENT,
-  )), runtime.agents);
+  const overlayConfig = finalizeGovernedOpenCodeOverlay({
+    profile: loaded.profile, role: options.role,
+    existingConfigContent: (options.env || process.env).OPENCODE_CONFIG_CONTENT,
+    runtime, contracts,
+  });
   const overlay = JSON.stringify(overlayConfig);
   const args = ['run'];
   if (options.pure !== false) args.push('--pure');
@@ -507,11 +522,11 @@ export async function executeGovernedRoleSdk(options) {
   });
 
   const runtime = prepareLowInterruptionRuntime({ baseDir, projectDir, contracts, governedAgentIds: manifest.roles.map((role) => role.id), environment: options.env || process.env });
-  const config = applyRuntimePermissions(JSON.parse(serializeGovernedExecutionOverlay(
-    loaded.profile,
-    options.role,
-    (options.env || process.env).OPENCODE_CONFIG_CONTENT,
-  )), runtime.agents);
+  const config = finalizeGovernedOpenCodeOverlay({
+    profile: loaded.profile, role: options.role,
+    existingConfigContent: (options.env || process.env).OPENCODE_CONFIG_CONTENT,
+    runtime, contracts,
+  });
   const { provider, model } = splitModelReference(resolution.execution_policy.requested_model);
   const activity = createActivityExecutionContext(options, { projectDir, role: options.role });
   const projectRuntimeEvent = createRuntimeActivityProjector(activity);
@@ -612,7 +627,11 @@ export async function executeGovernedRoleStreaming(options) {
   const admittedSubject = admittedSubjectForExecution(resolution, options.admissionDecision || null);
   validateResolutionAvailability(resolution, { runtimeIdentity, cwd: projectDir, env: options.env || process.env, cache: options.catalogCache, models: options.models });
   const runtime = prepareLowInterruptionRuntime({ baseDir, projectDir, contracts, governedAgentIds: manifest.roles.map((role) => role.id), environment: options.env || process.env });
-  const overlay = JSON.stringify(applyRuntimePermissions(JSON.parse(serializeGovernedExecutionOverlay(loaded.profile, options.role, (options.env || process.env).OPENCODE_CONFIG_CONTENT)), runtime.agents));
+  const overlay = JSON.stringify(finalizeGovernedOpenCodeOverlay({
+    profile: loaded.profile, role: options.role,
+    existingConfigContent: (options.env || process.env).OPENCODE_CONFIG_CONTENT,
+    runtime, contracts,
+  }));
   const args=['run']; if(options.pure!==false)args.push('--pure'); args.push('--agent',options.role,'--format','json','--dir',projectDir,options.prompt);
   const activity = createActivityExecutionContext(options, { projectDir, role: options.role });
   const projectRuntimeEvent = createRuntimeActivityProjector(activity);

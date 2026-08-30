@@ -1,5 +1,7 @@
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:net';
+import { createServer as createHttpServer } from 'node:http';
+import { randomUUID } from 'node:crypto';
 import { createOpencodeClient, createOpencodeServer } from '@opencode-ai/sdk';
 import {
   AGENT_DISPLAY_METADATA,
@@ -9,6 +11,7 @@ import {
   startActivityExecution,
 } from './activity.mjs';
 import { createVerifiedOpenCodeEnvironment, runtimeIdentityExecutable } from './runtime-identity.mjs';
+import { runtimeResourcePath } from './runtime-paths.mjs';
 import { createExecutionAuthority, createEffectRequest } from './authority-evidence.mjs';
 import { OPERATION_CLASSES, createRuntimeAuthoritySession, createRuntimeAuthorityBridge, identifyRepository, evaluateAuthorityRequest, executeVerificationWorktree, cleanupVerificationWorktree } from './runtime-continuity.mjs';
 
@@ -238,12 +241,18 @@ export function createInteractiveVerificationRuntime({ projectDir, workScope }) 
   const session = createRuntimeAuthoritySession({ repository, work_scope: workScope });
   const bridge = createRuntimeAuthorityBridge({ session });
   const pending = new Map();
+  const requests = new Map();
+  const requestSessions = new Map();
+  const decisionWaiters = new Map();
   return Object.freeze({
+    work_scope: workScope,
     bridge,
     requestVerificationEnvironment({ revision, session_id }) {
       if (pending.has(session_id)) throw new Error('verification request already pending for session');
       const request = createEffectRequest({ authority, effect: 'verification.worktree', operation_class: OPERATION_CLASSES.MANAGE_EPHEMERAL_VERIFICATION_WORKTREE, repository_id: repository.repository_id, work_scope: workScope, revision });
       pending.set(session_id, request);
+      requests.set(request.request_id, request);
+      requestSessions.set(request.request_id, session_id);
       return { request, admission: evaluateAuthorityRequest({ session, request }) };
     },
     handleNativeEvent(event) {
@@ -252,14 +261,68 @@ export function createInteractiveVerificationRuntime({ projectDir, workScope }) 
         const request = pending.get(properties.sessionID);
         if (request) bridge.registerRequest({ request, permission_id: properties.id, session_id: properties.sessionID });
       }
-      return bridge.handleNativeEvent(event);
+      const result = bridge.handleNativeEvent(event);
+      if (result?.request_id && ['GRANT_CREATED', 'REJECTED'].includes(result.status)) {
+        const waiter = decisionWaiters.get(result.request_id);
+        if (waiter) { decisionWaiters.delete(result.request_id); waiter.resolve(result); }
+      }
+      return result;
     },
     continueVerificationEnvironment({ request }) {
       const result = executeVerificationWorktree({ session, request });
       return result;
     },
+    requestFor({ request_id, session_id }) {
+      const request = requests.get(request_id);
+      if (!request || requestSessions.get(request_id) !== session_id) throw new Error('verification request is not bound to session');
+      return request;
+    },
+    completeRequest({ request, session_id }) {
+      if (pending.get(session_id) === request) pending.delete(session_id);
+    },
+    waitForDecision({ request }) {
+      const admission = evaluateAuthorityRequest({ session, request });
+      if (admission.status !== 'APPROVAL_REQUIRED') return Promise.resolve(admission);
+      const existing = decisionWaiters.get(request.request_id);
+      if (existing) return existing.promise;
+      let resolve;
+      const promise = new Promise((done) => { resolve = done; });
+      decisionWaiters.set(request.request_id, { promise, resolve });
+      return promise;
+    },
     cleanupVerificationEnvironment({ request }) { return cleanupVerificationWorktree({ session, request }); },
   });
+}
+
+/** Loopback-only, per-interactive-run capability endpoint; it is not a command server. */
+async function createVerificationEffectEndpoint(authorityRuntime) {
+  const capability = randomUUID();
+  const server = createHttpServer(async (req, res) => {
+    const reject = (status, error) => { res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify({ error })); };
+    if (req.method !== 'POST' || req.headers['x-ocode-verification-capability'] !== capability) return reject(403, 'OCODE_VERIFICATION_CAPABILITY_DENIED');
+    let body = '';
+    for await (const chunk of req) body += chunk;
+    let input; try { input = JSON.parse(body); } catch { return reject(400, 'OCODE_VERIFICATION_REQUEST_INVALID'); }
+    try {
+      if (req.url === '/request') {
+        const result = authorityRuntime.requestVerificationEnvironment({ revision: input.revision, session_id: input.session_id });
+        if (input.work_scope !== authorityRuntime.work_scope || result.admission.status !== 'APPROVAL_REQUIRED' && result.admission.status !== 'ADMITTED') return reject(403, 'OCODE_VERIFICATION_SCOPE_DENIED');
+        res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ request_id: result.request.request_id, admission: result.admission }));
+      }
+      if (req.url === '/continue') {
+        const request = authorityRuntime.requestFor({ request_id: input.request_id, session_id: input.session_id });
+        await authorityRuntime.waitForDecision({ request });
+        const result = authorityRuntime.continueVerificationEnvironment({ request });
+        if (!result.environment || !result.receipt) return reject(403, result.admission.code ?? 'OCODE_VERIFICATION_NOT_ADMITTED');
+        authorityRuntime.completeRequest({ request, session_id: input.session_id });
+        res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ environment: result.environment, receipt: result.receipt }));
+      }
+      return reject(404, 'OCODE_VERIFICATION_ENDPOINT_UNKNOWN');
+    } catch (error) { return reject(400, error.message); }
+  });
+  await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });
+  const address = server.address();
+  return { endpoint: `http://127.0.0.1:${address.port}`, capability, close: () => new Promise((resolve) => server.close(resolve)) };
 }
 
 function applyServerEnvironment(environment, start) {
@@ -317,6 +380,7 @@ export async function runInteractiveOpenCode(options) {
   const abort = new AbortController();
   let server = null;
   let streamTask = null;
+  let verificationEndpoint = null;
   let authorityRuntime = options.authorityRuntime ?? null;
   if (!authorityRuntime) {
     try { authorityRuntime = createInteractiveVerificationRuntime({ projectDir: options.projectDir, workScope: options.workScope ?? options.activity?.task_id ?? options.activity?.workflow_id ?? 'interactive' }); } catch (error) {
@@ -327,9 +391,17 @@ export async function runInteractiveOpenCode(options) {
   options.onAuthorityRuntime?.(authorityRuntime);
   const capture = createInteractiveActivityCapture({ projectDir: options.projectDir, activity: options.activity, authorityBridge: authorityRuntime ? { handleNativeEvent: (event) => authorityRuntime.handleNativeEvent(event) } : null });
   try {
+    if (authorityRuntime) verificationEndpoint = await createVerificationEffectEndpoint(authorityRuntime);
     const port = options.port ?? await reserveLoopbackPort();
+    const config = structuredClone(options.config ?? {});
+    if (verificationEndpoint) {
+      config.plugin = [[
+        runtimeResourcePath('plugins', 'verification-environment-tool.mjs'),
+        { endpoint: verificationEndpoint.endpoint, capability: verificationEndpoint.capability },
+      ], ...(config.plugin ?? [])];
+    }
     server = await applyServerEnvironment(serverRuntime.environment, () => sdk.createOpencodeServer({
-      hostname: '127.0.0.1', port, timeout: 15_000, config: options.config,
+      hostname: '127.0.0.1', port, timeout: 15_000, config,
     }));
     const client = sdk.createOpencodeClient({ baseUrl: server.url, directory: options.projectDir });
     const subscription = await client.event.subscribe({ query: { directory: options.projectDir }, signal: abort.signal });
@@ -354,6 +426,7 @@ export async function runInteractiveOpenCode(options) {
     abort.abort();
     await streamTask?.catch(() => {});
     server?.close();
+    await verificationEndpoint?.close();
     serverRuntime.cleanup();
   }
 }

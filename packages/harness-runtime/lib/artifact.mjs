@@ -76,6 +76,7 @@ export const RUNTIME_CLOSURE_REQUIRED_PATHS = Object.freeze([
   'harness-runtime/lib/wayfinding.mjs',
   'harness-runtime/lib/work-view.mjs',
   'harness-runtime/plugins/pre-execution-authority-guard.mjs',
+  'harness-runtime/plugins/verification-environment-tool.mjs',
   'orientation/bin/orient.mjs',
   'agents/manifest.json',
   'profiles/free.json',

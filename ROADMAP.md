@@ -2,6 +2,17 @@
 
 This file is the canonical high-level roadmap for the Ocode program.
 
+## Production Candidate Foundation — ACCEPTED
+
+Implementation baseline: `9e6ecb036f948ea10f4da1090da50376fbed326b`.
+
+Passes 1–3 establish installed-runtime closure, one qualified OpenCode
+1.18.21 runtime identity, and coherent command authority/validation admission.
+The accepted scope, evidence, known limitation (`git config --get user.name`),
+explicitly unclaimed properties, and next planning domains are recorded in
+[the foundation checkpoint](docs/architecture/production-candidate-foundation.md).
+This is not a general production-readiness claim.
+
 North-star acceptance property:
 
 > A clean machine can reconstruct Ocode from repository source plus machine-private configuration/authentication, prove install/update/rollback/runtime integrity, and then execute governed agentic development through deterministic evidence, authority boundaries, and recoverable state transitions.

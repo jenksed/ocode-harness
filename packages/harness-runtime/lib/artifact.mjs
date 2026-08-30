@@ -55,6 +55,7 @@ export const RUNTIME_CLOSURE_REQUIRED_PATHS = Object.freeze([
   'harness-runtime/lib/release-store.mjs',
   'harness-runtime/lib/repository-snapshot.mjs',
   'harness-runtime/lib/runtime-paths.mjs',
+  'harness-runtime/lib/runtime-identity.mjs',
   'harness-runtime/lib/skill-capsules.mjs',
   'harness-runtime/lib/skill-contract.mjs',
   'harness-runtime/lib/skill-projection.mjs',
@@ -75,6 +76,7 @@ export const RUNTIME_CLOSURE_REQUIRED_PATHS = Object.freeze([
   'profiles/hybrid.json',
   'doctrine/policy-version.json',
   'opencode-config/opencode.json',
+  'runtime-compatibility.json',
 ]);
 const sha = (value) => createHash('sha256').update(value).digest('hex');
 const fileSHA = (path) => sha(readFileSync(path));

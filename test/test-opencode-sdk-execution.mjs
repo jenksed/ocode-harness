@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, realpathSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { executeGovernedRole } from '../packages/harness-runtime/lib/execution.mjs';
@@ -9,6 +9,7 @@ import { activityStorePath, queryActivity } from '../packages/harness-runtime/li
 import { createTaskCapsule } from '../packages/harness-runtime/lib/task-capsule.mjs';
 
 const root = resolve('.');
+const runtimeIdentity = { executable: { path: process.execPath } };
 const projectDir = mkdtempSync(join(tmpdir(), 'ocode-sdk-test-'));
 writeFileSync(join(projectDir, 'package.json'), '{"scripts":{"test":"node -e \\"process.exit(0)\\""}}');
 const profile = JSON.parse(await (await import('node:fs/promises')).readFile(resolve(root, 'profiles/free.json'), 'utf8'));
@@ -22,6 +23,8 @@ function fakeSdk({ events = [], messages, status = { s1: { type: 'busy' } }, pro
   let closed = 0;
   let aborted = 0;
   let serverOptions = null;
+  let serverPath = null;
+  let serverExecutable = null;
   const assistantMessages = messages ?? [{
     info: { id: 'a1', sessionID: 's1', role: 'assistant', providerID: 'freellmapi', modelID: 'auto:coding', agent: 'coder' },
     parts: [{ id: 'p1', sessionID: 's1', messageID: 'a1', type: 'text', text: '{"ok":true}' }],
@@ -29,6 +32,8 @@ function fakeSdk({ events = [], messages, status = { s1: { type: 'busy' } }, pro
   const sdk = {
     async createOpencodeServer(options) {
       serverOptions = options;
+      serverPath = process.env.PATH;
+      serverExecutable = realpathSync(join(serverPath.split(':')[0], 'opencode'));
       calls.push('server.start');
       return { url: 'http://sdk.invalid', close() { closed += 1; calls.push('server.close'); } };
     },
@@ -54,7 +59,7 @@ function fakeSdk({ events = [], messages, status = { s1: { type: 'busy' } }, pro
       };
     },
   };
-  return { sdk, calls, get closed() { return closed; }, get aborted() { return aborted; }, get serverOptions() { return serverOptions; } };
+  return { sdk, calls, get closed() { return closed; }, get aborted() { return aborted; }, get serverOptions() { return serverOptions; }, get serverPath() { return serverPath; }, get serverExecutable() { return serverExecutable; } };
 }
 
 const rawTool = { type: 'message.part.updated', properties: { part: { type: 'tool', sessionID: 's1', tool: 'skill', state: { status: 'completed', input: { name: 'tdd' } } } } };
@@ -67,7 +72,7 @@ const happy = fakeSdk({ events: [
 ] });
 const result = await runOpenCodeSdkSession({
   projectDir: root, role: 'coder', providerID: 'freellmapi', modelID: 'auto:coding',
-  prompt: 'bounded', config: {}, sdk: happy.sdk, timeout: 500,
+  prompt: 'bounded', config: {}, sdk: happy.sdk, runtimeIdentity, timeout: 500,
 });
 assert.equal(result.termination, 'SESSION_IDLE');
 assert.equal(result.completion_source, 'SESSION_IDLE_EVENT');
@@ -76,17 +81,19 @@ assert.equal(result.events.some((event) => event.type === 'tool_use'), true);
 assert.equal(result.prompt_submissions, 1);
 assert.equal(happy.calls.indexOf('event.subscribe') < happy.calls.indexOf('session.promptAsync'), true);
 assert.equal(happy.closed, 1);
+assert.equal(happy.serverExecutable, realpathSync(process.execPath));
+console.log('✓ SDK server PATH is bound to the qualified executable alias');
 console.log('✓ SDK subscription precedes one prompt; wrong-session idle is ignored; matching idle returns messages and tool evidence');
 
 const queried = fakeSdk({ status: { s1: { type: 'idle' } } });
-const queryResult = await runOpenCodeSdkSession({ projectDir: root, role: 'coder', providerID: 'freellmapi', modelID: 'auto:coding', prompt: 'bounded', config: {}, sdk: queried.sdk, timeout: 500 });
+const queryResult = await runOpenCodeSdkSession({ projectDir: root, role: 'coder', providerID: 'freellmapi', modelID: 'auto:coding', prompt: 'bounded', config: {}, sdk: queried.sdk, runtimeIdentity, timeout: 500 });
 assert.equal(queryResult.completion_source, 'SESSION_IDLE_QUERY');
 assert.equal(queryResult.prompt_submissions, 1);
 console.log('✓ Authoritative session-status query closes the event race without duplicate inference');
 
 const stopped = fakeSdk({ events: [rawTool] });
 const stoppedResult = await runOpenCodeSdkSession({
-  projectDir: root, role: 'coder', providerID: 'freellmapi', modelID: 'auto:coding', prompt: 'bounded', config: {}, sdk: stopped.sdk, timeout: 500,
+  projectDir: root, role: 'coder', providerID: 'freellmapi', modelID: 'auto:coding', prompt: 'bounded', config: {}, sdk: stopped.sdk, runtimeIdentity, timeout: 500,
   methodEvidenceGate: ({ events }) => events.some((event) => event.type === 'tool_use') ? { method_evidence_sufficient: true, proof: 'runtime' } : null,
 });
 assert.equal(stoppedResult.termination, 'METHOD_PROVEN_SESSION_STOPPED');
@@ -100,7 +107,7 @@ const errored = fakeSdk({ events: [
   { type: 'session.error', properties: { sessionID: 's1', error: { name: 'failure' } } },
   { type: 'session.status', properties: { sessionID: 's1', status: { type: 'idle' } } },
 ] });
-const errorResult = await runOpenCodeSdkSession({ projectDir: root, role: 'coder', providerID: 'freellmapi', modelID: 'auto:coding', prompt: 'bounded', config: {}, sdk: errored.sdk, timeout: 500 });
+const errorResult = await runOpenCodeSdkSession({ projectDir: root, role: 'coder', providerID: 'freellmapi', modelID: 'auto:coding', prompt: 'bounded', config: {}, sdk: errored.sdk, runtimeIdentity, timeout: 500 });
 assert.equal(errorResult.termination, 'PROCESS_ERROR');
 assert.match(errorResult.spawn_error, /OPENCODE_SDK_SESSION_ERROR/);
 assert.equal(errored.aborted, 1);
@@ -124,7 +131,7 @@ assert.equal(providerFailureResult.ledger_record.model_telemetry.failure_attribu
 console.log('✓ Provider API failures remain separate from model capability failures');
 
 const waiting = fakeSdk();
-const timeoutResult = await runOpenCodeSdkSession({ projectDir: root, role: 'coder', providerID: 'freellmapi', modelID: 'auto:coding', prompt: 'bounded', config: {}, sdk: waiting.sdk, timeout: 20 });
+const timeoutResult = await runOpenCodeSdkSession({ projectDir: root, role: 'coder', providerID: 'freellmapi', modelID: 'auto:coding', prompt: 'bounded', config: {}, sdk: waiting.sdk, runtimeIdentity, timeout: 20 });
 assert.equal(timeoutResult.termination, 'PROCESS_TIMEOUT');
 assert.equal(waiting.closed, 1);
 console.log('✓ Timeout before authoritative completion fails closed and aborts the session');

@@ -35,6 +35,7 @@ import { renderActivityView, renderAgentsView, renderAnnouncement } from '../lib
 import { createRuntimePermissionProjection, createValidationWrapperEnvironment } from '../lib/command-admission.mjs';
 import { applyInteractiveRuntimePermissions, applyPreExecutionAuthorityGuard, createRuntimeBoundOpenCodeEnvironment } from '../lib/interactive-configuration.mjs';
 import { createRepositorySnapshot, repositorySnapshotFingerprint } from '../lib/repository-snapshot.mjs';
+import { qualifyRuntimeIdentity } from '../lib/runtime-identity.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 
@@ -83,35 +84,6 @@ function loadContext(profileOverride) {
     manifest,
   });
   return { harnessRoot, machineConfig, profileName, manifest, contracts, ...loaded };
-}
-
-/** Enforce the runtime pin only when this release carries a compatibility contract. */
-function assertRuntimeCompatibility(harnessRoot) {
-  const path = resolve(harnessRoot, 'runtime-compatibility.json');
-  if (!existsSync(path)) return;
-  let compatibility;
-  try {
-    compatibility = JSON.parse(readFileSync(path, 'utf8'));
-  } catch {
-    throw new Error(`OCODE_RUNTIME_COMPATIBILITY_INVALID: cannot read ${path}`);
-  }
-  const required = compatibility?.opencode?.required_version;
-  const supported = compatibility?.platform?.supported;
-  const minimumNode = compatibility?.node?.minimum_major;
-  if (typeof required !== 'string' || !Array.isArray(supported) || !Number.isInteger(minimumNode)) {
-    throw new Error('OCODE_RUNTIME_COMPATIBILITY_INVALID: required OpenCode, platform, or Node declaration is missing');
-  }
-  if (!supported.includes(`${process.platform} ${process.arch}`)) {
-    throw new Error(`OCODE_RUNTIME_PLATFORM_UNSUPPORTED: ${process.platform} ${process.arch}; supported: ${supported.join(', ')}`);
-  }
-  if (Number(process.versions.node.split('.')[0]) < minimumNode) {
-    throw new Error(`OCODE_RUNTIME_NODE_UNSUPPORTED: requires Node >=${minimumNode}; found ${process.versions.node}`);
-  }
-  const version = spawnSync('opencode', ['--version'], { encoding: 'utf8' });
-  const found = version.error ? null : version.stdout.trim();
-  if (version.status !== 0 || found !== required) {
-    throw new Error(`OCODE_RUNTIME_OPENCODE_VERSION_MISMATCH: requires ${required}; found ${found || 'unavailable'}. Install the pinned version, then rerun ocode.`);
-  }
 }
 
 function loadGovernanceContext() {
@@ -474,13 +446,14 @@ async function main() {
     throw new Error('Usage: ocode profile | ocode profile explain <role> | ocode profile diff <left> <right>');
   }
 
-  assertRuntimeCompatibility(context.harnessRoot);
+  const runtimeIdentity = qualifyRuntimeIdentity({ releaseRoot: context.harnessRoot, environment: process.env });
   validateProfileCompleteness(context.profile, context.manifest);
   const roots = orientProject();
   const projectRoot = roots.project_root;
   validateProfileAvailability(context.profile, {
     cwd: projectRoot,
     env: process.env,
+    runtimeIdentity,
   });
   const overlayConfig = JSON.parse(serializeOpenCodeRuntimeOverlay(context.profile, process.env.OPENCODE_CONFIG_CONTENT));
   const runtimePermissions = createRuntimePermissionProjection({ contracts: context.contracts, projectDir: projectRoot, environment: process.env });
@@ -517,13 +490,14 @@ async function main() {
     // `ocode .` always owns a server and observes its native event stream.
     if (process.env.OCODE_DISABLE_INTERACTIVE_ACTIVITY_BRIDGE === '1') {
       startActivityExecution(interactiveActivity);
-      result = spawnSync('opencode', remaining, { cwd: projectRoot, env: environment, stdio: 'inherit' });
+      result = spawnSync(runtimeIdentity.executable.path, remaining, { cwd: projectRoot, env: environment, stdio: 'inherit' });
     } else {
       result = await runInteractiveOpenCode({
         projectDir: projectRoot,
         args: remaining,
         env: environment,
         config: overlayConfig,
+        runtimeIdentity,
         activity: interactiveActivity,
         onObserverError: () => {},
       });

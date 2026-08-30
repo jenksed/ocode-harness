@@ -81,7 +81,8 @@ const architecture = readFileSync(resolve(root, 'docs/architecture/approval-firs
 
 assert.match(orchestratorSource, /native Bash tool/);
 assert.match(coderSource, /EFFECT REQUEST/);
-assert.match(launcher, /if \(!existsSync\(path\)\) return;/);
+assert.match(launcher, /const runtimeIdentity = qualifyRuntimeIdentity\(/);
+assert.doesNotMatch(launcher, /spawnSync\('opencode'/);
 for (const source of [launcher, installer]) {
   assert.doesNotMatch(source, /request_effect|Allow once\?|ocode effect|ALLOW_ONCE/);
 }

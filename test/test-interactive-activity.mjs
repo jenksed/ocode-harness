@@ -29,6 +29,7 @@ const root = resolve('.');
 // runtime projection cannot observe: inherited agent keys retain insertion
 // order, while OpenCode evaluates the last matching Bash rule.
 {
+  const opencodeHome = mkdtempSync(join(tmpdir(), 'ocode-interactive-config-home-'));
   const { manifest, contracts } = loadAgentContracts({ baseDir: root });
   const profile = loadBindingProfile('free', { profilesDir: resolve(root, 'profiles'), manifest }).profile;
   const overlay = JSON.parse(serializeOpenCodeRuntimeOverlay(profile));
@@ -43,6 +44,11 @@ const root = resolve('.');
       encoding: 'utf8',
       env: {
         ...runtimeBound.environment,
+        HOME: opencodeHome,
+        XDG_CONFIG_HOME: join(opencodeHome, '.config'),
+        XDG_DATA_HOME: join(opencodeHome, '.local', 'share'),
+        XDG_STATE_HOME: join(opencodeHome, '.local', 'state'),
+        XDG_CACHE_HOME: join(opencodeHome, '.cache'),
         OPENCODE_CONFIG_CONTENT: JSON.stringify(overlay),
         OPENCODE_DISABLE_EXTERNAL_SKILLS: '1',
         OPENCODE_DISABLE_CLAUDE_CODE_SKILLS: '1',
@@ -65,6 +71,7 @@ const root = resolve('.');
     console.log('✓ Runtime-bound interactive OpenCode config preserves Git observation exceptions after family denial');
   } finally {
     runtimeBound.cleanup();
+    rmSync(opencodeHome, { recursive: true, force: true });
   }
 }
 
@@ -82,7 +89,7 @@ try {
     chmodSync(path, 0o755);
   };
   writeExecutable('orient', 'mkdir -p "$1/.opencode"\nprintf "{\\\"project\\\":{\\\"root\\\":\\\"%s\\\"}}" "$1" > "$1/.opencode/orientation.json"\nprintf "orientation" > "$1/.opencode/orientation.md"');
-  writeExecutable('opencode', 'printf "%s\\n%s\\n%s\\n%s\\n" "$PWD" "$OCODE_PROJECT_ROOT" "$OCODE_REPOSITORY_ROOT" "$OCODE_INVOCATION_DIR" > "$OCODE_PROJECT_ROOT/opencode-root.log"\nif [ "$1" = "models" ]; then printf "%s\\n" freellmapi/auto:default freellmapi/auto:planning freellmapi/auto:coding freellmapi/auto:wayfinder freellmapi/auto:research freellmapi/auto:verification freellmapi/auto:review freellmapi/auto:reasoning freellmapi/auto:utility; fi\nexit 0');
+  writeExecutable('opencode', 'if [ "$1" = "--version" ]; then printf "%s\\n" 1.18.21; exit 0; fi\nprintf "%s\\n%s\\n%s\\n%s\\n" "$PWD" "$OCODE_PROJECT_ROOT" "$OCODE_REPOSITORY_ROOT" "$OCODE_INVOCATION_DIR" > "$OCODE_PROJECT_ROOT/opencode-root.log"\nif [ "$1" = "models" ]; then printf "%s\\n" freellmapi/auto:default freellmapi/auto:planning freellmapi/auto:coding freellmapi/auto:wayfinder freellmapi/auto:research freellmapi/auto:verification freellmapi/auto:review freellmapi/auto:reasoning freellmapi/auto:utility; fi\nexit 0');
   const result = spawnSync(process.execPath, [cli], {
     cwd: project,
     encoding: 'utf8',
@@ -177,8 +184,10 @@ try {
     }, { projectDir: bridgeRunProject, role: 'orchestrator' });
     const emitted = [];
     let serverOptions;
+    let serverLaunchPath;
+    let serverExecutable;
     const sdk = {
-      async createOpencodeServer(options) { serverOptions = options; return { url: 'http://127.0.0.1:9876', close() {} }; },
+      async createOpencodeServer(options) { serverOptions = options; serverLaunchPath = process.env.PATH; serverExecutable = realpathSync(join(serverLaunchPath.split(':')[0], 'opencode')); return { url: 'http://127.0.0.1:9876', close() {} }; },
       createOpencodeClient() {
         return { event: { subscribe: async () => ({ stream: (async function* stream() { yield { payload: session('attached-root') }; })() }) } };
       },
@@ -189,6 +198,7 @@ try {
       port: 9876,
       env: process.env,
       config: {},
+      runtimeIdentity: { executable: { path: process.execPath } },
       activity: runActivity,
       sdk,
       spawnProcess(command, args) {
@@ -200,6 +210,8 @@ try {
     });
     assert.equal(result.status, 0);
     assert.equal(serverOptions.port, 9876);
+    assert.equal(serverExecutable, realpathSync(process.execPath));
+    assert.equal(emitted[0].command, process.execPath);
     assert.deepEqual(emitted[0].args, ['attach', 'http://127.0.0.1:9876', '--dir', bridgeRunProject]);
     assert.equal(queryActivity(activityStorePath(bridgeRunProject)).events.some((record) => record.session_id === 'attached-root'), true);
     console.log('✓ Normal launcher bridge subscribes before attaching the TUI to the owned OpenCode server');

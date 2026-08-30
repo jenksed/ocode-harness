@@ -8,6 +8,7 @@ import {
   finishActivityExecution,
   startActivityExecution,
 } from './activity.mjs';
+import { createVerifiedOpenCodeEnvironment, runtimeIdentityExecutable } from './runtime-identity.mjs';
 
 function properties(event) {
   return event?.properties ?? event?.data ?? null;
@@ -287,13 +288,14 @@ function reserveLoopbackPort() {
 export async function runInteractiveOpenCode(options) {
   const sdk = options.sdk ?? { createOpencodeClient, createOpencodeServer };
   const spawnProcess = options.spawnProcess ?? spawn;
+  const serverRuntime = createVerifiedOpenCodeEnvironment(options.runtimeIdentity, options.env);
   const abort = new AbortController();
   let server = null;
   let streamTask = null;
   const capture = createInteractiveActivityCapture({ projectDir: options.projectDir, activity: options.activity });
   try {
     const port = options.port ?? await reserveLoopbackPort();
-    server = await applyServerEnvironment(options.env, () => sdk.createOpencodeServer({
+    server = await applyServerEnvironment(serverRuntime.environment, () => sdk.createOpencodeServer({
       hostname: '127.0.0.1', port, timeout: 15_000, config: options.config,
     }));
     const client = sdk.createOpencodeClient({ baseUrl: server.url, directory: options.projectDir });
@@ -305,7 +307,7 @@ export async function runInteractiveOpenCode(options) {
         if (!abort.signal.aborted) options.onObserverError?.(error);
       }
     })();
-    const child = spawnProcess(options.opencode ?? 'opencode', attachArguments(server.url, options.projectDir, options.args), {
+    const child = spawnProcess(runtimeIdentityExecutable(options.runtimeIdentity), attachArguments(server.url, options.projectDir, options.args), {
       cwd: options.projectDir, env: options.env, stdio: 'inherit',
     });
     const result = await waitForChild(child);
@@ -319,5 +321,6 @@ export async function runInteractiveOpenCode(options) {
     abort.abort();
     await streamTask?.catch(() => {});
     server?.close();
+    serverRuntime.cleanup();
   }
 }

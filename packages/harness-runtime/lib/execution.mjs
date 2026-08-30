@@ -24,6 +24,7 @@ import {
   startActivityExecution,
 } from './activity.mjs';
 import { createRuntimePermissionProjection, createValidationWrapperEnvironment } from './command-admission.mjs';
+import { qualifyRuntimeIdentity, runtimeIdentityExecutable } from './runtime-identity.mjs';
 
 function prepareLowInterruptionRuntime({ baseDir, projectDir, contracts, environment }) {
   const projection = createRuntimePermissionProjection({ contracts, projectDir, environment });
@@ -64,6 +65,11 @@ function run(command, args, options = {}) {
     duration_ms: Date.now() - started,
     spawn_error: result.error?.message || null,
   };
+}
+
+function controlledOpenCodeExecutable(options = {}) {
+  if (options.runtimeIdentity) return runtimeIdentityExecutable(options.runtimeIdentity);
+  throw new Error('OCODE_RUNTIME_IDENTITY_REQUIRED: OpenCode execution requires a qualified absolute executable identity');
 }
 
 export function runOpenCodeStreaming(command, args, options = {}) {
@@ -142,7 +148,7 @@ function parseExport(stdout) {
 export function discoverProviderModels(provider, options = {}) {
   const cache = options.cache;
   if (cache?.has(provider)) return cache.get(provider);
-  const result = run(options.opencode || 'opencode', ['models', provider], {
+  const result = run(controlledOpenCodeExecutable(options), ['models', provider], {
     cwd: options.cwd || process.cwd(),
     env: options.env || process.env,
     timeout: options.timeout || 30_000,
@@ -347,6 +353,8 @@ export function executeGovernedRole(options) {
   if (options.streaming === true) return executeGovernedRoleStreaming(options);
   const baseDir = resolve(options.baseDir);
   const projectDir = resolve(options.projectDir);
+  const runtimeIdentity = options.runtimeIdentity ?? qualifyRuntimeIdentity({ releaseRoot: baseDir, environment: options.env || process.env });
+  const opencode = controlledOpenCodeExecutable({ runtimeIdentity });
   const taskCapsule = assertTaskCapsuleProjectRoot(bindTaskCapsuleToExecution({ taskCapsule: options.taskCapsule, expectedTaskCapsuleFingerprint: options.taskCapsuleFingerprint, role: options.role, required: options.requireTaskCapsule === true }), projectDir);
   const { manifest, contracts } = loadAgentContracts({ baseDir });
   const loaded = options.profile
@@ -366,7 +374,7 @@ export function executeGovernedRole(options) {
   const admissionDecision = options.admissionDecision || null;
   const admittedSubject = admittedSubjectForExecution(resolution, admissionDecision);
   validateResolutionAvailability(resolution, {
-    opencode: options.opencode,
+    runtimeIdentity,
     cwd: projectDir,
     env: options.env || process.env,
     cache: options.catalogCache,
@@ -394,7 +402,7 @@ export function executeGovernedRole(options) {
   const activity = createActivityExecutionContext(options, { projectDir, role: options.role });
   const projectRuntimeEvent = createRuntimeActivityProjector(activity);
   startActivityExecution(activity);
-  const execution = run(options.opencode || 'opencode', args, {
+  const execution = run(opencode, args, {
     cwd: projectDir,
     env: { ...runtime.environment, OPENCODE_CONFIG_CONTENT: overlay },
     timeout: options.timeout || 120_000,
@@ -406,7 +414,7 @@ export function executeGovernedRole(options) {
   let exported = null;
   let exportResult = null;
   if (sessionID) {
-    exportResult = run(options.opencode || 'opencode', ['export', sessionID, '--sanitize'], {
+    exportResult = run(opencode, ['export', sessionID, '--sanitize'], {
       cwd: projectDir,
       env: runtime.environment,
       timeout: 30_000,
@@ -454,6 +462,7 @@ export function executeGovernedRole(options) {
     success,
     failure_classification: failureClassification,
     ledger_record: record,
+    runtime_identity: runtimeIdentity,
   };
 }
 
@@ -461,6 +470,7 @@ export function executeGovernedRole(options) {
 export async function executeGovernedRoleSdk(options) {
   const baseDir = resolve(options.baseDir);
   const projectDir = resolve(options.projectDir);
+  const runtimeIdentity = options.runtimeIdentity ?? qualifyRuntimeIdentity({ releaseRoot: baseDir, environment: options.env || process.env });
   const taskCapsule = assertTaskCapsuleProjectRoot(bindTaskCapsuleToExecution({ taskCapsule: options.taskCapsule, expectedTaskCapsuleFingerprint: options.taskCapsuleFingerprint, role: options.role, required: options.requireTaskCapsule === true }), projectDir);
   const { manifest, contracts } = loadAgentContracts({ baseDir });
   const loaded = options.profile
@@ -477,7 +487,7 @@ export async function executeGovernedRoleSdk(options) {
   const admissionDecision = options.admissionDecision || null;
   const admittedSubject = admittedSubjectForExecution(resolution, admissionDecision);
   validateResolutionAvailability(resolution, {
-    opencode: options.opencode,
+    runtimeIdentity,
     cwd: projectDir,
     env: options.env || process.env,
     cache: options.catalogCache,
@@ -502,6 +512,7 @@ export async function executeGovernedRoleSdk(options) {
     prompt: options.prompt,
     config,
     env: runtime.environment,
+    runtimeIdentity,
     timeout: options.timeout || 120_000,
     tools: options.sdkTools,
     sdk: options.sdk,
@@ -570,11 +581,14 @@ export async function executeGovernedRoleSdk(options) {
     ledger_record: record,
     transport: 'OPENCODE_SDK',
     completion_source: execution.completion_source,
+    runtime_identity: runtimeIdentity,
   };
 }
 
 export async function executeGovernedRoleStreaming(options) {
   const baseDir = resolve(options.baseDir), projectDir = resolve(options.projectDir);
+  const runtimeIdentity = options.runtimeIdentity ?? qualifyRuntimeIdentity({ releaseRoot: baseDir, environment: options.env || process.env });
+  const opencode = controlledOpenCodeExecutable({ runtimeIdentity });
   const taskCapsule = assertTaskCapsuleProjectRoot(bindTaskCapsuleToExecution({ taskCapsule: options.taskCapsule, expectedTaskCapsuleFingerprint: options.taskCapsuleFingerprint, role: options.role, required: options.requireTaskCapsule === true }), projectDir);
   const { manifest, contracts } = loadAgentContracts({ baseDir });
   const loaded = options.profile ? { profile: options.profile, source: options.bindingSource || `profiles/${options.profile.name}.json` } : loadBindingProfile(options.profileName, { profilesDir: resolve(baseDir, 'profiles'), manifest });
@@ -582,24 +596,24 @@ export async function executeGovernedRoleStreaming(options) {
   const contract = contracts.get(options.role);
   const resolution = createExecutionResolution({ role: options.role, contract, profile: loaded.profile, bindingSource: options.bindingSource || `profiles/${loaded.profile.name}.json` });
   const admittedSubject = admittedSubjectForExecution(resolution, options.admissionDecision || null);
-  validateResolutionAvailability(resolution, { opencode: options.opencode, cwd: projectDir, env: options.env || process.env, cache: options.catalogCache, models: options.models });
+  validateResolutionAvailability(resolution, { runtimeIdentity, cwd: projectDir, env: options.env || process.env, cache: options.catalogCache, models: options.models });
   const runtime = prepareLowInterruptionRuntime({ baseDir, projectDir, contracts, environment: options.env || process.env });
   const overlay = JSON.stringify(applyRuntimePermissions(JSON.parse(serializeGovernedExecutionOverlay(loaded.profile, options.role, (options.env || process.env).OPENCODE_CONFIG_CONTENT)), runtime.agents));
   const args=['run']; if(options.pure!==false)args.push('--pure'); args.push('--agent',options.role,'--format','json','--dir',projectDir,options.prompt);
   const activity = createActivityExecutionContext(options, { projectDir, role: options.role });
   const projectRuntimeEvent = createRuntimeActivityProjector(activity);
   startActivityExecution(activity);
-  const execution = await runOpenCodeStreaming(options.opencode || 'opencode', args, { cwd:projectDir, env:{...runtime.environment,OPENCODE_CONFIG_CONTENT:overlay}, timeout:options.timeout||120000 });
+  const execution = await runOpenCodeStreaming(opencode, args, { cwd:projectDir, env:{...runtime.environment,OPENCODE_CONFIG_CONTENT:overlay}, timeout:options.timeout||120000 });
   const events=parseOpenCodeEvents(execution.stdout);
   events.forEach(projectRuntimeEvent);
   const sessionID=events.find((event)=>event.sessionID)?.sessionID||null;
   let exported=null, exportResult=null;
-  if(sessionID){ exportResult=run(options.opencode||'opencode',['export',sessionID,'--sanitize'],{cwd:projectDir,env:runtime.environment,timeout:30000}); if(!exportResult.spawn_error&&!exportResult.signal&&exportResult.exit_code===0)exported=parseExport(exportResult.stdout); }
+  if(sessionID){ exportResult=run(opencode,['export',sessionID,'--sanitize'],{cwd:projectDir,env:runtime.environment,timeout:30000}); if(!exportResult.spawn_error&&!exportResult.signal&&exportResult.exit_code===0)exported=parseExport(exportResult.stdout); }
   const reconciliation=reconcileExecutionBinding(resolution,exported), subjectReconciliation=reconcileExecutionSubject(admittedSubject,exported);
   const runtimeSucceeded=execution.termination==='NORMAL_EXIT'&&execution.exit_code===0;
   const acceptance=evaluateGovernedExecutionAcceptance({runtimeSucceeded,reconciliation,subjectReconciliation});
   const ledgerPath=options.ledgerPath||resolve(projectDir,'.opencode','run-ledger.jsonl');
   const record=appendExecutionLedgerRecord({ledgerPath,projectDir,resolution,reconciliation,subjectReconciliation,success:acceptance.success,failureClassification:acceptance.failure_classification,elapsedMs:execution.duration_ms,telemetryContext:taskCapsule?{taskCapsule,capability:options.capability,adapter_fingerprint:options.adapterFingerprint,qualification_identity_fingerprint:options.qualificationIdentityFingerprint,acceptance_result:options.acceptanceResult,reviewer_verdict:options.reviewerVerdict,repair_cycles:options.repairCycles,validation_results:options.validationResults}:null});
   finishActivityExecution(activity, { success: acceptance.success, session_id: sessionID, failure_classification: acceptance.failure_classification });
-  return {resolution,execution,events,model_output:resolveAssistantModelOutput({events,exported}),session_id:sessionID,exported,export_result:exportResult,reconciliation,subject_reconciliation:subjectReconciliation,admitted_subject:admittedSubject,admission_decision:options.admissionDecision||null,success:acceptance.success,failure_classification:acceptance.failure_classification,ledger_record:record};
+  return {resolution,execution,events,model_output:resolveAssistantModelOutput({events,exported}),session_id:sessionID,exported,export_result:exportResult,reconciliation,subject_reconciliation:subjectReconciliation,admitted_subject:admittedSubject,admission_decision:options.admissionDecision||null,success:acceptance.success,failure_classification:acceptance.failure_classification,ledger_record:record,runtime_identity:runtimeIdentity};
 }

@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "contract_version": 1,
+  "compatibility_id": "ocode-opencode-1.18.21",
+  "opencode": {
+    "required_version": "1.18.21"
+  },
+  "sdk": {
+    "package": "@opencode-ai/sdk",
+    "required_version": "1.18.21"
+  },
+  "node": {
+    "minimum_major": 18
+  },
+  "platform": {
+    "supported": [
+      "darwin arm64"
+    ]
+  }
+}

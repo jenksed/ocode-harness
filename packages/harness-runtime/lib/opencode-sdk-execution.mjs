@@ -1,4 +1,5 @@
 import { createOpencodeClient, createOpencodeServer } from '@opencode-ai/sdk';
+import { createVerifiedOpenCodeEnvironment } from './runtime-identity.mjs';
 
 const DEFAULT_TIMEOUT_MS = 120_000;
 
@@ -88,6 +89,7 @@ export async function runOpenCodeSdkSession(options) {
   const started = Date.now();
   const timeoutMs = options.timeout ?? DEFAULT_TIMEOUT_MS;
   const sdk = options.sdk ?? { createOpencodeClient, createOpencodeServer };
+  const serverRuntime = createVerifiedOpenCodeEnvironment(options.runtimeIdentity, options.env);
   const abort = new AbortController();
   let server = null;
   let client = null;
@@ -110,7 +112,7 @@ export async function runOpenCodeSdkSession(options) {
   const timeout = setTimeout(() => rejectCompletion(new Error('OPENCODE_SDK_SESSION_TIMEOUT')), timeoutMs);
 
   try {
-    server = await applySpawnEnvironment(options.env, () => sdk.createOpencodeServer({
+    server = await applySpawnEnvironment(serverRuntime.environment, () => sdk.createOpencodeServer({
       hostname: '127.0.0.1',
       port: 0,
       timeout: Math.min(timeoutMs, 15_000),
@@ -250,7 +252,10 @@ export async function runOpenCodeSdkSession(options) {
   } finally {
     clearTimeout(timeout);
     abort.abort();
-    try { server?.close(); } finally { cleanupComplete = true; }
+    try { server?.close(); } finally {
+      serverRuntime.cleanup();
+      cleanupComplete = true;
+    }
     // Kept as an internal assertion so every returned result promises completed cleanup.
     if (!cleanupComplete) throw new Error('OPENCODE_SDK_CLEANUP_FAILED');
   }

@@ -179,3 +179,10 @@ M6–M10 remain planned. Placeholder directories or partial primitives do not im
 ## Current Bootstrap Boundary
 
 The current bootstrap may repair only the repository foundation needed for a reproducible baseline. It must not begin Wayfinder, Pstack skill implementation, Planner Compiler, worktree isolation, or broader roadmap features.
+
+## Daily Driver Integrity
+
+DD1 External Runtime State: **ACCEPTED** — Ocode-owned orientation, activity,
+and governed-ledger state is externalized under the XDG state contract with a
+physical-worktree identity. The accepted implementation and evidence are in
+[the DD1 checkpoint](docs/architecture/daily-driver-dd1-runtime-state.md).

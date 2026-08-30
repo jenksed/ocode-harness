@@ -69,7 +69,7 @@ function withEnvironment(environment, start) {
 
 function initializeGitFixture(fixture) {
   const git = (args) => execFileSync('git', args, { cwd: fixture, encoding: 'utf8' });
-  git(['init']); git(['config', 'user.email', 'fixture@example.test']); git(['config', 'user.name', 'Permission Fixture']);
+  git(['init']); git(['config', '--local', 'user.email', 'fixture@example.test']); git(['config', '--local', 'user.name', 'Permission Fixture']);
   git(['add', '--', '.']); git(['commit', '-m', 'fixture']); git(['branch', '-M', 'main']);
 }
 
@@ -130,10 +130,11 @@ const governedGitEffectProbes = {
   },
 };
 
-async function runScenario({ id, command, commands = [command], rules, reply = null, files = {}, git = false, effectProbe = null, agent = 'probe', sourceAgents = false, plugin = null, childSession = false, runtimeValidation = null, role = agent, expected_effect = null, expected_disposition = null }) {
+async function runScenario({ id, command, commands = [command], rules, reply = null, files = {}, git = false, modifyAfterGit = [], effectProbe = null, agent = 'probe', sourceAgents = false, plugin = null, childSession = false, runtimeValidation = null, role = agent, expected_effect = null, expected_disposition = null }) {
   const fixture = mkdtempSync(join(tmpdir(), `ocode-permission-${id}-`));
   for (const [path, content] of Object.entries(files)) writeFileSync(join(fixture, path), content);
   if (git) initializeGitFixture(fixture);
+  for (const [path, content] of modifyAfterGit) writeFileSync(join(fixture, path), content);
   const effect_before = effectProbe?.prepare(fixture) ?? null;
   const xdg = join(fixture, '.xdg');
   for (const name of ['config', 'data', 'state', 'cache']) mkdirSync(join(xdg, name), { recursive: true });
@@ -197,6 +198,10 @@ async function runScenario({ id, command, commands = [command], rules, reply = n
             await client.postSessionIdPermissionsPermissionId({ path: { id: created.id, permissionID: properties.id }, query: { directory: fixture }, body: { response: reply } });
           }
           if ((event.type === 'session.idle' || event.type === 'session.status' && properties.sessionID === created.id && properties.status?.type === 'idle') && properties.sessionID === created.id) resolveIdle();
+          if (event.type === 'message.part.updated' && properties.part?.type === 'tool' && ['completed', 'error'].includes(properties.part.state?.status)) {
+            const terminalParts = events.filter((candidate) => candidate.type === 'message.part.updated' && candidate.properties?.part?.type === 'tool' && ['completed', 'error'].includes(candidate.properties.part.state?.status));
+            if (terminalParts.length >= commands.length) resolveIdle();
+          }
           if (event.type === 'session.error' && properties.sessionID === created.id) rejectIdle(new Error(`SESSION_ERROR:${JSON.stringify(properties.error)}`));
         }
       } catch (error) { if (!abort.signal.aborted) rejectIdle(error); }
@@ -249,7 +254,7 @@ const pass3LiveScenarios = [
   ['git-grep', 'git grep fixture-token'], ['git-blame', 'git blame fixture.txt'], ['git-remote-v', 'git remote -v'],
   ['git-tag-list', 'git tag --list'], ['git-config-get', 'git config --get user.name'], ['git-diff-path', 'git diff -- fixture.txt'],
   ['find-observation', 'find . -type f'], ['tree-observation', 'tree .'],
-].map(([name, command]) => ({ id: `pass3-coder-observe-${name}`, role: 'coder', agent: 'coder', command, commands: [command], rules: coderRules, git: true, files: { 'fixture.txt': 'fixture-token\n' }, expected_effect: 'observation', expected_disposition: 'ALLOW' }));
+].map(([name, command]) => ({ id: `pass3-coder-observe-${name}`, role: 'coder', agent: 'coder', command, commands: [command], rules: coderRules, git: true, modifyAfterGit: name === 'git-diff-path' ? [['fixture.txt', 'fixture-token\nchanged\n']] : [], files: { 'fixture.txt': 'fixture-token\n' }, expected_effect: 'observation', expected_disposition: 'ALLOW' }));
 pass3LiveScenarios.push(
   { id: 'pass3-coder-workspace-ask', role: 'coder', agent: 'coder', command: 'touch feature.txt', rules: coderRules, expected_effect: 'workspace_mutation', expected_disposition: 'ASK' },
   { id: 'pass3-coder-git-forbidden', role: 'coder', agent: 'coder', commands: ['git add fixture.txt', 'git commit -m fixture', 'git push origin main'], rules: coderRules, git: true, files: { 'fixture.txt': 'fixture-token\n' }, expected_effect: 'closeout', expected_disposition: 'DENY' },

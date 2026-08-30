@@ -4,7 +4,7 @@
     "opencode": "1.18.21",
     "sdk": "1.18.21"
   },
-  "observed_at": "2026-08-30T04:10:56.406Z",
+  "observed_at": "2026-08-30T04:19:08.944Z",
   "method": "local OpenAI-compatible non-inference fixture through installed SDK/server",
   "lifecycle": {
     "server_start": "SUPPORTED",
@@ -5266,8 +5266,8 @@
     },
     {
       "id": "pass3-coder-observe-git-merge-base",
-      "run_id": "run-mtfaihqc",
-      "timestamp": "2026-08-30T04:09:14.386Z",
+      "run_id": "run-mtfatnfa",
+      "timestamp": "2026-08-30T04:17:53.410Z",
       "role": "coder",
       "command": "git merge-base HEAD HEAD",
       "commands": [
@@ -5306,6 +5306,7 @@
         "git status": "allow",
         "git status *": "allow",
         "git diff": "allow",
+        "git diff *": "allow",
         "git log": "allow",
         "git show": "allow",
         "git rev-parse": "allow",
@@ -5369,7 +5370,7 @@
       "git_fixture": true,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf249b92ffeUemtExafzygE2D",
+      "session_id": "ses_faf1ca9fcffe8ufuzF34PU5e4m",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,
@@ -5409,7 +5410,7 @@
           "error": null
         }
       ],
-      "request_count": 2,
+      "request_count": 1,
       "marker_created": false,
       "validation_execution": [],
       "runtime_validation": null,
@@ -5423,8 +5424,8 @@
     },
     {
       "id": "pass3-coder-observe-git-rev-list",
-      "run_id": "run-mtfaihqc",
-      "timestamp": "2026-08-30T04:09:19.169Z",
+      "run_id": "run-mtfatnfa",
+      "timestamp": "2026-08-30T04:17:56.655Z",
       "role": "coder",
       "command": "git rev-list HEAD",
       "commands": [
@@ -5463,6 +5464,7 @@
         "git status": "allow",
         "git status *": "allow",
         "git diff": "allow",
+        "git diff *": "allow",
         "git log": "allow",
         "git show": "allow",
         "git rev-parse": "allow",
@@ -5526,7 +5528,7 @@
       "git_fixture": true,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf248866ffeghwp4RsDy8VgFB",
+      "session_id": "ses_faf1c9cbcffevHdPsj7s5Dkm0B",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,
@@ -5566,7 +5568,7 @@
           "error": null
         }
       ],
-      "request_count": 2,
+      "request_count": 1,
       "marker_created": false,
       "validation_execution": [],
       "runtime_validation": null,
@@ -5580,8 +5582,8 @@
     },
     {
       "id": "pass3-coder-observe-git-ls-tree",
-      "run_id": "run-mtfaihqc",
-      "timestamp": "2026-08-30T04:09:24.131Z",
+      "run_id": "run-mtfatnfa",
+      "timestamp": "2026-08-30T04:17:59.909Z",
       "role": "coder",
       "command": "git ls-tree HEAD",
       "commands": [
@@ -5620,6 +5622,7 @@
         "git status": "allow",
         "git status *": "allow",
         "git diff": "allow",
+        "git diff *": "allow",
         "git log": "allow",
         "git show": "allow",
         "git rev-parse": "allow",
@@ -5683,7 +5686,7 @@
       "git_fixture": true,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf2475b4ffeqKosadTfprAQAt",
+      "session_id": "ses_faf1c9008ffeMfCXja6Xzdr9xs",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,
@@ -5723,7 +5726,7 @@
           "error": null
         }
       ],
-      "request_count": 2,
+      "request_count": 1,
       "marker_created": false,
       "validation_execution": [],
       "runtime_validation": null,
@@ -5737,8 +5740,8 @@
     },
     {
       "id": "pass3-coder-observe-git-cat-file",
-      "run_id": "run-mtfaihqc",
-      "timestamp": "2026-08-30T04:09:28.978Z",
+      "run_id": "run-mtfatnfa",
+      "timestamp": "2026-08-30T04:18:03.207Z",
       "role": "coder",
       "command": "git cat-file -t HEAD",
       "commands": [
@@ -5777,6 +5780,7 @@
         "git status": "allow",
         "git status *": "allow",
         "git diff": "allow",
+        "git diff *": "allow",
         "git log": "allow",
         "git show": "allow",
         "git rev-parse": "allow",
@@ -5840,7 +5844,7 @@
       "git_fixture": true,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf246259ffeCsj2ZKnQnglcB0",
+      "session_id": "ses_faf1c8317ffeRinJndlvKQ7Taj",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,
@@ -5880,7 +5884,7 @@
           "error": null
         }
       ],
-      "request_count": 2,
+      "request_count": 1,
       "marker_created": false,
       "validation_execution": [],
       "runtime_validation": null,
@@ -5894,8 +5898,8 @@
     },
     {
       "id": "pass3-coder-observe-git-show-ref",
-      "run_id": "run-mtfaihqc",
-      "timestamp": "2026-08-30T04:09:33.910Z",
+      "run_id": "run-mtfatnfa",
+      "timestamp": "2026-08-30T04:18:06.431Z",
       "role": "coder",
       "command": "git show-ref",
       "commands": [
@@ -5934,6 +5938,7 @@
         "git status": "allow",
         "git status *": "allow",
         "git diff": "allow",
+        "git diff *": "allow",
         "git log": "allow",
         "git show": "allow",
         "git rev-parse": "allow",
@@ -5997,7 +6002,7 @@
       "git_fixture": true,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf244f7dffeDnhvIgKCwUSgNp",
+      "session_id": "ses_faf1c766cffeepokdothXf37GY",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,
@@ -6037,7 +6042,7 @@
           "error": null
         }
       ],
-      "request_count": 2,
+      "request_count": 1,
       "marker_created": false,
       "validation_execution": [],
       "runtime_validation": null,
@@ -6051,8 +6056,8 @@
     },
     {
       "id": "pass3-coder-observe-git-ls-files",
-      "run_id": "run-mtfaihqc",
-      "timestamp": "2026-08-30T04:09:38.785Z",
+      "run_id": "run-mtfatnfa",
+      "timestamp": "2026-08-30T04:18:09.606Z",
       "role": "coder",
       "command": "git ls-files",
       "commands": [
@@ -6091,6 +6096,7 @@
         "git status": "allow",
         "git status *": "allow",
         "git diff": "allow",
+        "git diff *": "allow",
         "git log": "allow",
         "git show": "allow",
         "git rev-parse": "allow",
@@ -6154,7 +6160,7 @@
       "git_fixture": true,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf243c11ffeMvCQLLRZHv21NX",
+      "session_id": "ses_faf1c69d9ffeVhYA71goA3Bi4V",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,
@@ -6194,7 +6200,7 @@
           "error": null
         }
       ],
-      "request_count": 2,
+      "request_count": 1,
       "marker_created": false,
       "validation_execution": [],
       "runtime_validation": null,
@@ -6208,8 +6214,8 @@
     },
     {
       "id": "pass3-coder-observe-git-grep",
-      "run_id": "run-mtfaihqc",
-      "timestamp": "2026-08-30T04:09:43.715Z",
+      "run_id": "run-mtfatnfa",
+      "timestamp": "2026-08-30T04:18:12.907Z",
       "role": "coder",
       "command": "git grep fixture-token",
       "commands": [
@@ -6248,6 +6254,7 @@
         "git status": "allow",
         "git status *": "allow",
         "git diff": "allow",
+        "git diff *": "allow",
         "git log": "allow",
         "git show": "allow",
         "git rev-parse": "allow",
@@ -6311,7 +6318,7 @@
       "git_fixture": true,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf24291cffeganYV3v3uMYpU5",
+      "session_id": "ses_faf1c5d1dffetXIcjLLdJ5LY3J",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,
@@ -6351,7 +6358,7 @@
           "error": null
         }
       ],
-      "request_count": 2,
+      "request_count": 1,
       "marker_created": false,
       "validation_execution": [],
       "runtime_validation": null,
@@ -6365,8 +6372,8 @@
     },
     {
       "id": "pass3-coder-observe-git-blame",
-      "run_id": "run-mtfaihqc",
-      "timestamp": "2026-08-30T04:09:48.765Z",
+      "run_id": "run-mtfatnfa",
+      "timestamp": "2026-08-30T04:18:16.169Z",
       "role": "coder",
       "command": "git blame fixture.txt",
       "commands": [
@@ -6405,6 +6412,7 @@
         "git status": "allow",
         "git status *": "allow",
         "git diff": "allow",
+        "git diff *": "allow",
         "git log": "allow",
         "git show": "allow",
         "git rev-parse": "allow",
@@ -6468,7 +6476,7 @@
       "git_fixture": true,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf2415bfffeXH50AK7J2c873M",
+      "session_id": "ses_faf1c505cffeWR7UiLopmMeudW",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,
@@ -6508,7 +6516,7 @@
           "error": null
         }
       ],
-      "request_count": 2,
+      "request_count": 1,
       "marker_created": false,
       "validation_execution": [],
       "runtime_validation": null,
@@ -6522,8 +6530,8 @@
     },
     {
       "id": "pass3-coder-observe-git-remote-v",
-      "run_id": "run-mtfaihqc",
-      "timestamp": "2026-08-30T04:09:53.743Z",
+      "run_id": "run-mtfatnfa",
+      "timestamp": "2026-08-30T04:18:19.559Z",
       "role": "coder",
       "command": "git remote -v",
       "commands": [
@@ -6562,6 +6570,7 @@
         "git status": "allow",
         "git status *": "allow",
         "git diff": "allow",
+        "git diff *": "allow",
         "git log": "allow",
         "git show": "allow",
         "git rev-parse": "allow",
@@ -6625,7 +6634,7 @@
       "git_fixture": true,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf240219ffeO94J6YspZ6w6Xg",
+      "session_id": "ses_faf1c43b2ffe0C3mCHrOaWhguZ",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,
@@ -6659,7 +6668,7 @@
           "error": null
         }
       ],
-      "request_count": 2,
+      "request_count": 1,
       "marker_created": false,
       "validation_execution": [],
       "runtime_validation": null,
@@ -6673,8 +6682,8 @@
     },
     {
       "id": "pass3-coder-observe-git-tag-list",
-      "run_id": "run-mtfaihqc",
-      "timestamp": "2026-08-30T04:09:58.650Z",
+      "run_id": "run-mtfatnfa",
+      "timestamp": "2026-08-30T04:18:22.969Z",
       "role": "coder",
       "command": "git tag --list",
       "commands": [
@@ -6713,6 +6722,7 @@
         "git status": "allow",
         "git status *": "allow",
         "git diff": "allow",
+        "git diff *": "allow",
         "git log": "allow",
         "git show": "allow",
         "git rev-parse": "allow",
@@ -6776,7 +6786,7 @@
       "git_fixture": true,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf23eebeffePflfJDsHHXoFI7",
+      "session_id": "ses_faf1c362dffe6SJn67pVQgVYIW",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,
@@ -6810,7 +6820,7 @@
           "error": null
         }
       ],
-      "request_count": 2,
+      "request_count": 1,
       "marker_created": false,
       "validation_execution": [],
       "runtime_validation": null,
@@ -6824,7 +6834,7 @@
     },
     {
       "id": "pass3-coder-observe-git-config-get",
-      "run_id": "run-mtfaihqc",
+      "run_id": "run-mtfatnfa",
       "role": "coder",
       "command": "git config --get user.name",
       "commands": [
@@ -6836,12 +6846,12 @@
       "terminal_status": "ERROR",
       "evidence_status": "INSUFFICIENT_EVIDENCE",
       "error": "SCENARIO_TIMEOUT",
-      "timestamp": "2026-08-30T04:10:19.714Z"
+      "timestamp": "2026-08-30T04:18:44.159Z"
     },
     {
       "id": "pass3-coder-observe-git-diff-path",
-      "run_id": "run-mtfaihqc",
-      "timestamp": "2026-08-30T04:10:24.656Z",
+      "run_id": "run-mtfatnfa",
+      "timestamp": "2026-08-30T04:18:47.369Z",
       "role": "coder",
       "command": "git diff -- fixture.txt",
       "commands": [
@@ -6880,6 +6890,7 @@
         "git status": "allow",
         "git status *": "allow",
         "git diff": "allow",
+        "git diff *": "allow",
         "git log": "allow",
         "git show": "allow",
         "git rev-parse": "allow",
@@ -6943,16 +6954,18 @@
       "git_fixture": true,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf238909ffeWBn05DSjOXJus2",
+      "session_id": "ses_faf1bd6bcffedGk4fZoV1UZrE2",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,
-      "observed_disposition": "DENY",
+      "observed_disposition": "ALLOW",
       "terminal_status": "IDLE",
       "tool_states": [
         "pending",
         "running",
-        "error"
+        "running",
+        "running",
+        "completed"
       ],
       "tool_results": [
         {
@@ -6967,11 +6980,21 @@
         },
         {
           "command": "git diff -- fixture.txt",
-          "status": "error",
-          "error": "The user has specified a rule which prevents you from using this specific tool call. Here are some of the relevant rules [{\"permission\":\"*\",\"action\":\"allow\",\"pattern\":\"*\"},{\"permission\":\"bash\",\"pattern\":\"*\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"ls\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"ls *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"pwd\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"rg\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"rg *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"grep\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"grep *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"find\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"find *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"head\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"head *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tail\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tail *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"wc\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"wc *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"file\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"file *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"stat\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"stat *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tree\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tree *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"which\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"which *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"command -v\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"command -v *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git status\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git status *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git diff\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git log\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git show\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-parse\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-parse *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git worktree list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git worktree list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git merge-base\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git merge-base *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-tree\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-tree *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git cat-file\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git cat-file *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git show-ref\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git show-ref *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-files\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-files *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git grep\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git grep *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git blame\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git blame *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git remote -v\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git tag --list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git tag --list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git config --get\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git config --get *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch --show-current\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch --list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch --list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch -a\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch -r\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"touch *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"mkdir *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"cp *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"mv *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"sed -i *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"perl -i *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git checkout *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git restore *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git switch *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git rm *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git mv *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git config *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git remote add *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git push\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git push *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git reset --hard\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git reset --hard *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git clean\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git clean *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git add\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git add *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git commit\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git commit *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"rm -rf *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"*>*\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"*<*\",\"action\":\"deny\"}]"
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "git diff -- fixture.txt",
+          "status": "running",
+          "error": null
+        },
+        {
+          "command": "git diff -- fixture.txt",
+          "status": "completed",
+          "error": null
         }
       ],
-      "request_count": 2,
+      "request_count": 1,
       "marker_created": false,
       "validation_execution": [],
       "runtime_validation": null,
@@ -6981,12 +7004,12 @@
       "effect_before": null,
       "effect_after": null,
       "session_abort": "SUPPORTED",
-      "evidence_status": "FAIL"
+      "evidence_status": "PASS"
     },
     {
       "id": "pass3-coder-observe-find-observation",
-      "run_id": "run-mtfaihqc",
-      "timestamp": "2026-08-30T04:10:29.528Z",
+      "run_id": "run-mtfatnfa",
+      "timestamp": "2026-08-30T04:18:50.824Z",
       "role": "coder",
       "command": "find . -type f",
       "commands": [
@@ -7025,6 +7048,7 @@
         "git status": "allow",
         "git status *": "allow",
         "git diff": "allow",
+        "git diff *": "allow",
         "git log": "allow",
         "git show": "allow",
         "git rev-parse": "allow",
@@ -7088,7 +7112,7 @@
       "git_fixture": true,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf2375f7ffeo0lz17PAmwRyu6",
+      "session_id": "ses_faf1bc97bffe9Ci7mjv7P4R26L",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,
@@ -7122,7 +7146,7 @@
           "error": null
         }
       ],
-      "request_count": 2,
+      "request_count": 1,
       "marker_created": false,
       "validation_execution": [],
       "runtime_validation": null,
@@ -7136,8 +7160,8 @@
     },
     {
       "id": "pass3-coder-observe-tree-observation",
-      "run_id": "run-mtfaihqc",
-      "timestamp": "2026-08-30T04:10:34.432Z",
+      "run_id": "run-mtfatnfa",
+      "timestamp": "2026-08-30T04:18:54.167Z",
       "role": "coder",
       "command": "tree .",
       "commands": [
@@ -7176,6 +7200,7 @@
         "git status": "allow",
         "git status *": "allow",
         "git diff": "allow",
+        "git diff *": "allow",
         "git log": "allow",
         "git show": "allow",
         "git rev-parse": "allow",
@@ -7239,7 +7264,7 @@
       "git_fixture": true,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf2362dbffey0APRejw2kkhol",
+      "session_id": "ses_faf1bbc5affecgyd7ecCWRnhI2",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,
@@ -7279,7 +7304,7 @@
           "error": null
         }
       ],
-      "request_count": 2,
+      "request_count": 1,
       "marker_created": false,
       "validation_execution": [],
       "runtime_validation": null,
@@ -7293,8 +7318,8 @@
     },
     {
       "id": "pass3-coder-workspace-ask",
-      "run_id": "run-mtfaihqc",
-      "timestamp": "2026-08-30T04:10:36.571Z",
+      "run_id": "run-mtfatnfa",
+      "timestamp": "2026-08-30T04:18:56.520Z",
       "role": "coder",
       "command": "touch feature.txt",
       "commands": [
@@ -7333,6 +7358,7 @@
         "git status": "allow",
         "git status *": "allow",
         "git diff": "allow",
+        "git diff *": "allow",
         "git log": "allow",
         "git show": "allow",
         "git rev-parse": "allow",
@@ -7396,14 +7422,14 @@
       "git_fixture": false,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf235085ffe1LErj8HuoSHBTX",
+      "session_id": "ses_faf1bb004ffewUfo0JcIWZXjK1",
       "permission_events": [
         {
-          "id": "evt_050dcb38d002ipCAcQuRMR1Tth",
+          "id": "evt_050e45477002hT3CR2c2uESBIp",
           "type": "permission.asked",
           "properties": {
-            "id": "per_050dcb38d001RvsAFqjrA8dix8",
-            "sessionID": "ses_faf235085ffe1LErj8HuoSHBTX",
+            "id": "per_050e45477001pYvAblzeZRhQNd",
+            "sessionID": "ses_faf1bb004ffewUfo0JcIWZXjK1",
             "permission": "bash",
             "patterns": [
               "touch feature.txt"
@@ -7415,7 +7441,7 @@
               "touch *"
             ],
             "tool": {
-              "messageID": "msg_050dcb08d001jtK74zv8oai9wq",
+              "messageID": "msg_050e45122001EREljDD6NYMVXx",
               "callID": "call-1"
             }
           }
@@ -7453,8 +7479,8 @@
     },
     {
       "id": "pass3-coder-git-forbidden",
-      "run_id": "run-mtfaihqc",
-      "timestamp": "2026-08-30T04:10:51.308Z",
+      "run_id": "run-mtfatnfa",
+      "timestamp": "2026-08-30T04:19:03.813Z",
       "role": "coder",
       "commands": [
         "git add fixture.txt",
@@ -7494,6 +7520,7 @@
         "git status": "allow",
         "git status *": "allow",
         "git diff": "allow",
+        "git diff *": "allow",
         "git log": "allow",
         "git show": "allow",
         "git rev-parse": "allow",
@@ -7557,7 +7584,7 @@
       "git_fixture": true,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf234789ffeOgBhV36vfFs4eg",
+      "session_id": "ses_faf1ba674ffem79IrLvjO88L0i",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,
@@ -7588,7 +7615,7 @@
         {
           "command": "git add fixture.txt",
           "status": "error",
-          "error": "The user has specified a rule which prevents you from using this specific tool call. Here are some of the relevant rules [{\"permission\":\"*\",\"action\":\"allow\",\"pattern\":\"*\"},{\"permission\":\"bash\",\"pattern\":\"*\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"ls\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"ls *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"pwd\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"rg\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"rg *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"grep\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"grep *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"find\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"find *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"head\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"head *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tail\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tail *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"wc\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"wc *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"file\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"file *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"stat\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"stat *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tree\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tree *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"which\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"which *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"command -v\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"command -v *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git status\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git status *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git diff\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git log\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git show\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-parse\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-parse *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git worktree list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git worktree list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git merge-base\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git merge-base *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-tree\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-tree *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git cat-file\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git cat-file *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git show-ref\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git show-ref *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-files\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-files *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git grep\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git grep *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git blame\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git blame *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git remote -v\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git tag --list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git tag --list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git config --get\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git config --get *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch --show-current\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch --list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch --list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch -a\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch -r\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"touch *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"mkdir *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"cp *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"mv *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"sed -i *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"perl -i *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git checkout *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git restore *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git switch *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git rm *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git mv *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git config *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git remote add *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git push\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git push *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git reset --hard\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git reset --hard *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git clean\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git clean *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git add\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git add *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git commit\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git commit *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"rm -rf *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"*>*\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"*<*\",\"action\":\"deny\"}]"
+          "error": "The user has specified a rule which prevents you from using this specific tool call. Here are some of the relevant rules [{\"permission\":\"*\",\"action\":\"allow\",\"pattern\":\"*\"},{\"permission\":\"bash\",\"pattern\":\"*\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"ls\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"ls *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"pwd\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"rg\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"rg *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"grep\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"grep *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"find\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"find *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"head\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"head *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tail\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tail *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"wc\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"wc *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"file\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"file *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"stat\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"stat *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tree\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tree *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"which\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"which *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"command -v\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"command -v *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git status\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git status *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git diff\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git diff *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git log\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git show\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-parse\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-parse *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git worktree list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git worktree list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git merge-base\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git merge-base *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-tree\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-tree *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git cat-file\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git cat-file *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git show-ref\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git show-ref *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-files\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-files *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git grep\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git grep *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git blame\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git blame *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git remote -v\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git tag --list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git tag --list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git config --get\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git config --get *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch --show-current\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch --list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch --list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch -a\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch -r\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"touch *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"mkdir *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"cp *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"mv *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"sed -i *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"perl -i *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git checkout *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git restore *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git switch *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git rm *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git mv *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git config *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git remote add *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git push\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git push *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git reset --hard\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git reset --hard *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git clean\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git clean *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git add\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git add *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git commit\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git commit *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"rm -rf *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"*>*\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"*<*\",\"action\":\"deny\"}]"
         },
         {
           "command": null,
@@ -7603,7 +7630,7 @@
         {
           "command": "git commit -m fixture",
           "status": "error",
-          "error": "The user has specified a rule which prevents you from using this specific tool call. Here are some of the relevant rules [{\"permission\":\"*\",\"action\":\"allow\",\"pattern\":\"*\"},{\"permission\":\"bash\",\"pattern\":\"*\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"ls\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"ls *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"pwd\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"rg\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"rg *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"grep\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"grep *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"find\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"find *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"head\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"head *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tail\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tail *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"wc\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"wc *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"file\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"file *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"stat\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"stat *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tree\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tree *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"which\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"which *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"command -v\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"command -v *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git status\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git status *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git diff\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git log\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git show\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-parse\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-parse *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git worktree list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git worktree list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git merge-base\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git merge-base *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-tree\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-tree *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git cat-file\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git cat-file *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git show-ref\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git show-ref *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-files\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-files *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git grep\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git grep *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git blame\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git blame *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git remote -v\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git tag --list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git tag --list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git config --get\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git config --get *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch --show-current\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch --list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch --list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch -a\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch -r\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"touch *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"mkdir *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"cp *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"mv *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"sed -i *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"perl -i *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git checkout *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git restore *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git switch *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git rm *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git mv *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git config *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git remote add *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git push\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git push *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git reset --hard\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git reset --hard *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git clean\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git clean *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git add\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git add *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git commit\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git commit *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"rm -rf *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"*>*\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"*<*\",\"action\":\"deny\"}]"
+          "error": "The user has specified a rule which prevents you from using this specific tool call. Here are some of the relevant rules [{\"permission\":\"*\",\"action\":\"allow\",\"pattern\":\"*\"},{\"permission\":\"bash\",\"pattern\":\"*\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"ls\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"ls *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"pwd\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"rg\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"rg *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"grep\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"grep *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"find\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"find *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"head\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"head *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tail\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tail *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"wc\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"wc *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"file\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"file *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"stat\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"stat *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tree\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tree *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"which\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"which *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"command -v\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"command -v *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git status\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git status *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git diff\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git diff *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git log\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git show\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-parse\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-parse *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git worktree list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git worktree list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git merge-base\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git merge-base *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-tree\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-tree *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git cat-file\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git cat-file *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git show-ref\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git show-ref *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-files\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-files *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git grep\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git grep *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git blame\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git blame *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git remote -v\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git tag --list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git tag --list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git config --get\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git config --get *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch --show-current\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch --list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch --list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch -a\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch -r\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"touch *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"mkdir *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"cp *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"mv *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"sed -i *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"perl -i *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git checkout *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git restore *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git switch *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git rm *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git mv *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git config *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git remote add *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git push\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git push *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git reset --hard\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git reset --hard *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git clean\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git clean *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git add\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git add *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git commit\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git commit *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"rm -rf *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"*>*\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"*<*\",\"action\":\"deny\"}]"
         },
         {
           "command": null,
@@ -7618,10 +7645,10 @@
         {
           "command": "git push origin main",
           "status": "error",
-          "error": "The user has specified a rule which prevents you from using this specific tool call. Here are some of the relevant rules [{\"permission\":\"*\",\"action\":\"allow\",\"pattern\":\"*\"},{\"permission\":\"bash\",\"pattern\":\"*\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"ls\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"ls *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"pwd\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"rg\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"rg *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"grep\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"grep *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"find\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"find *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"head\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"head *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tail\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tail *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"wc\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"wc *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"file\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"file *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"stat\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"stat *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tree\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tree *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"which\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"which *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"command -v\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"command -v *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git status\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git status *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git diff\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git log\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git show\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-parse\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-parse *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git worktree list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git worktree list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git merge-base\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git merge-base *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-tree\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-tree *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git cat-file\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git cat-file *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git show-ref\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git show-ref *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-files\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-files *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git grep\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git grep *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git blame\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git blame *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git remote -v\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git tag --list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git tag --list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git config --get\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git config --get *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch --show-current\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch --list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch --list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch -a\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch -r\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"touch *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"mkdir *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"cp *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"mv *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"sed -i *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"perl -i *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git checkout *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git restore *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git switch *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git rm *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git mv *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git config *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git remote add *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git push\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git push *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git reset --hard\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git reset --hard *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git clean\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git clean *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git add\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git add *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git commit\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git commit *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"rm -rf *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"*>*\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"*<*\",\"action\":\"deny\"}]"
+          "error": "The user has specified a rule which prevents you from using this specific tool call. Here are some of the relevant rules [{\"permission\":\"*\",\"action\":\"allow\",\"pattern\":\"*\"},{\"permission\":\"bash\",\"pattern\":\"*\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"ls\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"ls *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"pwd\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"rg\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"rg *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"grep\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"grep *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"find\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"find *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"head\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"head *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tail\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tail *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"wc\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"wc *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"file\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"file *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"stat\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"stat *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tree\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tree *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"which\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"which *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"command -v\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"command -v *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git status\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git status *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git diff\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git diff *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git log\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git show\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-parse\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-parse *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git worktree list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git worktree list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git merge-base\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git merge-base *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-tree\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-tree *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git cat-file\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git cat-file *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git show-ref\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git show-ref *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-files\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-files *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git grep\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git grep *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git blame\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git blame *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git remote -v\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git tag --list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git tag --list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git config --get\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git config --get *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch --show-current\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch --list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch --list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch -a\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch -r\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"touch *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"mkdir *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"cp *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"mv *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"sed -i *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"perl -i *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git checkout *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git restore *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git switch *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git rm *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git mv *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git config *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git remote add *\",\"action\":\"ask\"},{\"permission\":\"bash\",\"pattern\":\"git push\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git push *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git reset --hard\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git reset --hard *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git clean\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git clean *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git add\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git add *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git commit\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git commit *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"rm -rf *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"*>*\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"*<*\",\"action\":\"deny\"}]"
         }
       ],
-      "request_count": 4,
+      "request_count": 3,
       "marker_created": false,
       "validation_execution": [],
       "runtime_validation": null,
@@ -7635,8 +7662,8 @@
     },
     {
       "id": "pass3-coder-transitive-deny",
-      "run_id": "run-mtfaihqc",
-      "timestamp": "2026-08-30T04:10:54.475Z",
+      "run_id": "run-mtfatnfa",
+      "timestamp": "2026-08-30T04:19:07.051Z",
       "role": "coder",
       "commands": [
         "sh -c echo escape",
@@ -7676,6 +7703,7 @@
         "git status": "allow",
         "git status *": "allow",
         "git diff": "allow",
+        "git diff *": "allow",
         "git log": "allow",
         "git show": "allow",
         "git rev-parse": "allow",
@@ -7741,7 +7769,7 @@
       "plugin": {
         "path": "/Users/jenksed/Projects/ocode-harness/packages/harness-runtime/plugins/pre-execution-authority-guard.mjs"
       },
-      "session_id": "ses_faf230984ffenzIcaNfvb4SAt5",
+      "session_id": "ses_faf1b85cdffeASfU1JD2D0Fg4p",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,
@@ -7805,7 +7833,7 @@
           "error": "OCODE_COMMAND_DENIED\nrole: coder\neffect: governed-git-unknown\nowner: deterministic-runtime\ncommand: python -c \"print(escape)\"\naction: ROUTE_TO_DETERMINISTIC_RUNTIME"
         }
       ],
-      "request_count": 4,
+      "request_count": 3,
       "marker_created": false,
       "validation_execution": [],
       "runtime_validation": null,
@@ -7817,8 +7845,8 @@
     },
     {
       "id": "pass3-reviewer-mutation-deny",
-      "run_id": "run-mtfaihqc",
-      "timestamp": "2026-08-30T04:10:56.403Z",
+      "run_id": "run-mtfatnfa",
+      "timestamp": "2026-08-30T04:19:08.941Z",
       "role": "reviewer",
       "command": "touch reviewer.txt",
       "commands": [
@@ -7857,6 +7885,7 @@
         "git status": "allow",
         "git status *": "allow",
         "git diff": "allow",
+        "git diff *": "allow",
         "git log": "allow",
         "git show": "allow",
         "git rev-parse": "allow",
@@ -7908,7 +7937,7 @@
       "git_fixture": false,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf230239ffezDfVSna3lo5gGW",
+      "session_id": "ses_faf1b7e09ffeGlUNdeuDdcQyER",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,
@@ -7933,10 +7962,10 @@
         {
           "command": "touch reviewer.txt",
           "status": "error",
-          "error": "The user has specified a rule which prevents you from using this specific tool call. Here are some of the relevant rules [{\"permission\":\"*\",\"action\":\"allow\",\"pattern\":\"*\"},{\"permission\":\"bash\",\"pattern\":\"*\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"ls\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"ls *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"pwd\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"rg\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"rg *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"grep\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"grep *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"find\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"find *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"head\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"head *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tail\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tail *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"wc\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"wc *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"file\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"file *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"stat\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"stat *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tree\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tree *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"which\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"which *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"command -v\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"command -v *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git status\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git status *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git diff\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git log\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git show\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-parse\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-parse *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git worktree list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git worktree list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git merge-base\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git merge-base *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-tree\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-tree *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git cat-file\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git cat-file *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git show-ref\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git show-ref *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-files\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-files *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git grep\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git grep *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git blame\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git blame *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git remote -v\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git tag --list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git tag --list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git config --get\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git config --get *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch --show-current\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch --list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch --list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch -a\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch -r\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"npm test\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git push\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git push *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git reset --hard\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git reset --hard *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git clean\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git clean *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git add\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git add *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git commit\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git commit *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"rm -rf *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"*>*\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"*<*\",\"action\":\"deny\"}]"
+          "error": "The user has specified a rule which prevents you from using this specific tool call. Here are some of the relevant rules [{\"permission\":\"*\",\"action\":\"allow\",\"pattern\":\"*\"},{\"permission\":\"bash\",\"pattern\":\"*\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"ls\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"ls *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"pwd\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"rg\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"rg *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"grep\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"grep *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"find\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"find *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"head\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"head *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tail\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tail *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"wc\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"wc *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"file\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"file *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"stat\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"stat *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tree\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"tree *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"which\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"which *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"command -v\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"command -v *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git status\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git status *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git diff\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git diff *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git log\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git show\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-parse\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-parse *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git worktree list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git worktree list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git merge-base\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git merge-base *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git rev-list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-tree\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-tree *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git cat-file\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git cat-file *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git show-ref\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git show-ref *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-files\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git ls-files *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git grep\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git grep *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git blame\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git blame *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git remote -v\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git tag --list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git tag --list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git config --get\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git config --get *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch --show-current\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch --list\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch --list *\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch -a\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"git branch -r\",\"action\":\"allow\"},{\"permission\":\"bash\",\"pattern\":\"npm test\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git push\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git push *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git reset --hard\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git reset --hard *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git clean\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git clean *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git add\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git add *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git commit\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"git commit *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"rm -rf *\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"*>*\",\"action\":\"deny\"},{\"permission\":\"bash\",\"pattern\":\"*<*\",\"action\":\"deny\"}]"
         }
       ],
-      "request_count": 2,
+      "request_count": 1,
       "marker_created": false,
       "validation_execution": [],
       "runtime_validation": null,

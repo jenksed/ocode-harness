@@ -48,7 +48,7 @@ const OBSERVATION_PATTERNS = new Set([
   'head', 'head *', 'tail', 'tail *', 'wc', 'wc *', 'file', 'file *',
   'stat', 'stat *', 'tree', 'tree *', 'which', 'which *', 'command -v', 'command -v *',
   'git status', 'git status *',
-  'git diff', 'git log', 'git show',
+  'git diff', 'git diff *', 'git log', 'git show',
   'git rev-parse', 'git rev-parse *', 'git worktree list', 'git worktree list *',
   'git merge-base', 'git merge-base *', 'git rev-list', 'git rev-list *', 'git ls-tree', 'git ls-tree *',
   'git cat-file', 'git cat-file *', 'git show-ref', 'git show-ref *', 'git ls-files', 'git ls-files *',

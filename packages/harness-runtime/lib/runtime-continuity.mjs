@@ -70,6 +70,16 @@ export function recordOperatorDecision({ session, request, decision, decision_id
   return result;
 }
 
+/** Bridge a native OpenCode permission reply into the only grant-creation path. */
+export function recordNativeApprovalEvent({ session, request, event } = {}) {
+  if (!event || event.type !== 'permission.replied') throw new Error('native approval event must be permission.replied');
+  const properties = event.properties ?? event.data;
+  if (!properties || properties.permissionID !== request?.request_id) throw new Error('native approval event does not correlate to request');
+  const response = String(properties.response ?? '').toLowerCase();
+  const decision = ['allow', 'always', 'once', 'approved', 'grant'].includes(response) ? 'APPROVE' : 'REJECT';
+  return recordOperatorDecision({ session, request, decision, decision_id: typeof properties.id === 'string' ? properties.id : randomUUID() });
+}
+
 /** A serializable handoff is only a reference; the runtime rechecks it against its session grant store. */
 export function createAuthorityContext({ session } = {}) {
   if (!session?.[SESSION]) throw new Error('authority context requires runtime session');

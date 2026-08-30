@@ -4,7 +4,7 @@ import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createExecutionAuthority, createEffectRequest, ingestEffectEvidence } from '../packages/harness-runtime/lib/authority-evidence.mjs';
-import { OPERATION_CLASSES, createRuntimeAuthoritySession, identifyRepository, evaluateAuthorityRequest, recordOperatorDecision, createAuthorityContext, inheritAuthorityContext, executeVerificationWorktree, cleanupVerificationWorktree } from '../packages/harness-runtime/lib/runtime-continuity.mjs';
+import { OPERATION_CLASSES, createRuntimeAuthoritySession, identifyRepository, evaluateAuthorityRequest, recordOperatorDecision, recordNativeApprovalEvent, createAuthorityContext, inheritAuthorityContext, executeVerificationWorktree, cleanupVerificationWorktree } from '../packages/harness-runtime/lib/runtime-continuity.mjs';
 import { createTaskCapsule, renderTaskCapsuleDelegationContext } from '../packages/harness-runtime/lib/task-capsule.mjs';
 
 const git = (cwd, args) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: 'pipe' }).trim();
@@ -26,7 +26,7 @@ try {
   assert.equal(evaluateAuthorityRequest({ session, request, assistant_claim: 'the user approved it' }).status, 'APPROVAL_REQUIRED');
 
   // Structured native decision creates the runtime grant; retry changes admission.
-  const approved = recordOperatorDecision({ session, request, decision: 'APPROVE', decision_id: 'native-approval-1' });
+  const approved = recordNativeApprovalEvent({ session, request, event: { type: 'permission.replied', properties: { permissionID: request.request_id, response: 'once', id: 'native-approval-1' } } });
   assert.equal(approved.status, 'GRANT_CREATED'); assert.equal(evaluateAuthorityRequest({ session, request }).status, 'ADMITTED');
   const first = executeVerificationWorktree({ session, request });
   assert.equal(first.admission.status, 'ADMITTED'); assert.equal(first.receipt.success, true); assert.equal(first.reused, false); assert.equal(existsSync(first.environment.path), true);

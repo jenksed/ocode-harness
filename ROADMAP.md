@@ -186,3 +186,12 @@ DD1 External Runtime State: **ACCEPTED** — Ocode-owned orientation, activity,
 and governed-ledger state is externalized under the XDG state contract with a
 physical-worktree identity. The accepted implementation and evidence are in
 [the DD1 checkpoint](docs/architecture/daily-driver-dd1-runtime-state.md).
+
+DD2 Governed OpenCode Composition: **ACCEPTED** — OpenCode 1.18.21 now
+composes qualified project MCP, unrelated agents, and project skills with an
+ephemeral Ocode-owned governed overlay. Governed agent and canonical-skill
+collisions reject before execution; normal, SDK, and streaming governed paths
+share the guard-bearing authority finalizer. The accepted implementation,
+installed real-skill discovery, guard closure, live-permission regression, and
+explicit limits are in [the DD2 checkpoint](docs/architecture/daily-driver-dd2-acceptance.md).
+The next frontier is DD3 — Truthful Operator Surface & Chat UX.

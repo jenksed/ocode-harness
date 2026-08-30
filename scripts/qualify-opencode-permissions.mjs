@@ -9,6 +9,7 @@ import { createNativeBashPermissionRules, createRuntimePermissionProjection, cre
 import { createPreExecutionAuthorityGuardOptions } from '../packages/harness-runtime/lib/pre-execution-authority-guard.mjs';
 
 const runtimeVersion = '1.18.21';
+const qualificationRunId = process.env.OCODE_PERMISSION_RUN_ID || `run-${Date.now().toString(36)}`;
 const root = resolve('.');
 const artifactPath = resolve(process.env.OCODE_PERMISSION_EVIDENCE || 'qualification/opencode-1.18.21-permissions.json');
 
@@ -220,7 +221,7 @@ async function runScenario({ id, command, commands = [command], rules, reply = n
     const effect_after = effectProbe?.observe(fixture) ?? null;
     const plugin_events = pluginLogPath && existsSync(pluginLogPath) ? readFileSync(pluginLogPath, 'utf8').trim().split('\n').filter(Boolean).map((line) => JSON.parse(line)) : [];
     const observed_disposition = permissionEvents.length ? 'ASK' : tool_results.some((entry) => entry.status === 'error') ? 'DENY' : tool_results.some((entry) => entry.status === 'completed') ? 'ALLOW' : 'INSUFFICIENT_EVIDENCE';
-    return { id, role, command, commands, expected_effect, expected_disposition, rules, reply, git_fixture: git, child_session: childSession, plugin: plugin ? { path: plugin.path } : null, session_id: created.id, permission_events: permissionEvents, permission_request_count: permissionEvents.length, permission_reply: permissionReply, observed_disposition, terminal_status: 'IDLE', tool_states: tool_results.map((entry) => entry.status), tool_results, request_count: provider.requests.length, marker_created: existsSync(join(fixture, 'marker.txt')), validation_execution: existsSync(join(fixture, 'validation-executed.log')) ? readFileSync(join(fixture, 'validation-executed.log'), 'utf8').trim().split('\n') : [], runtime_validation, fixture_file_exists, effect_before, effect_after, session_abort: 'SUPPORTED', evidence_status: expected_disposition && observed_disposition === expected_disposition ? 'PASS' : expected_disposition ? 'FAIL' : 'UNQUALIFIED' };
+    return { id, run_id: qualificationRunId, timestamp: new Date().toISOString(), role, command, commands, expected_effect, expected_disposition, rules, reply, git_fixture: git, child_session: childSession, plugin: plugin ? { path: plugin.path } : null, session_id: created.id, permission_events: permissionEvents, permission_request_count: permissionEvents.length, permission_reply: permissionReply, observed_disposition, terminal_status: 'IDLE', tool_states: tool_results.map((entry) => entry.status), tool_results, request_count: provider.requests.length, marker_created: existsSync(join(fixture, 'marker.txt')), validation_execution: existsSync(join(fixture, 'validation-executed.log')) ? readFileSync(join(fixture, 'validation-executed.log'), 'utf8').trim().split('\n') : [], runtime_validation, fixture_file_exists, effect_before, effect_after, session_abort: 'SUPPORTED', evidence_status: expected_disposition && observed_disposition === expected_disposition ? 'PASS' : expected_disposition ? 'FAIL' : 'UNQUALIFIED' };
   } finally {
     await opencode?.close?.();
     await new Promise((resolveClose) => provider.server.close(resolveClose));
@@ -366,7 +367,7 @@ for (const scenario of [
     try {
       scenarios.push(await runScenario(scenario));
     } catch (error) {
-      scenarios.push({ id: scenario.id, role: scenario.role ?? scenario.agent ?? 'probe', command: scenario.command ?? null, commands: scenario.commands ?? [scenario.command], expected_effect: scenario.expected_effect ?? null, expected_disposition: scenario.expected_disposition ?? null, observed_disposition: 'INSUFFICIENT_EVIDENCE', terminal_status: 'ERROR', evidence_status: 'INSUFFICIENT_EVIDENCE', error: String(error?.message ?? error), timestamp: new Date().toISOString() });
+      scenarios.push({ id: scenario.id, run_id: qualificationRunId, role: scenario.role ?? scenario.agent ?? 'probe', command: scenario.command ?? null, commands: scenario.commands ?? [scenario.command], expected_effect: scenario.expected_effect ?? null, expected_disposition: scenario.expected_disposition ?? null, observed_disposition: 'INSUFFICIENT_EVIDENCE', terminal_status: 'ERROR', evidence_status: 'INSUFFICIENT_EVIDENCE', error: String(error?.message ?? error), timestamp: new Date().toISOString() });
     }
   }
 }

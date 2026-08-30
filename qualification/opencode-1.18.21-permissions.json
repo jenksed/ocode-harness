@@ -4,7 +4,7 @@
     "opencode": "1.18.21",
     "sdk": "1.18.21"
   },
-  "observed_at": "2026-08-30T04:08:02.444Z",
+  "observed_at": "2026-08-30T04:10:56.406Z",
   "method": "local OpenAI-compatible non-inference fixture through installed SDK/server",
   "lifecycle": {
     "server_start": "SUPPORTED",
@@ -5266,6 +5266,8 @@
     },
     {
       "id": "pass3-coder-observe-git-merge-base",
+      "run_id": "run-mtfaihqc",
+      "timestamp": "2026-08-30T04:09:14.386Z",
       "role": "coder",
       "command": "git merge-base HEAD HEAD",
       "commands": [
@@ -5367,7 +5369,7 @@
       "git_fixture": true,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf2743cbffexHsYkwQwc78z9K",
+      "session_id": "ses_faf249b92ffeUemtExafzygE2D",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,
@@ -5421,6 +5423,8 @@
     },
     {
       "id": "pass3-coder-observe-git-rev-list",
+      "run_id": "run-mtfaihqc",
+      "timestamp": "2026-08-30T04:09:19.169Z",
       "role": "coder",
       "command": "git rev-list HEAD",
       "commands": [
@@ -5522,7 +5526,7 @@
       "git_fixture": true,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf272fb6ffeUvICTfFfoKHQka",
+      "session_id": "ses_faf248866ffeghwp4RsDy8VgFB",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,
@@ -5576,6 +5580,8 @@
     },
     {
       "id": "pass3-coder-observe-git-ls-tree",
+      "run_id": "run-mtfaihqc",
+      "timestamp": "2026-08-30T04:09:24.131Z",
       "role": "coder",
       "command": "git ls-tree HEAD",
       "commands": [
@@ -5677,7 +5683,7 @@
       "git_fixture": true,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf271cadffe59Ndqz6UxXmmNh",
+      "session_id": "ses_faf2475b4ffeqKosadTfprAQAt",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,
@@ -5731,6 +5737,8 @@
     },
     {
       "id": "pass3-coder-observe-git-cat-file",
+      "run_id": "run-mtfaihqc",
+      "timestamp": "2026-08-30T04:09:28.978Z",
       "role": "coder",
       "command": "git cat-file -t HEAD",
       "commands": [
@@ -5832,7 +5840,7 @@
       "git_fixture": true,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf27095dffe2h27ZfpPjw0vtN",
+      "session_id": "ses_faf246259ffeCsj2ZKnQnglcB0",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,
@@ -5886,6 +5894,8 @@
     },
     {
       "id": "pass3-coder-observe-git-show-ref",
+      "run_id": "run-mtfaihqc",
+      "timestamp": "2026-08-30T04:09:33.910Z",
       "role": "coder",
       "command": "git show-ref",
       "commands": [
@@ -5987,7 +5997,7 @@
       "git_fixture": true,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf26f608ffeUiKJ4SqW1Mm7w0",
+      "session_id": "ses_faf244f7dffeDnhvIgKCwUSgNp",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,
@@ -6041,6 +6051,8 @@
     },
     {
       "id": "pass3-coder-observe-git-ls-files",
+      "run_id": "run-mtfaihqc",
+      "timestamp": "2026-08-30T04:09:38.785Z",
       "role": "coder",
       "command": "git ls-files",
       "commands": [
@@ -6142,7 +6154,7 @@
       "git_fixture": true,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf26e340ffeDKgiQJb3SQX7Te",
+      "session_id": "ses_faf243c11ffeMvCQLLRZHv21NX",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,
@@ -6196,6 +6208,8 @@
     },
     {
       "id": "pass3-coder-observe-git-grep",
+      "run_id": "run-mtfaihqc",
+      "timestamp": "2026-08-30T04:09:43.715Z",
       "role": "coder",
       "command": "git grep fixture-token",
       "commands": [
@@ -6297,7 +6311,7 @@
       "git_fixture": true,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf26cfe7ffeXm1vgE8UQqpQtp",
+      "session_id": "ses_faf24291cffeganYV3v3uMYpU5",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,
@@ -6351,6 +6365,8 @@
     },
     {
       "id": "pass3-coder-observe-git-blame",
+      "run_id": "run-mtfaihqc",
+      "timestamp": "2026-08-30T04:09:48.765Z",
       "role": "coder",
       "command": "git blame fixture.txt",
       "commands": [
@@ -6452,7 +6468,7 @@
       "git_fixture": true,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf26bc88ffeNNTcQD5SbKFqSk",
+      "session_id": "ses_faf2415bfffeXH50AK7J2c873M",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,
@@ -6506,6 +6522,8 @@
     },
     {
       "id": "pass3-coder-observe-git-remote-v",
+      "run_id": "run-mtfaihqc",
+      "timestamp": "2026-08-30T04:09:53.743Z",
       "role": "coder",
       "command": "git remote -v",
       "commands": [
@@ -6607,7 +6625,7 @@
       "git_fixture": true,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf26a8f6ffeXriK5eHVvWY9qP",
+      "session_id": "ses_faf240219ffeO94J6YspZ6w6Xg",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,
@@ -6655,6 +6673,8 @@
     },
     {
       "id": "pass3-coder-observe-git-tag-list",
+      "run_id": "run-mtfaihqc",
+      "timestamp": "2026-08-30T04:09:58.650Z",
       "role": "coder",
       "command": "git tag --list",
       "commands": [
@@ -6756,7 +6776,7 @@
       "git_fixture": true,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf2695deffe9CaVZBWkqtrQ3O",
+      "session_id": "ses_faf23eebeffePflfJDsHHXoFI7",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,
@@ -6804,6 +6824,7 @@
     },
     {
       "id": "pass3-coder-observe-git-config-get",
+      "run_id": "run-mtfaihqc",
       "role": "coder",
       "command": "git config --get user.name",
       "commands": [
@@ -6815,10 +6836,12 @@
       "terminal_status": "ERROR",
       "evidence_status": "INSUFFICIENT_EVIDENCE",
       "error": "SCENARIO_TIMEOUT",
-      "timestamp": "2026-08-30T04:07:25.848Z"
+      "timestamp": "2026-08-30T04:10:19.714Z"
     },
     {
       "id": "pass3-coder-observe-git-diff-path",
+      "run_id": "run-mtfaihqc",
+      "timestamp": "2026-08-30T04:10:24.656Z",
       "role": "coder",
       "command": "git diff -- fixture.txt",
       "commands": [
@@ -6920,7 +6943,7 @@
       "git_fixture": true,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf263079ffeZmDjgcCwasHD7q",
+      "session_id": "ses_faf238909ffeWBn05DSjOXJus2",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,
@@ -6962,6 +6985,8 @@
     },
     {
       "id": "pass3-coder-observe-find-observation",
+      "run_id": "run-mtfaihqc",
+      "timestamp": "2026-08-30T04:10:29.528Z",
       "role": "coder",
       "command": "find . -type f",
       "commands": [
@@ -7063,7 +7088,7 @@
       "git_fixture": true,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf261d05ffe7xa5Jn4U0Z3oks",
+      "session_id": "ses_faf2375f7ffeo0lz17PAmwRyu6",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,
@@ -7111,6 +7136,8 @@
     },
     {
       "id": "pass3-coder-observe-tree-observation",
+      "run_id": "run-mtfaihqc",
+      "timestamp": "2026-08-30T04:10:34.432Z",
       "role": "coder",
       "command": "tree .",
       "commands": [
@@ -7212,7 +7239,7 @@
       "git_fixture": true,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf2609c1ffep8UvbiSNiAwJqZ",
+      "session_id": "ses_faf2362dbffey0APRejw2kkhol",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,
@@ -7266,6 +7293,8 @@
     },
     {
       "id": "pass3-coder-workspace-ask",
+      "run_id": "run-mtfaihqc",
+      "timestamp": "2026-08-30T04:10:36.571Z",
       "role": "coder",
       "command": "touch feature.txt",
       "commands": [
@@ -7367,14 +7396,14 @@
       "git_fixture": false,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf25f776ffeVhgj08vWQ0f2yM",
+      "session_id": "ses_faf235085ffe1LErj8HuoSHBTX",
       "permission_events": [
         {
-          "id": "evt_050da0cce002l8TEOOjinTlWcf",
+          "id": "evt_050dcb38d002ipCAcQuRMR1Tth",
           "type": "permission.asked",
           "properties": {
-            "id": "per_050da0cce001rZfrYqD6iZmD8Q",
-            "sessionID": "ses_faf25f776ffeVhgj08vWQ0f2yM",
+            "id": "per_050dcb38d001RvsAFqjrA8dix8",
+            "sessionID": "ses_faf235085ffe1LErj8HuoSHBTX",
             "permission": "bash",
             "patterns": [
               "touch feature.txt"
@@ -7386,7 +7415,7 @@
               "touch *"
             ],
             "tool": {
-              "messageID": "msg_050da09a9001iN7fubfNUVDHuJ",
+              "messageID": "msg_050dcb08d001jtK74zv8oai9wq",
               "callID": "call-1"
             }
           }
@@ -7424,6 +7453,8 @@
     },
     {
       "id": "pass3-coder-git-forbidden",
+      "run_id": "run-mtfaihqc",
+      "timestamp": "2026-08-30T04:10:51.308Z",
       "role": "coder",
       "commands": [
         "git add fixture.txt",
@@ -7526,7 +7557,7 @@
       "git_fixture": true,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf25ee38ffeUr5H2G1DzDK2mv",
+      "session_id": "ses_faf234789ffeOgBhV36vfFs4eg",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,
@@ -7604,6 +7635,8 @@
     },
     {
       "id": "pass3-coder-transitive-deny",
+      "run_id": "run-mtfaihqc",
+      "timestamp": "2026-08-30T04:10:54.475Z",
       "role": "coder",
       "commands": [
         "sh -c echo escape",
@@ -7708,7 +7741,7 @@
       "plugin": {
         "path": "/Users/jenksed/Projects/ocode-harness/packages/harness-runtime/plugins/pre-execution-authority-guard.mjs"
       },
-      "session_id": "ses_faf25b0fdffeURLKtrZS3KMEvO",
+      "session_id": "ses_faf230984ffenzIcaNfvb4SAt5",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,
@@ -7784,6 +7817,8 @@
     },
     {
       "id": "pass3-reviewer-mutation-deny",
+      "run_id": "run-mtfaihqc",
+      "timestamp": "2026-08-30T04:10:56.403Z",
       "role": "reviewer",
       "command": "touch reviewer.txt",
       "commands": [
@@ -7873,7 +7908,7 @@
       "git_fixture": false,
       "child_session": false,
       "plugin": null,
-      "session_id": "ses_faf25a9a2ffeKmowSvV6cQV8xu",
+      "session_id": "ses_faf230239ffezDfVSna3lo5gGW",
       "permission_events": [],
       "permission_request_count": 0,
       "permission_reply": null,

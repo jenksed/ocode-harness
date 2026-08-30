@@ -48,15 +48,14 @@ if (foundViaManifest) {
 // Run orientation on the determined directory
 try {
   const orientation = await orient(orientDir);
-  // Write the output files (B1)
-  await writeOrientation(orientDir, orientation);
+  const state = await writeOrientation(orientDir, orientation);
 
   // Print success report
   const requestedPath = dirArg || cwd();
   const resolvedProjectRoot = orientation.project.root;
   const gitRoot = orientation.git.root;
-  const jsonPath = resolve(resolvedProjectRoot, '.opencode', 'orientation.json');
-  const mdPath = resolve(resolvedProjectRoot, '.opencode', 'orientation.md');
+  const jsonPath = state.orientation_json;
+  const mdPath = state.orientation_markdown;
 
   console.log('Orientation complete:');
   console.log(`  Requested path:  ${requestedPath}`);

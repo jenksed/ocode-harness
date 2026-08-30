@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { buildReleaseArtifact, createArtifactManifest } from '../scripts/release-artifact.mjs';
 import { materializeVerifiedArtifact, verifyMaterializedPayload, verifyReleaseArtifact } from '../packages/harness-runtime/lib/artifact.mjs';
 import { activateRelease, installVerifiedArtifact, releaseEntrypoint } from '../packages/harness-runtime/lib/release-store.mjs';
+import { resolveRuntimeState } from '../packages/harness-runtime/lib/runtime-state.mjs';
 
 const root = mkdtempSync(join(tmpdir(), 'ocode-runtime-closure-'));
 const repository = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -159,7 +160,6 @@ try {
   mkdirSync(home, { recursive: true });
   mkdirSync(project, { recursive: true });
   mkdirSync(proof, { recursive: true });
-  executable('orient', 'project="$1"\nmkdir -p "$project/.opencode"\nprintf \'{"project":{"root":"%s"},"git":{"root":"%s"}}\' "$project" "$project" > "$project/.opencode/orientation.json"\nprintf "runtime closure fixture\\n" > "$project/.opencode/orientation.md"');
   const opencode = opencodeFixture();
   writeFileSync(join(project, 'package.json'), JSON.stringify({ private: true, scripts: { test: 'node --version' } }));
   writeFileSync(join(home, 'machine.json'), JSON.stringify({ profile: 'free' }));
@@ -188,6 +188,13 @@ try {
   assert.match(result.stdout, /=== PROJECT ORIENTATION ===/);
   assert.match(result.stdout, /=== ORIENTATION READY ===/);
   assert.match(result.stdout, /WORK — ◇ Orchestrator · active/);
+  const state = resolveRuntimeState(project, { environment: {
+    HOME: home,
+    XDG_STATE_HOME: join(home, '.local', 'state'),
+  } });
+  assert.equal(existsSync(join(project, '.opencode')), false, 'installed Ocode startup must not create project runtime state');
+  assert.equal(existsSync(state.orientation_json), true, 'installed orientation must persist externally');
+  assert.equal(existsSync(join(state.activity, 'events')), true, 'installed startup activity must persist externally');
 
   const pluginProof = JSON.parse(readFileSync(join(proof, 'plugin.json'), 'utf8'));
   const authorityPlugin = pluginProof.authority_plugin;

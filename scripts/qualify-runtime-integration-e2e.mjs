@@ -8,6 +8,7 @@ import { mkdtemp } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { resolveRuntimeState } from '../packages/harness-runtime/lib/runtime-state.mjs';
 
 const EXPECTED_OPENCODE = '1.18.21';
 const EXPECTED_SDK = '1.18.21';
@@ -305,7 +306,7 @@ async function main(argv = process.argv.slice(2)) {
     const trace = await runLogged(state, 'activity-trace', state.installed?.ocode || 'ocode', ['activity', '--trace'], { cwd: state.fixture, env: state.automatedEnv });
     const agents = await runLogged(state, 'agents', state.installed?.ocode || 'ocode', ['agents'], { cwd: state.fixture, env: state.automatedEnv });
     const gitStatus = await runLogged(state, 'git-status', 'git', ['status', '--short'], { cwd: state.fixture, env: state.automatedEnv });
-    const ledgerPath = join(state.fixture, '.opencode', 'run-ledger.jsonl');
+    const ledgerPath = resolveRuntimeState(state.fixture, { environment: state.automatedEnv }).ledger;
     if (existsSync(ledgerPath)) writeFileSync(join(state.evidenceDir, 'run-ledger.jsonl'), readFileSync(ledgerPath));
     const activity = summarizeActivity(raw.stdout);
     state.activityMetrics = activity;

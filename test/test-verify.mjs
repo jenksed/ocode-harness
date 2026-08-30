@@ -9,11 +9,14 @@ import { dirname, join, resolve } from 'node:path';
 import { existsSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { execSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
+import { resolveRuntimeState } from '../packages/harness-runtime/lib/runtime-state.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const testDir = join(tmpdir(), `ocode-harness-verify-test-${Date.now()}`);
+const stateHome = join(tmpdir(), `ocode-harness-verify-state-${Date.now()}`);
+process.env.XDG_STATE_HOME = stateHome;
 const harnessRuntimeDir = join(__dirname, '..', 'packages', 'harness-runtime');
 
 console.log('=== Test Verify Runtime ===\n');
@@ -120,8 +123,6 @@ try {
   console.log('\nTesting runVerification with orientation.json...\n');
 
   // Test 5: Create orientation.json and test with it
-  const opencodeDir = join(testDir, '.opencode');
-  mkdirSync(opencodeDir, { recursive: true });
   
   const orientation = {
     schema_version: 1,
@@ -134,14 +135,16 @@ try {
       verify: []
     }
   };
-  writeFileSync(join(opencodeDir, 'orientation.json'), JSON.stringify(orientation, null, 2), 'utf8');
+  const orientationPath = resolveRuntimeState(testDir).orientation_json;
+  mkdirSync(dirname(orientationPath), { recursive: true });
+  writeFileSync(orientationPath, JSON.stringify(orientation, null, 2), 'utf8');
 
   const orientResult = runVerification({
     projectRoot: testDir
   });
   assert(orientResult.status === 'PASS', 'Orientation commands return PASS');
   assert(orientResult.summary.total === 2, 'Two commands from orientation executed');
-  assert(orientResult.orientation_path === join(opencodeDir, 'orientation.json'), 'Orientation path recorded');
+  assert(orientResult.orientation_path === orientationPath, 'Orientation path recorded');
 
   console.log('\nTesting explicit commands override orientation...\n');
 

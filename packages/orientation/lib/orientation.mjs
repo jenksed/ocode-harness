@@ -2,8 +2,9 @@ import { probeGit, probeGitRoot, probeManifests, probeLanguages, probePackageMan
 import { renderJson } from './render.mjs';
 import { renderMarkdown } from './render.mjs';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { resolve, join } from 'node:path';
+import { resolve, dirname } from 'node:path';
 import { cwd } from 'node:process';
+import { resolveRuntimeState } from '../../harness-runtime/lib/runtime-state.mjs';
 
 /**
  * Orient function - runs all probes and assembles the orientation object.
@@ -82,20 +83,21 @@ export async function orient(projectRoot) {
 }
 
 /**
- * Write orientation outputs to .opencode/orientation.json and .opencode/orientation.md
- * @param {string} dir - The directory to write to.
+ * Write Ocode-owned orientation outputs to the external runtime-state root.
+ * @param {string} dir - The project directory being oriented.
  * @param {Object} orientation - The orientation object.
  * @returns {Promise<void>}
  */
-export async function writeOrientation(dir, orientation) {
-  const outputDir = join(dir, '.opencode');
-  await mkdir(outputDir, { recursive: true });
+export async function writeOrientation(dir, orientation, options = {}) {
+  const state = resolveRuntimeState(dir, options);
+  await mkdir(dirname(state.orientation_json), { recursive: true });
 
   const jsonOutput = renderJson(orientation);
   const mdOutput = renderMarkdown(orientation);
 
   await Promise.all([
-    writeFile(join(outputDir, 'orientation.json'), jsonOutput, 'utf8'),
-    writeFile(join(outputDir, 'orientation.md'), mdOutput, 'utf8')
+    writeFile(state.orientation_json, jsonOutput, 'utf8'),
+    writeFile(state.orientation_markdown, mdOutput, 'utf8')
   ]);
+  return state;
 }

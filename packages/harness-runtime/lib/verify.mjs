@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
+import { resolveRuntimeState, worktreeRoot } from './runtime-state.mjs';
 import {
   createActivityExecutionContext,
   finishActivityExecution,
@@ -191,25 +192,11 @@ function executeCommand(command, cwd, timeout = 120000) {
 }
 
 function findProjectRoot(startDir) {
-  let dir = resolve(startDir);
-  while (true) {
-    const opencodeDir = resolve(dir, '.opencode');
-    if (existsSync(opencodeDir)) {
-      return dir;
-    }
-    const parent = resolve(dir, '..');
-    if (parent === dir) break;
-    dir = parent;
-  }
-  return process.cwd();
+  return worktreeRoot(startDir);
 }
 
-function findOrientationFile(projectRoot) {
-  const orientationPath = resolve(projectRoot, '.opencode', 'orientation.json');
-  if (existsSync(orientationPath)) {
-    return orientationPath;
-  }
-  return null;
+function findOrientationFile(projectRoot, environment) {
+  return resolveRuntimeState(projectRoot, { environment }).orientation_json;
 }
 
 /**
@@ -226,14 +213,14 @@ function findOrientationFile(projectRoot) {
  * @returns {Object} Structured verification result
  */
 export function runVerification(options = {}) {
-  const { projectRoot: providedRoot, explicitCommands = {}, timeout = 120000 } = options;
+  const { projectRoot: providedRoot, explicitCommands = {}, timeout = 120000, env = process.env } = options;
   
   // Determine project root
   const projectRoot = providedRoot ? resolve(providedRoot) : findProjectRoot(process.cwd());
   
   // Find and parse orientation
-  const orientationPath = findOrientationFile(projectRoot);
-  const orientation = orientationPath ? parseOrientation(orientationPath) : null;
+  const orientationPath = findOrientationFile(projectRoot, env);
+  const orientation = parseOrientation(orientationPath);
   
   // Extract commands (orientation + explicit overrides)
   const commands = extractCommands(orientation, explicitCommands);

@@ -55,6 +55,7 @@ export const RUNTIME_CLOSURE_REQUIRED_PATHS = Object.freeze([
   'harness-runtime/lib/release-store.mjs',
   'harness-runtime/lib/repository-snapshot.mjs',
   'harness-runtime/lib/runtime-paths.mjs',
+  'harness-runtime/lib/runtime-state.mjs',
   'harness-runtime/lib/runtime-identity.mjs',
   'harness-runtime/lib/skill-capsules.mjs',
   'harness-runtime/lib/skill-contract.mjs',

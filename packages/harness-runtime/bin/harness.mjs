@@ -32,6 +32,7 @@ import {
   CONFIG,
 } from '../lib/deploy.mjs';
 import { activateRelease, installVerifiedArtifact, listInstalledReleases, releaseEntrypoint, releaseStorePaths, resolveReleasePointer, rollbackRelease } from '../lib/release-store.mjs';
+import { resolveRuntimeState, worktreeRoot } from '../lib/runtime-state.mjs';
 
 function toCamelCase(flag) {
   return flag.replace(/^--/, '').replace(/-([a-z])/g, (_, char) => char.toUpperCase());
@@ -129,14 +130,7 @@ const program = new MiniProgram();
 program.name('harness').description('ocode-harness deterministic runtime').version('0.1.0');
 
 function findProjectRoot(startDir) {
-  let dir = resolve(startDir);
-  while (true) {
-    if (existsSync(resolve(dir, '.opencode'))) return dir;
-    const parent = dirname(dir);
-    if (parent === dir) break;
-    dir = parent;
-  }
-  return process.cwd();
+  return worktreeRoot(startDir);
 }
 
 function getInstalledVersionInfo() {
@@ -323,7 +317,7 @@ program
   .action(async (options) => {
     try {
       const projectRoot = findProjectRoot(options.projectRoot);
-      const ledgerPath = resolve(projectRoot, '.opencode', 'run-ledger.jsonl');
+      const ledgerPath = resolveRuntimeState(projectRoot).ledger;
       const record = createLedgerRecord({
         task_id: options.taskId,
         run_id: options.runId,
@@ -368,7 +362,7 @@ program
   .action((options) => {
     try {
       const projectRoot = findProjectRoot(options.projectRoot);
-      const record = getLatestRecord(resolve(projectRoot, '.opencode', 'run-ledger.jsonl'));
+      const record = getLatestRecord(resolveRuntimeState(projectRoot).ledger);
       if (record) console.log(JSON.stringify(record, null, 2));
       else console.log('No records found');
     } catch (err) {
@@ -385,7 +379,7 @@ program
   .action((options) => {
     try {
       const projectRoot = findProjectRoot(options.projectRoot);
-      const records = getRecentRecords(resolve(projectRoot, '.opencode', 'run-ledger.jsonl'), parseInt(options.count, 10));
+      const records = getRecentRecords(resolveRuntimeState(projectRoot).ledger, parseInt(options.count, 10));
       console.log(JSON.stringify(records, null, 2));
     } catch (err) {
       console.error('✗ Failed to read ledger:', err.message);

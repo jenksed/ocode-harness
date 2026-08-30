@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { resolveRuntimeState } from './runtime-state.mjs';
 
 export const ACTIVITY_SCHEMA_VERSION = 1;
 export const DEFAULT_ACTIVITY_RETENTION = 1_000;
@@ -99,8 +100,8 @@ export function createActivityEvent(input) {
   return event;
 }
 
-export function activityStorePath(projectDir) {
-  return resolve(projectDir, '.opencode', 'activity');
+export function activityStorePath(projectDir, options = {}) {
+  return resolveRuntimeState(projectDir, options).activity;
 }
 
 function eventsDirectory(storePath) {

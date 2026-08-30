@@ -24,7 +24,6 @@ import {
 } from '../lib/opencode-integration.mjs';
 import { validateProfileAvailability } from '../lib/execution.mjs';
 import {
-  activityStorePath,
   createActivityExecutionContext,
   finishActivityExecution,
   queryActivity,
@@ -36,6 +35,7 @@ import { createRuntimePermissionProjection, createValidationWrapperEnvironment }
 import { applyInteractiveRuntimePermissions, applyPreExecutionAuthorityGuard, createRuntimeBoundOpenCodeEnvironment } from '../lib/interactive-configuration.mjs';
 import { createRepositorySnapshot, repositorySnapshotFingerprint } from '../lib/repository-snapshot.mjs';
 import { qualifyRuntimeIdentity } from '../lib/runtime-identity.mjs';
+import { resolveRuntimeState, worktreeRoot } from '../lib/runtime-state.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 
@@ -143,19 +143,13 @@ function diffProfiles(harnessRoot, manifest, leftName, rightName) {
 }
 
 function findProjectRoot(start) {
-  let current = resolve(start);
-  while (true) {
-    if (existsSync(resolve(current, '.opencode'))) return current;
-    const parent = dirname(current);
-    if (parent === current) return resolve(start);
-    current = parent;
-  }
+  return worktreeRoot(start);
 }
 
 function explainRun(runID) {
   const projectRoot = findProjectRoot(process.cwd());
-  const record = getRecordByRunId(resolve(projectRoot, '.opencode', 'run-ledger.jsonl'), runID);
-  if (!record) throw new Error(`Run not found in project ledger: ${runID}`);
+  const record = getRecordByRunId(resolveRuntimeState(projectRoot).ledger, runID);
+  if (!record) throw new Error(`Run not found in external Ocode ledger: ${runID}`);
   const provenance = record.execution_provenance;
   if (!provenance) throw new Error(`Run ${runID} has no M3 execution provenance`);
   console.log(`RUN\n${runID}\n`);
@@ -198,7 +192,7 @@ function printActivity(args) {
     } else throw new Error('Usage: ocode activity [--raw] [--follow] [--verbose|--trace] [--workflow <id>] [--limit <count>]');
   }
   const projectRoot = findProjectRoot(process.cwd());
-  const storePath = activityStorePath(projectRoot);
+  const storePath = resolveRuntimeState(projectRoot).activity;
   const render = () => {
     const result = queryActivity(storePath, { workflow_id: workflowID, limit });
     if (raw) for (const event of result.events) console.log(JSON.stringify(event));
@@ -224,7 +218,7 @@ function printActivity(args) {
 function printAgents() {
   const projectRoot = findProjectRoot(process.cwd());
   const { manifest } = loadGovernanceContext();
-  const activity = queryActivity(activityStorePath(projectRoot));
+  const activity = queryActivity(resolveRuntimeState(projectRoot).activity);
   console.log(renderAgentsView(manifest, activity));
 }
 
@@ -341,37 +335,30 @@ function govern(context, args) {
 function orientProject() {
   const requested = process.cwd();
   console.log('=== PROJECT ORIENTATION ===');
-  const result = spawnSync('orient', [requested], { stdio: 'inherit', env: process.env });
+  const installedOrient = [
+    resolve(findHarnessRoot(), 'orientation', 'bin', 'orient.mjs'),
+    resolve(findHarnessRoot(), 'packages', 'orientation', 'bin', 'orient.mjs'),
+  ].find((path) => existsSync(path));
+  if (!installedOrient) throw new Error('Could not locate installed Ocode orientation runtime');
+  const result = spawnSync(process.execPath, [installedOrient, requested], { encoding: 'utf8', env: process.env });
+  if (result.stdout) process.stdout.write(result.stdout);
+  if (result.stderr) process.stderr.write(result.stderr);
   if (result.error || result.signal || result.status !== 0) {
     throw new Error(`Project orientation failed${result.error ? `: ${result.error.message}` : ''}`);
   }
-  let current = requested;
-  while (true) {
-    if (existsSync(resolve(current, '.opencode', 'orientation.json'))
-      && existsSync(resolve(current, '.opencode', 'orientation.md'))) {
-      const orientationPath = resolve(current, '.opencode', 'orientation.json');
-      let orientation;
-      try {
-        orientation = JSON.parse(readFileSync(orientationPath, 'utf8'));
-      } catch {
-        throw new Error(`OCODE_PROJECT_ROOT_MISMATCH: cannot read ${orientationPath}`);
-      }
-      if (orientation?.project?.root !== current) {
-        throw new Error(`OCODE_PROJECT_ROOT_MISMATCH: orientation root ${orientation?.project?.root ?? 'absent'} does not equal resolved project root ${current}`);
-      }
-      const repositoryRoot = orientation?.git?.root ?? current;
-      if (typeof repositoryRoot !== 'string' || !repositoryRoot.startsWith('/')) {
-        throw new Error(`OCODE_PROJECT_ROOT_MISMATCH: orientation repository root ${repositoryRoot ?? 'absent'} is invalid`);
-      }
-      console.log('=== ORIENTATION READY ===');
-      console.log(`project root: ${current}`);
-      console.log(`context:      ${resolve(current, '.opencode', 'orientation.md')}\n`);
-      return { invocation_dir: requested, project_root: current, repository_root: repositoryRoot };
-    }
-    const parent = dirname(current);
-    if (parent === current) throw new Error('Orientation completed but no orientation artifact was found');
-    current = parent;
-  }
+  const projectRoot = result.stdout.match(/^  Project root:\s+(.+)$/m)?.[1]?.trim();
+  if (!projectRoot) throw new Error('Orientation completed without a project root');
+  const state = resolveRuntimeState(projectRoot);
+  let orientation;
+  try { orientation = JSON.parse(readFileSync(state.orientation_json, 'utf8')); }
+  catch { throw new Error(`OCODE_PROJECT_ROOT_MISMATCH: cannot read ${state.orientation_json}`); }
+  if (orientation?.project?.root !== projectRoot) throw new Error(`OCODE_PROJECT_ROOT_MISMATCH: orientation root ${orientation?.project?.root ?? 'absent'} does not equal resolved project root ${projectRoot}`);
+  const repositoryRoot = orientation?.git?.root ?? projectRoot;
+  if (typeof repositoryRoot !== 'string' || !repositoryRoot.startsWith('/')) throw new Error(`OCODE_PROJECT_ROOT_MISMATCH: orientation repository root ${repositoryRoot ?? 'absent'} is invalid`);
+  console.log('=== ORIENTATION READY ===');
+  console.log(`project root: ${projectRoot}`);
+  console.log(`context:      ${state.orientation_markdown}\n`);
+  return { invocation_dir: requested, project_root: projectRoot, repository_root: repositoryRoot };
 }
 
 function printBindingError(error) {
@@ -461,7 +448,7 @@ async function main() {
   applyPreExecutionAuthorityGuard(overlayConfig, { contracts: context.contracts, validationRegistry: runtimePermissions.validation_registry });
   const overlay = JSON.stringify(overlayConfig);
   console.log(`=== EXECUTION PROFILE: ${context.profile.name} (${short(fingerprintBindingProfile(context.profile))}) ===\n`);
-  const interactiveActivity = createActivityExecutionContext({ activity_store_path: activityStorePath(projectRoot) }, { projectDir: projectRoot, role: 'orchestrator' });
+  const interactiveActivity = createActivityExecutionContext({ activity_store_path: resolveRuntimeState(projectRoot).activity }, { projectDir: projectRoot, role: 'orchestrator' });
   console.log('WORK — ◇ Orchestrator · active\n');
   let result;
   const runtimeBound = createRuntimeBoundOpenCodeEnvironment({ harnessRoot: context.harnessRoot, environment: process.env });

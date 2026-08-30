@@ -1,4 +1,4 @@
-import { describe, test, beforeEach, afterEach } from 'node:test';
+import { describe, test, beforeEach, afterEach, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
@@ -8,6 +8,11 @@ import util from 'node:util';
 const execFilePromise = util.promisify(execFile);
 import { orient } from '../lib/orientation.mjs';
 import { readFile } from 'node:fs/promises';
+import { resolveRuntimeState } from '../../harness-runtime/lib/runtime-state.mjs';
+
+const originalStateHome = process.env.XDG_STATE_HOME;
+const stateHome = resolve(tmpdir(), `orient-state-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+process.env.XDG_STATE_HOME = stateHome;
 
 // Helper to create a temporary directory
 async function createTempDir() {
@@ -43,6 +48,12 @@ describe('Project Orientation v1', () => {
     if (testDir) {
       await rm(testDir, { recursive: true, force: true });
     }
+  });
+
+  after(async () => {
+    if (originalStateHome === undefined) delete process.env.XDG_STATE_HOME;
+    else process.env.XDG_STATE_HOME = originalStateHome;
+    await rm(stateHome, { recursive: true, force: true });
   });
 
   test('should detect Node.js project with package.json', async () => {
@@ -236,14 +247,15 @@ describe('Project Orientation v1', () => {
     assert.deepStrictEqual(orientation.directories.sort(), ['src'].sort());
   });
 
-  test('should write orientation output under project root', async () => {
+  test('should write orientation output under external runtime state', async () => {
     testDir = await createTempDir();
     await writeFile(join(testDir, 'package.json'), '{"name":"write-test","scripts":{"test":"node test.js"}}', 'utf8');
     const orientation = await orient(testDir);
     const { writeOrientation } = await import('../lib/orientation.mjs');
     await writeOrientation(testDir, orientation);
-    const jsonPath = join(testDir, '.opencode', 'orientation.json');
-    const mdPath = join(testDir, '.opencode', 'orientation.md');
+    const state = resolveRuntimeState(testDir);
+    const jsonPath = state.orientation_json;
+    const mdPath = state.orientation_markdown;
     // ensure files exist by attempting to read
     let jsonErr = null;
     try {
@@ -267,6 +279,7 @@ describe('Project Orientation v1', () => {
     const mdContent = await readFile(mdPath, 'utf8');
     assert.ok(mdContent.includes('# Project Orientation'));
     assert.ok(mdContent.includes('node test.js'));
+    await assert.rejects(readFile(join(testDir, '.opencode', 'orientation.json'), 'utf8'), /ENOENT/);
   });
 
   test('does not select a manifest above a Git worktree boundary', async () => {
@@ -294,7 +307,7 @@ describe('Project Orientation v1', () => {
     });
 
     assert.match(stdout, new RegExp(`Project root:\\s+${canonicalWorktreeDir.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}`));
-    await readFile(join(worktreeDir, '.opencode', 'orientation.json'), 'utf8');
-    await assert.rejects(readFile(join(outerDir, '.opencode', 'orientation.json'), 'utf8'));
+    await readFile(resolveRuntimeState(worktreeDir).orientation_json, 'utf8');
+    await assert.rejects(readFile(join(worktreeDir, '.opencode', 'orientation.json'), 'utf8'));
   });
 });

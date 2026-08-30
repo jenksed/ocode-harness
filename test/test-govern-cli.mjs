@@ -7,10 +7,13 @@ import { fileURLToPath } from 'node:url';
 import { appendRecord, createLedgerRecord } from '../packages/harness-runtime/lib/ledger.mjs';
 import { loadAgentContracts } from '../packages/harness-runtime/lib/agent-contract.mjs';
 import { activityStorePath, appendActivityEvent, createActivityEvent } from '../packages/harness-runtime/lib/activity.mjs';
+import { resolveRuntimeState } from '../packages/harness-runtime/lib/runtime-state.mjs';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const cli = resolve(repoRoot, 'packages/harness-runtime/bin/ocode.mjs');
 const projectRoot = mkdtempSync(join(tmpdir(), 'ocode-govern-cli-'));
+const stateHome = mkdtempSync(join(tmpdir(), 'ocode-govern-cli-state-'));
+process.env.XDG_STATE_HOME = stateHome;
 const { manifest } = loadAgentContracts({ baseDir: repoRoot });
 function invoke(args) { return spawnSync(process.execPath, [cli, ...args], { cwd: projectRoot, env: { ...process.env, OCODE_HARNESS_ROOT: repoRoot }, encoding: 'utf8' }); }
 
@@ -45,13 +48,12 @@ try {
   assert.match(audit.stdout, /committer.*VALID\s+ALLOW/);
   console.log('✓ govern audit is manifest-derived and evaluates every baseline role through production governance');
 
-  mkdirSync(join(projectRoot, '.opencode'), { recursive: true });
   const record = createLedgerRecord({ run_id: '33333333-3333-4333-8333-333333333333', project_name: 'govern-cli-fixture', project_root: projectRoot, execution_provenance: {
     schema_version: 1, subject: { role: 'reviewer', contract_fingerprint: 'a'.repeat(64) },
     execution_policy: { profile: 'free', policy_version: 1, profile_fingerprint: 'b'.repeat(64), requested_model: 'freellmapi/auto:review', binding_source: 'profiles/free.json', fallback: 'deny' },
     effective_model: 'freellmapi/auto:review', binding_reconciliation: 'MATCH', admitted_subject: 'reviewer', effective_subject: 'reviewer', subject_reconciliation: 'MATCH', subject_reason_code: 'SUBJECT_MATCH', success: true, failure_classification: null,
   }});
-  appendRecord(join(projectRoot, '.opencode', 'run-ledger.jsonl'), record);
+  appendRecord(resolveRuntimeState(projectRoot).ledger, record);
   const runExplanation = invoke(['explain', '--run', record.run_id]);
   assert.equal(runExplanation.status, 0, runExplanation.stderr);
   assert.match(runExplanation.stdout, /ADMITTED SUBJECT\nreviewer/);
@@ -82,4 +84,4 @@ try {
   assert.match(agents.stdout, /Orchestrator\s+active/);
   console.log('✓ activity CLI exposes human, trace, and raw runtime records; agents reports configured versus active roles');
   console.log(JSON.stringify({ status: 'GOVERN_CLI_TESTS_PROVEN', operator_surfaces: ['explain', 'check', 'audit', 'explain --run', 'activity', 'agents'] }));
-} finally { rmSync(projectRoot, { recursive: true, force: true }); }
+} finally { rmSync(projectRoot, { recursive: true, force: true }); rmSync(stateHome, { recursive: true, force: true }); }

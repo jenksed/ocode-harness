@@ -25,6 +25,7 @@ import {
 } from './activity.mjs';
 import { createRuntimePermissionProjection, createValidationWrapperEnvironment } from './command-admission.mjs';
 import { qualifyRuntimeIdentity, runtimeIdentityExecutable } from './runtime-identity.mjs';
+import { resolveRuntimeState } from './runtime-state.mjs';
 
 function prepareLowInterruptionRuntime({ baseDir, projectDir, contracts, environment }) {
   const projection = createRuntimePermissionProjection({ contracts, projectDir, environment });
@@ -435,7 +436,7 @@ export function executeGovernedRole(options) {
     subjectReconciliation,
   });
   const { success, failure_classification: failureClassification } = acceptance;
-  const ledgerPath = options.ledgerPath || resolve(projectDir, '.opencode', 'run-ledger.jsonl');
+  const ledgerPath = options.ledgerPath || resolveRuntimeState(projectDir, { environment: options.env || process.env }).ledger;
   const record = appendExecutionLedgerRecord({
     ledgerPath,
     projectDir,
@@ -548,7 +549,7 @@ export async function executeGovernedRoleSdk(options) {
   const sdkFailureClassification = !acceptance.success && /(?:APIError|PROVIDER|chat\/completions|statusCode[^0-9]{0,12}(?:401|403|429|5\d\d))/i.test(execution.spawn_error ?? '')
     ? 'PROVIDER_FAILURE'
     : acceptance.failure_classification;
-  const ledgerPath = options.ledgerPath || resolve(projectDir, '.opencode', 'run-ledger.jsonl');
+  const ledgerPath = options.ledgerPath || resolveRuntimeState(projectDir, { environment: options.env || process.env }).ledger;
   const record = appendExecutionLedgerRecord({
     ledgerPath,
     projectDir,
@@ -614,7 +615,7 @@ export async function executeGovernedRoleStreaming(options) {
   const reconciliation=reconcileExecutionBinding(resolution,exported), subjectReconciliation=reconcileExecutionSubject(admittedSubject,exported);
   const runtimeSucceeded=execution.termination==='NORMAL_EXIT'&&execution.exit_code===0;
   const acceptance=evaluateGovernedExecutionAcceptance({runtimeSucceeded,reconciliation,subjectReconciliation});
-  const ledgerPath=options.ledgerPath||resolve(projectDir,'.opencode','run-ledger.jsonl');
+  const ledgerPath=options.ledgerPath||resolveRuntimeState(projectDir,{ environment: options.env || process.env }).ledger;
   const record=appendExecutionLedgerRecord({ledgerPath,projectDir,resolution,reconciliation,subjectReconciliation,success:acceptance.success,failureClassification:acceptance.failure_classification,elapsedMs:execution.duration_ms,telemetryContext:taskCapsule?{taskCapsule,capability:options.capability,adapter_fingerprint:options.adapterFingerprint,qualification_identity_fingerprint:options.qualificationIdentityFingerprint,acceptance_result:options.acceptanceResult,reviewer_verdict:options.reviewerVerdict,repair_cycles:options.repairCycles,validation_results:options.validationResults}:null});
   finishActivityExecution(activity, { success: acceptance.success, session_id: sessionID, failure_classification: acceptance.failure_classification });
   return {resolution,execution,events,model_output:resolveAssistantModelOutput({events,exported}),session_id:sessionID,exported,export_result:exportResult,reconciliation,subject_reconciliation:subjectReconciliation,admitted_subject:admittedSubject,admission_decision:options.admissionDecision||null,success:acceptance.success,failure_classification:acceptance.failure_classification,ledger_record:record,runtime_identity:runtimeIdentity};

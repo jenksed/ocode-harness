@@ -29,9 +29,12 @@ import {
   validateResolutionAvailability,
 } from '../packages/harness-runtime/lib/execution.mjs';
 import { appendRecord, createLedgerRecord, getRecordByRunId } from '../packages/harness-runtime/lib/ledger.mjs';
+import { resolveRuntimeState } from '../packages/harness-runtime/lib/runtime-state.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const repoRoot = resolve(dirname(__filename), '..');
+const stateHome = mkdtempSync(join(tmpdir(), 'ocode-execution-profile-state-'));
+process.env.XDG_STATE_HOME = stateHome;
 const fixtureRoot = resolve(repoRoot, 'test', 'fixtures', 'm4-readiness');
 const tempRoot = mkdtempSync(join(tmpdir(), 'ocode-m3-unit-'));
 const sha256 = (path) => createHash('sha256').update(readFileSync(path)).digest('hex');
@@ -141,7 +144,7 @@ try {
   mkdirSync(resolve(projectDir, '.opencode'), { recursive: true });
   const reconciliation = reconcileExecutionBinding(plannerHybrid, matchingExport);
   const provenance = createExecutionProvenance({ resolution: plannerHybrid, reconciliation, success: true });
-  const ledgerPath = resolve(projectDir, '.opencode', 'run-ledger.jsonl');
+  const ledgerPath = resolveRuntimeState(projectDir).ledger;
   const record = createLedgerRecord({
     run_id: '22222222-2222-4cba-8def-222222222222',
     project_name: 'fixture',
@@ -184,4 +187,5 @@ try {
   console.log('\n✓ All M3 execution profile tests passed');
 } finally {
   rmSync(tempRoot, { recursive: true, force: true });
+  rmSync(stateHome, { recursive: true, force: true });
 }

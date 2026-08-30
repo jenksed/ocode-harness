@@ -18,6 +18,7 @@ import { loadAgentContracts } from '../packages/harness-runtime/lib/agent-contra
 import { ADMISSION_KINDS, ADMISSION_REQUEST_SCHEMA_VERSION, evaluateAdmission } from '../packages/harness-runtime/lib/admission.mjs';
 import { executeGovernedRole } from '../packages/harness-runtime/lib/execution.mjs';
 import { readRecords } from '../packages/harness-runtime/lib/ledger.mjs';
+import { resolveRuntimeState } from '../packages/harness-runtime/lib/runtime-state.mjs';
 import {
   BindingError,
   fingerprintBindingProfile,
@@ -303,7 +304,7 @@ try {
   requireSuccess(normalLaunch, 'Normal ocode interactive launch smoke');
   assert.match(normalLaunch.stdout, /EXECUTION PROFILE: free/);
 
-  const ledgerRecords = readRecords(resolve(temporaryProject, '.opencode', 'run-ledger.jsonl'));
+  const ledgerRecords = readRecords(resolveRuntimeState(temporaryProject).ledger);
   assert(ledgerRecords.length >= freeQualification.length + hybridQualification.length + 2);
   assert(ledgerRecords.some((record) => record.execution_provenance?.binding_reconciliation === 'MATCH'));
   assert(ledgerRecords.some((record) => record.execution_provenance?.failure_classification === 'INFRASTRUCTURE_FAILURE'));

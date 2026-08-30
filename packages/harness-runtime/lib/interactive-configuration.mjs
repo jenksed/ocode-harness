@@ -3,6 +3,9 @@ import { homedir, tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createPreExecutionAuthorityGuardOptions } from './pre-execution-authority-guard.mjs';
 import { runtimeResourcePath } from './runtime-paths.mjs';
+import { ADMITTED_CANONICAL_SKILL_IDS } from './admitted-skills.mjs';
+import { assertProjectOpenCodeCompositionSafe, inspectProjectOpenCodeOwnership } from './opencode-composition.mjs';
+import { projectSkills } from './skill-projection.mjs';
 
 /**
  * OpenCode deep-merges agent frontmatter with OPENCODE_CONFIG_CONTENT while
@@ -11,7 +14,7 @@ import { runtimeResourcePath } from './runtime-paths.mjs';
  * its semantic agents, so run from an isolated configuration containing the
  * selected runtime agents and the user's non-agent global config.
  */
-export function createRuntimeBoundOpenCodeEnvironment({ harnessRoot, environment = process.env } = {}) {
+export function createRuntimeBoundOpenCodeEnvironment({ harnessRoot, projectRoot = null, governedAgentIds = [], admittedSkillIds = ADMITTED_CANONICAL_SKILL_IDS, environment = process.env } = {}) {
   const configHome = mkdtempSync(join(tmpdir(), 'ocode-runtime-config-'));
   const target = join(configHome, 'opencode');
   const originalHome = environment.XDG_CONFIG_HOME
@@ -26,16 +29,16 @@ export function createRuntimeBoundOpenCodeEnvironment({ harnessRoot, environment
       const source = join(original, name);
       if (existsSync(source)) copyFileSync(source, join(target, name));
     }
+    if (projectRoot) assertProjectOpenCodeCompositionSafe(inspectProjectOpenCodeOwnership({ projectRoot, governedAgentIds, admittedSkillIds }));
     cpSync(resolve(harnessRoot, 'agents'), join(target, 'agents'), { recursive: true });
+    projectSkills({ skillsDir: resolve(harnessRoot, 'skills'), runtimeSkillsDir: join(target, 'skills'), skillIds: admittedSkillIds });
+    const { OPENCODE_DISABLE_PROJECT_CONFIG: _disabledProjectConfig, ...withoutProjectDisable } = environment;
     return {
       config_home: configHome,
       environment: {
-        ...environment,
+        ...withoutProjectDisable,
         XDG_CONFIG_HOME: configHome,
         OPENCODE_CONFIG_DIR: target,
-        // Project-local agent/config layers cannot become an unordered second
-        // policy owner for Ocode's governed role names.
-        OPENCODE_DISABLE_PROJECT_CONFIG: '1',
       },
       cleanup: () => rmSync(configHome, { recursive: true, force: true }),
     };

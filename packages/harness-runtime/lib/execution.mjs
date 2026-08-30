@@ -26,17 +26,24 @@ import {
 import { createRuntimePermissionProjection, createValidationWrapperEnvironment } from './command-admission.mjs';
 import { qualifyRuntimeIdentity, runtimeIdentityExecutable } from './runtime-identity.mjs';
 import { resolveRuntimeState } from './runtime-state.mjs';
+import { createRuntimeBoundOpenCodeEnvironment } from './interactive-configuration.mjs';
 
-function prepareLowInterruptionRuntime({ baseDir, projectDir, contracts, environment }) {
+function prepareLowInterruptionRuntime({ baseDir, projectDir, contracts, environment, governedAgentIds }) {
+  const runtimeBound = createRuntimeBoundOpenCodeEnvironment({
+    harnessRoot: baseDir,
+    projectRoot: projectDir,
+    governedAgentIds,
+    environment,
+  });
   const projection = createRuntimePermissionProjection({ contracts, projectDir, environment });
-  let env = { ...environment };
+  let env = { ...runtimeBound.environment };
   if (projection.validation_registry) {
     env = createValidationWrapperEnvironment({
       baseDir, projectDir, registry: projection.validation_registry, environment: env,
       executables: projection.validation_executables,
     });
   }
-  return { ...projection, environment: env };
+  return { ...projection, environment: env, cleanup: runtimeBound.cleanup };
 }
 
 function applyRuntimePermissions(config, projectedAgents) {
@@ -384,7 +391,7 @@ export function executeGovernedRole(options) {
     models: options.models,
   });
 
-  const runtime = prepareLowInterruptionRuntime({ baseDir, projectDir, contracts, environment: options.env || process.env });
+  const runtime = prepareLowInterruptionRuntime({ baseDir, projectDir, contracts, governedAgentIds: manifest.roles.map((role) => role.id), environment: options.env || process.env });
   const overlayConfig = applyRuntimePermissions(JSON.parse(serializeGovernedExecutionOverlay(
     loaded.profile,
     options.role,
@@ -450,7 +457,7 @@ export function executeGovernedRole(options) {
   });
   finishActivityExecution(activity, { success, session_id: sessionID, failure_classification: failureClassification });
 
-  return {
+  const result = {
     resolution,
     execution,
     events,
@@ -467,6 +474,8 @@ export function executeGovernedRole(options) {
     ledger_record: record,
     runtime_identity: runtimeIdentity,
   };
+  runtime.cleanup();
+  return result;
 }
 
 /** Execute a governed assignment through OpenCode's authoritative session API. */
@@ -497,7 +506,7 @@ export async function executeGovernedRoleSdk(options) {
     models: options.models,
   });
 
-  const runtime = prepareLowInterruptionRuntime({ baseDir, projectDir, contracts, environment: options.env || process.env });
+  const runtime = prepareLowInterruptionRuntime({ baseDir, projectDir, contracts, governedAgentIds: manifest.roles.map((role) => role.id), environment: options.env || process.env });
   const config = applyRuntimePermissions(JSON.parse(serializeGovernedExecutionOverlay(
     loaded.profile,
     options.role,
@@ -566,7 +575,7 @@ export async function executeGovernedRoleSdk(options) {
     session_id: execution.session_id,
     failure_classification: sdkFailureClassification,
   });
-  return {
+  const result = {
     resolution,
     execution,
     events: execution.events,
@@ -586,6 +595,8 @@ export async function executeGovernedRoleSdk(options) {
     completion_source: execution.completion_source,
     runtime_identity: runtimeIdentity,
   };
+  runtime.cleanup();
+  return result;
 }
 
 export async function executeGovernedRoleStreaming(options) {
@@ -600,7 +611,7 @@ export async function executeGovernedRoleStreaming(options) {
   const resolution = createExecutionResolution({ role: options.role, contract, profile: loaded.profile, bindingSource: options.bindingSource || `profiles/${loaded.profile.name}.json` });
   const admittedSubject = admittedSubjectForExecution(resolution, options.admissionDecision || null);
   validateResolutionAvailability(resolution, { runtimeIdentity, cwd: projectDir, env: options.env || process.env, cache: options.catalogCache, models: options.models });
-  const runtime = prepareLowInterruptionRuntime({ baseDir, projectDir, contracts, environment: options.env || process.env });
+  const runtime = prepareLowInterruptionRuntime({ baseDir, projectDir, contracts, governedAgentIds: manifest.roles.map((role) => role.id), environment: options.env || process.env });
   const overlay = JSON.stringify(applyRuntimePermissions(JSON.parse(serializeGovernedExecutionOverlay(loaded.profile, options.role, (options.env || process.env).OPENCODE_CONFIG_CONTENT)), runtime.agents));
   const args=['run']; if(options.pure!==false)args.push('--pure'); args.push('--agent',options.role,'--format','json','--dir',projectDir,options.prompt);
   const activity = createActivityExecutionContext(options, { projectDir, role: options.role });
@@ -618,5 +629,7 @@ export async function executeGovernedRoleStreaming(options) {
   const ledgerPath=options.ledgerPath||resolveRuntimeState(projectDir,{ environment: options.env || process.env }).ledger;
   const record=appendExecutionLedgerRecord({ledgerPath,projectDir,resolution,reconciliation,subjectReconciliation,success:acceptance.success,failureClassification:acceptance.failure_classification,elapsedMs:execution.duration_ms,telemetryContext:taskCapsule?{taskCapsule,capability:options.capability,adapter_fingerprint:options.adapterFingerprint,qualification_identity_fingerprint:options.qualificationIdentityFingerprint,acceptance_result:options.acceptanceResult,reviewer_verdict:options.reviewerVerdict,repair_cycles:options.repairCycles,validation_results:options.validationResults}:null});
   finishActivityExecution(activity, { success: acceptance.success, session_id: sessionID, failure_classification: acceptance.failure_classification });
-  return {resolution,execution,events,model_output:resolveAssistantModelOutput({events,exported}),session_id:sessionID,exported,export_result:exportResult,reconciliation,subject_reconciliation:subjectReconciliation,admitted_subject:admittedSubject,admission_decision:options.admissionDecision||null,success:acceptance.success,failure_classification:acceptance.failure_classification,ledger_record:record,runtime_identity:runtimeIdentity};
+  const result = {resolution,execution,events,model_output:resolveAssistantModelOutput({events,exported}),session_id:sessionID,exported,export_result:exportResult,reconciliation,subject_reconciliation:subjectReconciliation,admitted_subject:admittedSubject,admission_decision:options.admissionDecision||null,success:acceptance.success,failure_classification:acceptance.failure_classification,ledger_record:record,runtime_identity:runtimeIdentity};
+  runtime.cleanup();
+  return result;
 }

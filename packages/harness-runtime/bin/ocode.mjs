@@ -451,7 +451,12 @@ async function main() {
   const interactiveActivity = createActivityExecutionContext({ activity_store_path: resolveRuntimeState(projectRoot).activity }, { projectDir: projectRoot, role: 'orchestrator' });
   console.log('WORK — ◇ Orchestrator · active\n');
   let result;
-  const runtimeBound = createRuntimeBoundOpenCodeEnvironment({ harnessRoot: context.harnessRoot, environment: process.env });
+  const runtimeBound = createRuntimeBoundOpenCodeEnvironment({
+    harnessRoot: context.harnessRoot,
+    projectRoot,
+    governedAgentIds: context.manifest.roles.map((role) => role.id),
+    environment: process.env,
+  });
   try {
     let environment = {
       ...runtimeBound.environment,

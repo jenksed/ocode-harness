@@ -29,6 +29,7 @@
     "test:dd4-pass1-authority-evidence": "node test/test-dd4-pass1-authority-evidence.mjs",
     "test:dd4-pass2-runtime-continuity": "node test/test-dd4-pass2-runtime-continuity.mjs",
     "test:dd4-pass2-live-runtime-continuity": "node test/test-dd4-pass2-live-runtime-continuity.mjs",
+    "test:dd4-pass2-production-effect": "node test/test-dd4-pass2-production-effect.mjs",
     "test:harness:version": "node test/test-harness-version.mjs",
     "test:harness:update": "node test/test-harness-update.mjs",
     "test:harness:rollback": "node test/test-harness-rollback.mjs",

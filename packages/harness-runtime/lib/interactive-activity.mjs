@@ -9,6 +9,8 @@ import {
   startActivityExecution,
 } from './activity.mjs';
 import { createVerifiedOpenCodeEnvironment, runtimeIdentityExecutable } from './runtime-identity.mjs';
+import { createExecutionAuthority, createEffectRequest } from './authority-evidence.mjs';
+import { OPERATION_CLASSES, createRuntimeAuthoritySession, createRuntimeAuthorityBridge, identifyRepository, evaluateAuthorityRequest, executeVerificationWorktree, cleanupVerificationWorktree } from './runtime-continuity.mjs';
 
 function properties(event) {
   return event?.properties ?? event?.data ?? null;
@@ -229,6 +231,37 @@ export function createInteractiveActivityCapture({ projectDir, activity, authori
   };
 }
 
+/** One interactive run owns this narrow verifier-effect lifecycle; no global state. */
+export function createInteractiveVerificationRuntime({ projectDir, workScope }) {
+  const repository = identifyRepository(projectDir);
+  const authority = createExecutionAuthority({ authority_id: `interactive:${workScope}`, operation_classes: [OPERATION_CLASSES.MANAGE_EPHEMERAL_VERIFICATION_WORKTREE] });
+  const session = createRuntimeAuthoritySession({ repository, work_scope: workScope });
+  const bridge = createRuntimeAuthorityBridge({ session });
+  const pending = new Map();
+  return Object.freeze({
+    bridge,
+    requestVerificationEnvironment({ revision, session_id }) {
+      if (pending.has(session_id)) throw new Error('verification request already pending for session');
+      const request = createEffectRequest({ authority, effect: 'verification.worktree', operation_class: OPERATION_CLASSES.MANAGE_EPHEMERAL_VERIFICATION_WORKTREE, repository_id: repository.repository_id, work_scope: workScope, revision });
+      pending.set(session_id, request);
+      return { request, admission: evaluateAuthorityRequest({ session, request }) };
+    },
+    handleNativeEvent(event) {
+      const properties = event?.properties ?? event?.data;
+      if ((event?.type === 'permission.asked' || event?.type === 'permission.updated') && properties?.id && properties?.sessionID) {
+        const request = pending.get(properties.sessionID);
+        if (request) bridge.registerRequest({ request, permission_id: properties.id, session_id: properties.sessionID });
+      }
+      return bridge.handleNativeEvent(event);
+    },
+    continueVerificationEnvironment({ request }) {
+      const result = executeVerificationWorktree({ session, request });
+      return result;
+    },
+    cleanupVerificationEnvironment({ request }) { return cleanupVerificationWorktree({ session, request }); },
+  });
+}
+
 function applyServerEnvironment(environment, start) {
   const keys = Object.keys(environment ?? {}).filter((key) => key !== 'OPENCODE_CONFIG_CONTENT');
   const prior = new Map(keys.map((key) => [key, process.env[key]]));
@@ -284,7 +317,15 @@ export async function runInteractiveOpenCode(options) {
   const abort = new AbortController();
   let server = null;
   let streamTask = null;
-  const capture = createInteractiveActivityCapture({ projectDir: options.projectDir, activity: options.activity, authorityBridge: options.authorityBridge ?? null });
+  let authorityRuntime = options.authorityRuntime ?? null;
+  if (!authorityRuntime) {
+    try { authorityRuntime = createInteractiveVerificationRuntime({ projectDir: options.projectDir, workScope: options.workScope ?? options.activity?.task_id ?? options.activity?.workflow_id ?? 'interactive' }); } catch (error) {
+      // Non-repository interactive sessions have no verification-worktree effect surface.
+      if (options.requireVerificationRuntime) throw error;
+    }
+  }
+  options.onAuthorityRuntime?.(authorityRuntime);
+  const capture = createInteractiveActivityCapture({ projectDir: options.projectDir, activity: options.activity, authorityBridge: authorityRuntime ? { handleNativeEvent: (event) => authorityRuntime.handleNativeEvent(event) } : null });
   try {
     const port = options.port ?? await reserveLoopbackPort();
     server = await applyServerEnvironment(serverRuntime.environment, () => sdk.createOpencodeServer({

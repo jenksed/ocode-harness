@@ -195,3 +195,14 @@ share the guard-bearing authority finalizer. The accepted implementation,
 installed real-skill discovery, guard closure, live-permission regression, and
 explicit limits are in [the DD2 checkpoint](docs/architecture/daily-driver-dd2-acceptance.md).
 The next frontier is DD3 — Truthful Operator Surface & Chat UX.
+
+DD3 Truthful Operator Surface & Chat UX: **ACCEPTED** — accepted implementation
+`987bb94c230b67a0675ef0953b01cd0014811016` adds truthful pre-launch argument
+classification, installed `ocode doctor`, and explicit candidate capability
+gating. Installed artifact, DD1/DD2, and full regression evidence are recorded
+in [the DD3 checkpoint](docs/architecture/daily-driver-dd3-operator-surface.md).
+OpenCode 1.18.21 exposes no qualified Ocode-controlled per-message rendering
+seam, so custom chat styling is explicitly bounded as
+`DD3_CHAT_PRESENTATION_SEAM_UNAVAILABLE`; terminal interception and TUI
+replacement remain prohibited. This checkpoint is not DD4, daily-driver
+candidate acceptance, or production release qualification.

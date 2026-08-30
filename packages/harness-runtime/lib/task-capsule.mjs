@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { canonicalJSONStringify } from './agent-contract.mjs';
 import { createRepositoryTaskContext } from './repository-snapshot.mjs';
 
-export const TASK_CAPSULE_SCHEMA_VERSION = 2;
+export const TASK_CAPSULE_SCHEMA_VERSION = 3;
 const HEX = /^[a-f0-9]{64}$/;
 const ID = /^[a-z][a-z0-9_-]{0,63}$/;
 const ACCEPTANCE_STATES = new Set(['SATISFIED', 'UNSATISFIED', 'UNRESOLVED']);
@@ -42,6 +42,11 @@ function normalizeAcceptance(acceptance) {
   if (!output.length || new Set(output.map((entry) => entry.id)).size !== output.length) throw new Error('acceptance IDs must be non-empty and unique');
   return output;
 }
+function normalizeAuthorityContext(value) {
+  if (value === undefined || value === null) return null;
+  object(value, 'authority_context'); fields(value, ['repository_id', 'work_scope', 'grant_ids'], 'authority_context');
+  return { repository_id: string(value.repository_id, 'authority_context.repository_id'), work_scope: string(value.work_scope, 'authority_context.work_scope'), grant_ids: uniqueStrings(value.grant_ids, 'authority_context.grant_ids') };
+}
 
 export function taskCapsuleFingerprint(capsule) {
   const { fingerprint: ignored, ...identity } = validateTaskCapsule(capsule, { requireFingerprint: false });
@@ -50,8 +55,8 @@ export function taskCapsuleFingerprint(capsule) {
 
 export function validateTaskCapsule(capsule, { requireFingerprint = true } = {}) {
   object(capsule, 'TaskCapsule');
-  fields(capsule, ['schema_version', 'task_id', 'revision', 'parent_fingerprint', 'objective', 'authoritative_inputs', 'scope', 'non_goals', 'constraints', 'acceptance', 'stop_conditions', 'context', 'assumptions', 'provenance', 'repository_context', 'fingerprint'], 'TaskCapsule');
-  if (![1, TASK_CAPSULE_SCHEMA_VERSION].includes(capsule.schema_version)) throw new Error('TaskCapsule schema_version invalid');
+  fields(capsule, ['schema_version', 'task_id', 'revision', 'parent_fingerprint', 'objective', 'authoritative_inputs', 'scope', 'non_goals', 'constraints', 'acceptance', 'stop_conditions', 'context', 'assumptions', 'provenance', 'repository_context', 'authority_context', 'fingerprint'], 'TaskCapsule');
+  if (![1, 2, TASK_CAPSULE_SCHEMA_VERSION].includes(capsule.schema_version)) throw new Error('TaskCapsule schema_version invalid');
   if (capsule.schema_version === 1 && capsule.repository_context !== undefined) throw new Error('TaskCapsule v1 cannot carry repository_context');
   if (!ID.test(capsule.task_id)) throw new Error('TaskCapsule task_id invalid');
   if (!Number.isInteger(capsule.revision) || capsule.revision < 1) throw new Error('TaskCapsule revision invalid');
@@ -65,7 +70,7 @@ export function validateTaskCapsule(capsule, { requireFingerprint = true } = {})
     objective: string(capsule.objective, 'objective'), authoritative_inputs: normalizeInputs(capsule.authoritative_inputs), scope,
     non_goals: uniqueStrings(capsule.non_goals, 'non_goals'), constraints: uniqueStrings(capsule.constraints, 'constraints'),
     acceptance: normalizeAcceptance(capsule.acceptance), stop_conditions: uniqueStrings(capsule.stop_conditions, 'stop_conditions'), context: normalizeContext(capsule.context),
-    assumptions: uniqueStrings(capsule.assumptions, 'assumptions'), provenance: (() => { object(capsule.provenance, 'provenance'); fields(capsule.provenance, ['workflow_id', 'run_id', 'session_id', 'role'], 'provenance'); const output = {}; for (const key of ['workflow_id', 'run_id', 'session_id', 'role']) { const value = capsule.provenance[key]; if (value !== null && value !== undefined) output[key] = string(value, `provenance.${key}`); else output[key] = null; } return output; })(),
+    assumptions: uniqueStrings(capsule.assumptions, 'assumptions'), provenance: (() => { object(capsule.provenance, 'provenance'); fields(capsule.provenance, ['workflow_id', 'run_id', 'session_id', 'role'], 'provenance'); const output = {}; for (const key of ['workflow_id', 'run_id', 'session_id', 'role']) { const value = capsule.provenance[key]; if (value !== null && value !== undefined) output[key] = string(value, `provenance.${key}`); else output[key] = null; } return output; })(), authority_context: capsule.schema_version === TASK_CAPSULE_SCHEMA_VERSION ? normalizeAuthorityContext(capsule.authority_context) : null,
   };
   if (capsule.schema_version === TASK_CAPSULE_SCHEMA_VERSION) {
     if (capsule.repository_context === undefined || capsule.repository_context === null) normalized.repository_context = null;
@@ -112,6 +117,7 @@ export function renderTaskCapsuleDelegationContext(capsule) {
     `TASK_ID: ${normalized.task_id}`,
     `FINGERPRINT: ${normalized.fingerprint}`,
     `OBJECTIVE: ${normalized.objective}`,
+    `RUNTIME_AUTHORITY_REFS: ${normalized.authority_context ? normalized.authority_context.grant_ids.join(', ') || '(none)' : '(none)'}`,
     'AUTHORITATIVE_INPUTS:',
     ...(normalized.authoritative_inputs.length ? normalized.authoritative_inputs.map((input) => `- [${input.kind}] ${input.reference} — ${input.description}`) : ['- (none supplied)']),
     `BOUNDED_RECOVERY_PATHS: ${normalized.context.path_refs.length ? normalized.context.path_refs.join(', ') : '(none supplied)'}`,

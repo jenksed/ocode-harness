@@ -34,22 +34,37 @@ export function isGitObjectId(value) {
   return Boolean(value?.[GIT_OBJECT_ID_BRAND] === true && typeof value.value === 'string' && GIT_OBJECT_ID.test(value.value));
 }
 
+export function isRuntimeEffectRequest(value) { return Boolean(value?.[REQUEST]); }
+
+export function createRuntimeExecutionReceipt(request, { success, exit_code = success ? 0 : 1, stdout = '', stderr = '', observation = null } = {}) {
+  if (!request?.[REQUEST]) throw new Error('execution receipt requires a runtime-issued effect request');
+  const observed = observation === null ? null : Object.freeze({ ...observation, [OBSERVATION]: true });
+  return Object.freeze({ request_id: request.request_id, authority_id: request.authority_id, effect: request.effect, success: Boolean(success), exit_code, stdout, stderr, observation: observed, [RECEIPT]: true });
+}
+
+export function isRuntimeExecutionReceipt(value) { return Boolean(value?.[RECEIPT]); }
+
 /** Create bounded data authority from a trusted orchestration policy. */
-export function createExecutionAuthority({ authority_id = randomUUID(), effects } = {}) {
+export function createExecutionAuthority({ authority_id = randomUUID(), effects = [], operation_classes = [] } = {}) {
   const id = nonEmpty(authority_id, 'authority_id');
-  if (!Array.isArray(effects) || effects.length === 0 || effects.some((effect) => effect !== 'git.observe_head')) {
-    throw new Error('authority effects must contain only supported bounded effects');
+  if (!Array.isArray(effects) || !Array.isArray(operation_classes) || (!effects.length && !operation_classes.length) || effects.some((effect) => effect !== 'git.observe_head')) {
+    throw new Error('authority must contain supported bounded effects or operation classes');
   }
-  return Object.freeze({ authority_id: id, effects: Object.freeze([...new Set(effects)]), [AUTHORITY]: true });
+  return Object.freeze({ authority_id: id, effects: Object.freeze([...new Set(effects)]), operation_classes: Object.freeze([...new Set(operation_classes)]), [AUTHORITY]: true });
 }
 
 /** Model-facing code can request, but cannot claim, the requested effect. */
-export function createEffectRequest({ authority, request_id = randomUUID(), effect, git_ref = 'HEAD' } = {}) {
+export function createEffectRequest({ authority, request_id = randomUUID(), effect, git_ref = 'HEAD', operation_class = null, repository_id = null, work_scope = null, revision = null } = {}) {
   if (!authority?.[AUTHORITY]) throw new Error('effect request requires runtime-issued authority');
-  if (effect !== 'git.observe_head' || !authority.effects.includes(effect)) throw new Error('effect is not authorized');
+  const isHeadObservation = effect === 'git.observe_head' && authority.effects.includes(effect);
+  const isScopedOperation = effect === 'verification.worktree' && typeof operation_class === 'string' && authority.operation_classes.includes(operation_class);
+  if (!isHeadObservation && !isScopedOperation) throw new Error('effect is not authorized');
   const ref = nonEmpty(git_ref, 'git_ref');
   if (!/^[A-Za-z0-9._/-]+$/.test(ref)) throw new Error('git_ref contains unsupported characters');
-  return Object.freeze({ request_id: nonEmpty(request_id, 'request_id'), authority_id: authority.authority_id, effect, git_ref: ref, [REQUEST]: true });
+  if (isScopedOperation) {
+    if (typeof repository_id !== 'string' || typeof work_scope !== 'string' || typeof revision !== 'string') throw new Error('scoped effect request requires repository_id, work_scope, and revision');
+  }
+  return Object.freeze({ request_id: nonEmpty(request_id, 'request_id'), authority_id: authority.authority_id, effect, git_ref: ref, operation_class, repository_id, work_scope, revision, [REQUEST]: true });
 }
 
 /** The deterministic substrate is the sole constructor of execution receipts. */
@@ -66,7 +81,7 @@ export function executeEffectRequest(request, { cwd = process.cwd() } = {}) {
   const observation = success
     ? Object.freeze({ kind: 'git.head', object_id: createGitObjectId(stdout), [OBSERVATION]: true })
     : null;
-  return Object.freeze({ request_id: request.request_id, authority_id: request.authority_id, effect: request.effect, success, exit_code, stdout, stderr, observation, [RECEIPT]: true });
+  return createRuntimeExecutionReceipt(request, { success, exit_code, stdout, stderr, observation });
 }
 
 /**
@@ -82,11 +97,12 @@ export function ingestEffectEvidence({ request, receipt, report } = {}) {
   }
   object(report, 'effect report');
   if (report.request_id !== request.request_id || typeof report.claim !== 'string') throw new Error('report must identify its effect request and textual claim');
-  if (!receipt.success || !receipt.observation?.[OBSERVATION] || !isGitObjectId(receipt.observation.object_id)) {
+  if (!receipt.success || !receipt.observation?.[OBSERVATION]) {
     return Object.freeze({ state: 'UNVERIFIED', request_id: request.request_id, claim: report.claim, evidence: null });
   }
+  if (receipt.effect === 'git.observe_head' && !isGitObjectId(receipt.observation.object_id)) return Object.freeze({ state: 'UNVERIFIED', request_id: request.request_id, claim: report.claim, evidence: null });
   return Object.freeze({
     state: 'SATISFIED', request_id: request.request_id, claim: report.claim,
-    evidence: Object.freeze({ origin: 'DETERMINISTIC_RUNTIME', kind: receipt.observation.kind, object_id: receipt.observation.object_id.value, exit_code: receipt.exit_code }),
+    evidence: Object.freeze({ origin: 'DETERMINISTIC_RUNTIME', kind: receipt.observation.kind, ...(receipt.observation.object_id ? { object_id: receipt.observation.object_id.value } : {}), exit_code: receipt.exit_code }),
   });
 }

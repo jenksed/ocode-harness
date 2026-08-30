@@ -18,7 +18,7 @@ import {
 } from '../packages/harness-runtime/lib/interactive-activity.mjs';
 import { loadAgentContracts } from '../packages/harness-runtime/lib/agent-contract.mjs';
 import { createRuntimePermissionProjection } from '../packages/harness-runtime/lib/command-admission.mjs';
-import { applyInteractiveRuntimePermissions, applyPreExecutionAuthorityGuard, createSourceBoundOpenCodeEnvironment } from '../packages/harness-runtime/lib/interactive-configuration.mjs';
+import { applyInteractiveRuntimePermissions, applyPreExecutionAuthorityGuard, createRuntimeBoundOpenCodeEnvironment } from '../packages/harness-runtime/lib/interactive-configuration.mjs';
 import { loadBindingProfile, serializeOpenCodeRuntimeOverlay } from '../packages/harness-runtime/lib/opencode-integration.mjs';
 import { projectBashCommand } from '../packages/harness-runtime/lib/permission-projection.mjs';
 
@@ -33,16 +33,16 @@ const root = resolve('.');
   const profile = loadBindingProfile('free', { profilesDir: resolve(root, 'profiles'), manifest }).profile;
   const overlay = JSON.parse(serializeOpenCodeRuntimeOverlay(profile));
   applyInteractiveRuntimePermissions(overlay, createRuntimePermissionProjection({ contracts, projectDir: root }));
-  applyPreExecutionAuthorityGuard(overlay, { harnessRoot: root, contracts });
+  applyPreExecutionAuthorityGuard(overlay, { contracts });
   assert.match(overlay.plugin[0][0], /packages\/harness-runtime\/plugins\/pre-execution-authority-guard\.mjs$/);
   assert.equal(overlay.plugin[0][1].authorityByRole.coder.may_stage, false);
-  const sourceBound = createSourceBoundOpenCodeEnvironment({ harnessRoot: root });
+  const runtimeBound = createRuntimeBoundOpenCodeEnvironment({ harnessRoot: root });
   try {
     const resolved = JSON.parse(execFileSync('opencode', ['debug', 'agent', 'orchestrator'], {
       cwd: root,
       encoding: 'utf8',
       env: {
-        ...sourceBound.environment,
+        ...runtimeBound.environment,
         OPENCODE_CONFIG_CONTENT: JSON.stringify(overlay),
         OPENCODE_DISABLE_EXTERNAL_SKILLS: '1',
         OPENCODE_DISABLE_CLAUDE_CODE_SKILLS: '1',
@@ -62,9 +62,9 @@ const root = resolve('.');
     for (const command of ['git add README.md', 'git commit -m denied', 'git push origin main', 'git reset --hard', 'git clean -fd']) {
       assert.equal(projectBashCommand(bash, command).state, 'DENY', command);
     }
-    console.log('✓ Source-bound interactive OpenCode config preserves Git observation exceptions after family denial');
+    console.log('✓ Runtime-bound interactive OpenCode config preserves Git observation exceptions after family denial');
   } finally {
-    sourceBound.cleanup();
+    runtimeBound.cleanup();
   }
 }
 

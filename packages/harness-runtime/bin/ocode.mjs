@@ -33,7 +33,7 @@ import {
 import { runInteractiveOpenCode } from '../lib/interactive-activity.mjs';
 import { renderActivityView, renderAgentsView, renderAnnouncement } from '../lib/work-view.mjs';
 import { createRuntimePermissionProjection, createValidationWrapperEnvironment } from '../lib/command-admission.mjs';
-import { applyInteractiveRuntimePermissions, applyPreExecutionAuthorityGuard, createSourceBoundOpenCodeEnvironment } from '../lib/interactive-configuration.mjs';
+import { applyInteractiveRuntimePermissions, applyPreExecutionAuthorityGuard, createRuntimeBoundOpenCodeEnvironment } from '../lib/interactive-configuration.mjs';
 import { createRepositorySnapshot, repositorySnapshotFingerprint } from '../lib/repository-snapshot.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -485,16 +485,16 @@ async function main() {
   const overlayConfig = JSON.parse(serializeOpenCodeRuntimeOverlay(context.profile, process.env.OPENCODE_CONFIG_CONTENT));
   const runtimePermissions = createRuntimePermissionProjection({ contracts: context.contracts, projectDir: projectRoot, environment: process.env });
   applyInteractiveRuntimePermissions(overlayConfig, runtimePermissions);
-  applyPreExecutionAuthorityGuard(overlayConfig, { harnessRoot: context.harnessRoot, contracts: context.contracts });
+  applyPreExecutionAuthorityGuard(overlayConfig, { contracts: context.contracts });
   const overlay = JSON.stringify(overlayConfig);
   console.log(`=== EXECUTION PROFILE: ${context.profile.name} (${short(fingerprintBindingProfile(context.profile))}) ===\n`);
   const interactiveActivity = createActivityExecutionContext({ activity_store_path: activityStorePath(projectRoot) }, { projectDir: projectRoot, role: 'orchestrator' });
   console.log('WORK — ◇ Orchestrator · active\n');
   let result;
-  const sourceBound = createSourceBoundOpenCodeEnvironment({ harnessRoot: context.harnessRoot, environment: process.env });
+  const runtimeBound = createRuntimeBoundOpenCodeEnvironment({ harnessRoot: context.harnessRoot, environment: process.env });
   try {
     let environment = {
-      ...sourceBound.environment,
+      ...runtimeBound.environment,
       OPENCODE_ENABLE_EXA: '1',
       OCODE_HARNESS_ROOT: context.harnessRoot,
       // These are runtime context, not a filesystem sandbox. The server,
@@ -507,7 +507,6 @@ async function main() {
     };
     if (runtimePermissions.validation_registry) {
       environment = createValidationWrapperEnvironment({
-        baseDir: context.harnessRoot,
         projectDir: projectRoot,
         registry: runtimePermissions.validation_registry,
         environment,
@@ -530,7 +529,7 @@ async function main() {
       });
     }
   } finally {
-    sourceBound.cleanup();
+    runtimeBound.cleanup();
     finishActivityExecution(interactiveActivity, {
       success: Boolean(result && !result.error && !result.signal && result.status === 0),
       failure_classification: result?.error?.message ?? result?.signal ?? (result?.status === 0 ? null : 'OPENCODE_EXIT_FAILURE'),

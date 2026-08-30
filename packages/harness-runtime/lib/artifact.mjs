@@ -11,6 +11,71 @@ import { readReleaseIdentity, validateReleaseIdentity } from './deploy.mjs';
 
 export const ARTIFACT_SCHEMA_VERSION = 1;
 export const ARTIFACT_FORMAT = 'ocode-release-artifact-v1';
+// This is the shipped runtime module inventory, not a source-layout lookup.
+// Keep it explicit so verification rejects a self-consistent but incomplete
+// candidate payload before it can become an installed release.
+export const RUNTIME_CLOSURE_REQUIRED_PATHS = Object.freeze([
+  'harness-runtime/bin/harness.mjs',
+  'harness-runtime/bin/ocode.mjs',
+  'harness-runtime/bin/validation/command.mjs',
+  'harness-runtime/bin/validation/cargo',
+  'harness-runtime/bin/validation/go',
+  'harness-runtime/bin/validation/mix',
+  'harness-runtime/bin/validation/npm',
+  'harness-runtime/bin/validation/python',
+  'harness-runtime/bin/validation/pytest',
+  'harness-runtime/package.json',
+  'harness-runtime/lib/activity.mjs',
+  'harness-runtime/lib/admission.mjs',
+  'harness-runtime/lib/agent-contract.mjs',
+  'harness-runtime/lib/artifact.mjs',
+  'harness-runtime/lib/behavioral-adapters.mjs',
+  'harness-runtime/lib/capability-resolution.mjs',
+  'harness-runtime/lib/closeout.mjs',
+  'harness-runtime/lib/command-admission.mjs',
+  'harness-runtime/lib/composition.mjs',
+  'harness-runtime/lib/deploy.mjs',
+  'harness-runtime/lib/deterministic-skill-qualification.mjs',
+  'harness-runtime/lib/deterministic-staging.mjs',
+  'harness-runtime/lib/evidence.mjs',
+  'harness-runtime/lib/execution.mjs',
+  'harness-runtime/lib/governance.mjs',
+  'harness-runtime/lib/identity.mjs',
+  'harness-runtime/lib/interactive-activity.mjs',
+  'harness-runtime/lib/interactive-configuration.mjs',
+  'harness-runtime/lib/ledger.mjs',
+  'harness-runtime/lib/lifecycle.mjs',
+  'harness-runtime/lib/model-qualification.mjs',
+  'harness-runtime/lib/model-telemetry.mjs',
+  'harness-runtime/lib/opencode-integration.mjs',
+  'harness-runtime/lib/opencode-runtime-contract.mjs',
+  'harness-runtime/lib/opencode-sdk-execution.mjs',
+  'harness-runtime/lib/permission-projection.mjs',
+  'harness-runtime/lib/pre-execution-authority-guard.mjs',
+  'harness-runtime/lib/release-store.mjs',
+  'harness-runtime/lib/repository-snapshot.mjs',
+  'harness-runtime/lib/runtime-paths.mjs',
+  'harness-runtime/lib/skill-capsules.mjs',
+  'harness-runtime/lib/skill-contract.mjs',
+  'harness-runtime/lib/skill-projection.mjs',
+  'harness-runtime/lib/skill-qualification.mjs',
+  'harness-runtime/lib/skill-runtime.mjs',
+  'harness-runtime/lib/task-capsule.mjs',
+  'harness-runtime/lib/tdd-qualification.mjs',
+  'harness-runtime/lib/tool-loop-control.mjs',
+  'harness-runtime/lib/validation-registry.mjs',
+  'harness-runtime/lib/verify.mjs',
+  'harness-runtime/lib/wayfinding-runtime.mjs',
+  'harness-runtime/lib/wayfinding.mjs',
+  'harness-runtime/lib/work-view.mjs',
+  'harness-runtime/plugins/pre-execution-authority-guard.mjs',
+  'orientation/bin/orient.mjs',
+  'agents/manifest.json',
+  'profiles/free.json',
+  'profiles/hybrid.json',
+  'doctrine/policy-version.json',
+  'opencode-config/opencode.json',
+]);
 const sha = (value) => createHash('sha256').update(value).digest('hex');
 const fileSHA = (path) => sha(readFileSync(path));
 const posix = (path) => path.split('\\').join('/');
@@ -26,5 +91,5 @@ export function inspectArtifactArchive(archive) { const bytes = gunzipSync(readF
 /** Materializes only into a new child of a caller-trusted real parent. */
 export function materializeVerifiedArtifact(archive, candidateRoot) { const candidate = resolve(candidateRoot), parent = dirname(candidate); try { lstatSync(candidate); throw new Error('Artifact candidate root must not already exist'); } catch (error) { if (error?.code !== 'ENOENT') throw error; } const p = lstatSync(parent); if (!p.isDirectory() || p.isSymbolicLink()) throw new Error('Artifact candidate parent must be a real directory'); mkdirSync(candidate); const c = lstatSync(candidate); if (!c.isDirectory() || c.isSymbolicLink()) throw new Error('Artifact candidate root creation was unsafe'); const entries = inspectArtifactArchive(archive), root = join(candidate, 'ocode-release'); for (const e of entries.filter((x) => x.type === 'directory').sort((a, b) => a.path.length - b.path.length)) { const target = e.path ? join(root, e.path) : root; mkdirSync(target, { recursive: true, mode: e.mode & 0o777 }); chmodSync(target, e.mode & 0o777); } for (const e of entries.filter((x) => x.type === 'file')) { const target = join(root, e.path); mkdirSync(dirname(target), { recursive: true }); writeFileSync(target, e.data, { flag: 'wx', mode: e.mode & 0o777 }); chmodSync(target, e.mode & 0o777); } return { root, entries }; }
 
-export function verifyMaterializedPayload(root) { const release = readReleaseIdentity(root), artifact = JSON.parse(readFileSync(join(root, 'ARTIFACT.json'), 'utf8')); validateReleaseIdentity(release); if (artifact?.schema_version !== ARTIFACT_SCHEMA_VERSION || artifact.format !== ARTIFACT_FORMAT || artifact.release?.version !== release.version || artifact.release?.source_commit !== release.source_commit) throw new Error('Artifact metadata identity mismatch'); if (readFileSync(join(root, 'VERSION'), 'utf8') !== `${release.version}\n`) throw new Error('Artifact VERSION identity mismatch'); if (!/^[0-9a-f]{64}$/.test(artifact.build_inputs?.package_lock_sha256 || '') || fileSHA(join(root, 'package-lock.json')) !== artifact.build_inputs.package_lock_sha256) throw new Error('Artifact lockfile identity mismatch'); const actual = list(root).filter((x) => x.path !== 'ARTIFACT.json'); if (sha(JSON.stringify(actual)) !== artifact.payload?.manifest_sha256 || JSON.stringify(actual) !== JSON.stringify(artifact.payload.files)) throw new Error('Artifact payload manifest mismatch'); const sdk = join(root, 'harness-runtime/node_modules/@opencode-ai/sdk/package.json'); if (!existsSync(sdk) || JSON.parse(readFileSync(sdk, 'utf8')).version !== artifact.runtime?.sdk?.version) throw new Error('Artifact SDK dependency mismatch'); for (const required of ['harness-runtime/bin/harness.mjs', 'harness-runtime/bin/ocode.mjs', 'orientation/bin/orient.mjs', 'agents/manifest.json', 'profiles/free.json', 'doctrine/policy-version.json', 'opencode-config/opencode.json']) if (!existsSync(join(root, required))) throw new Error(`Artifact missing ${required}`); return { release, artifact }; }
+export function verifyMaterializedPayload(root) { const release = readReleaseIdentity(root), artifact = JSON.parse(readFileSync(join(root, 'ARTIFACT.json'), 'utf8')); validateReleaseIdentity(release); if (artifact?.schema_version !== ARTIFACT_SCHEMA_VERSION || artifact.format !== ARTIFACT_FORMAT || artifact.release?.version !== release.version || artifact.release?.source_commit !== release.source_commit) throw new Error('Artifact metadata identity mismatch'); if (readFileSync(join(root, 'VERSION'), 'utf8') !== `${release.version}\n`) throw new Error('Artifact VERSION identity mismatch'); if (!/^[0-9a-f]{64}$/.test(artifact.build_inputs?.package_lock_sha256 || '') || fileSHA(join(root, 'package-lock.json')) !== artifact.build_inputs.package_lock_sha256) throw new Error('Artifact lockfile identity mismatch'); const actual = list(root).filter((x) => x.path !== 'ARTIFACT.json'); if (sha(JSON.stringify(actual)) !== artifact.payload?.manifest_sha256 || JSON.stringify(actual) !== JSON.stringify(artifact.payload.files)) throw new Error('Artifact payload manifest mismatch'); const sdk = join(root, 'harness-runtime/node_modules/@opencode-ai/sdk/package.json'); if (!existsSync(sdk) || JSON.parse(readFileSync(sdk, 'utf8')).version !== artifact.runtime?.sdk?.version) throw new Error('Artifact SDK dependency mismatch'); for (const required of RUNTIME_CLOSURE_REQUIRED_PATHS) if (!existsSync(join(root, required))) throw new Error(`Artifact missing runtime resource ${required}`); const manifest = JSON.parse(readFileSync(join(root, 'agents/manifest.json'), 'utf8')); for (const role of manifest.roles ?? []) { if (typeof role.file !== 'string' || !existsSync(join(root, 'agents', role.file))) throw new Error(`Artifact missing runtime agent contract ${role.file ?? 'unknown'}`); } return { release, artifact }; }
 export function verifyReleaseArtifact(archive) { const checksum = `${archive}.sha256`; if (!existsSync(checksum)) throw new Error('Detached archive checksum missing'); const expected = readFileSync(checksum, 'utf8').trim().split(/\s+/)[0]; if (!/^[0-9a-f]{64}$/.test(expected) || fileSHA(archive) !== expected) throw new Error('Archive SHA-256 mismatch'); const temp = mkdtempSync(join(tmpdir(), 'ocode-release-verify-')); try { const { root } = materializeVerifiedArtifact(archive, join(temp, 'candidate')); return { ...verifyMaterializedPayload(root), archive_sha256: expected }; } finally { rmSync(temp, { recursive: true, force: true }); } }

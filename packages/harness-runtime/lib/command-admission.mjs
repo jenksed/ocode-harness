@@ -6,6 +6,7 @@ import {
   evaluateValidationRegistryFreshness,
   validateValidationRegistry,
 } from './validation-registry.mjs';
+import { runtimeResourcePath } from './runtime-paths.mjs';
 
 export { createValidationRegistry, evaluateValidationRegistryFreshness, validateValidationRegistry } from './validation-registry.mjs';
 
@@ -217,10 +218,10 @@ export function createRuntimePermissionProjection({ contracts, projectDir, envir
   };
 }
 
-export function createValidationWrapperEnvironment({ baseDir, projectDir, registry, environment = process.env, executables = {} } = {}) {
+export function createValidationWrapperEnvironment({ projectDir, registry, environment = process.env, executables = {} } = {}) {
   if (!registry) return { ...environment };
   validateValidationRegistry(registry);
-  const wrapperDir = resolve(baseDir, 'packages', 'harness-runtime', 'bin', 'validation');
+  const wrapperDir = runtimeResourcePath('bin', 'validation');
   return {
     ...environment,
     PATH: `${wrapperDir}${delimiter}${environment.PATH ?? ''}`,

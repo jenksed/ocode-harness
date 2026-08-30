@@ -2,16 +2,17 @@ import { copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, rmSync } from
 import { homedir, tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createPreExecutionAuthorityGuardOptions } from './pre-execution-authority-guard.mjs';
+import { runtimeResourcePath } from './runtime-paths.mjs';
 
 /**
  * OpenCode deep-merges agent frontmatter with OPENCODE_CONFIG_CONTENT while
  * retaining existing object-key order. Its last-match Bash matcher therefore
  * makes a stale installed agent an authority input. Interactive Ocode owns
  * its semantic agents, so run from an isolated configuration containing the
- * selected harness source agents and the user's non-agent global config.
+ * selected runtime agents and the user's non-agent global config.
  */
-export function createSourceBoundOpenCodeEnvironment({ harnessRoot, environment = process.env } = {}) {
-  const configHome = mkdtempSync(join(tmpdir(), 'ocode-source-config-'));
+export function createRuntimeBoundOpenCodeEnvironment({ harnessRoot, environment = process.env } = {}) {
+  const configHome = mkdtempSync(join(tmpdir(), 'ocode-runtime-config-'));
   const target = join(configHome, 'opencode');
   const originalHome = environment.XDG_CONFIG_HOME
     ? resolve(environment.XDG_CONFIG_HOME)
@@ -59,12 +60,12 @@ export function applyInteractiveRuntimePermissions(overlayConfig, runtimePermiss
   return overlayConfig;
 }
 
-/** Install the source-owned, deny-only guard into Ocode's owned overlay. */
-export function applyPreExecutionAuthorityGuard(overlayConfig, { harnessRoot, contracts } = {}) {
+/** Install the runtime-owned, deny-only guard into Ocode's owned overlay. */
+export function applyPreExecutionAuthorityGuard(overlayConfig, { contracts } = {}) {
   if (!overlayConfig || typeof overlayConfig !== 'object' || Array.isArray(overlayConfig)) throw new Error('OpenCode runtime overlay must be an object');
   if (overlayConfig.plugin !== undefined && !Array.isArray(overlayConfig.plugin)) throw new Error('OpenCode runtime overlay plugin field must be an array');
   const guard = [
-    resolve(harnessRoot, 'packages', 'harness-runtime', 'plugins', 'pre-execution-authority-guard.mjs'),
+    runtimeResourcePath('plugins', 'pre-execution-authority-guard.mjs'),
     createPreExecutionAuthorityGuardOptions({ contracts }),
   ];
   overlayConfig.plugin = [guard, ...(overlayConfig.plugin ?? [])];

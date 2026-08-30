@@ -242,20 +242,9 @@ function applyServerEnvironment(environment, start) {
 }
 
 export function attachArguments(serverURL, projectDir, args = []) {
-  const supported = new Set(['--continue', '-c', '--fork', '--mini', '--no-replay']);
-  const valued = new Set(['--session', '-s', '--replay-limit', '--password', '-p', '--username', '-u']);
-  const forwarded = [];
-  for (let index = 0; index < args.length; index += 1) {
-    const value = args[index];
-    if (supported.has(value)) forwarded.push(value);
-    else if (valued.has(value)) {
-      const next = args[++index];
-      if (next !== undefined) forwarded.push(value, next);
-    }
-    // The initial project positional is already represented by --dir. Other
-    // OpenCode launch-only options are intentionally not sent to attach.
-  }
-  return ['attach', serverURL, '--dir', projectDir, ...forwarded];
+  // Arguments have already been classified by operator-arguments.mjs. This
+  // remains deliberately mechanical so no operator intent can disappear here.
+  return ['attach', serverURL, '--dir', projectDir, ...args];
 }
 
 function waitForChild(child) {

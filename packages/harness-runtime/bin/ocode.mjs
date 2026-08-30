@@ -36,6 +36,9 @@ import { applyInteractiveRuntimePermissions, applyPreExecutionAuthorityGuard, cr
 import { createRepositorySnapshot, repositorySnapshotFingerprint } from '../lib/repository-snapshot.mjs';
 import { qualifyRuntimeIdentity } from '../lib/runtime-identity.mjs';
 import { resolveRuntimeState, worktreeRoot } from '../lib/runtime-state.mjs';
+import { classifyInteractiveArguments } from '../lib/operator-arguments.mjs';
+import { requireCandidateCapability } from '../lib/candidate-capabilities.mjs';
+import { runDoctor } from '../lib/doctor.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 
@@ -388,6 +391,16 @@ function printRepositorySnapshot(args) {
 
 async function main() {
   const { override, remaining } = extractProfileOverride(process.argv.slice(2));
+  if (remaining[0] === 'doctor') {
+    if (remaining.length !== 1 || override) throw new Error('Usage: ocode doctor');
+    const report = runDoctor({ projectDir: process.cwd(), environment: process.env });
+    console.log(report.text);
+    if (!report.healthy) process.exitCode = 1;
+    return;
+  }
+  if (remaining[0] === 'update' || remaining[0] === 'rollback') {
+    requireCandidateCapability(remaining[0] === 'update' ? 'self-update' : 'rollback');
+  }
   if (remaining[0] === 'explain' && remaining[1] === '--run') {
     if (!remaining[2]) throw new Error('ocode explain --run requires a run ID');
     explainRun(remaining[2]);
@@ -433,6 +446,7 @@ async function main() {
     throw new Error('Usage: ocode profile | ocode profile explain <role> | ocode profile diff <left> <right>');
   }
 
+  const operatorArguments = classifyInteractiveArguments(remaining);
   const runtimeIdentity = qualifyRuntimeIdentity({ releaseRoot: context.harnessRoot, environment: process.env });
   validateProfileCompleteness(context.profile, context.manifest);
   const roots = orientProject();
@@ -482,11 +496,11 @@ async function main() {
     // `ocode .` always owns a server and observes its native event stream.
     if (process.env.OCODE_DISABLE_INTERACTIVE_ACTIVITY_BRIDGE === '1') {
       startActivityExecution(interactiveActivity);
-      result = spawnSync(runtimeIdentity.executable.path, remaining, { cwd: projectRoot, env: environment, stdio: 'inherit' });
+      result = spawnSync(runtimeIdentity.executable.path, operatorArguments.forward, { cwd: projectRoot, env: environment, stdio: 'inherit' });
     } else {
       result = await runInteractiveOpenCode({
         projectDir: projectRoot,
-        args: remaining,
+        args: operatorArguments.forward,
         env: environment,
         config: overlayConfig,
         runtimeIdentity,

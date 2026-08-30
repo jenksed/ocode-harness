@@ -172,7 +172,7 @@ try {
   assert.deepEqual(activity.active_agents, []);
   assert.equal(roleFromOpenCodeAgent('coder'), 'coder');
   assert.equal(roleFromOpenCodeAgent('third-party-agent'), null);
-  assert.deepEqual(attachArguments('http://127.0.0.1:9000', bridgeProject, ['.', '--continue', '--session', 'session-1', '--agent', 'coder']), [
+  assert.deepEqual(attachArguments('http://127.0.0.1:9000', bridgeProject, ['--continue', '--session', 'session-1']), [
     'attach', 'http://127.0.0.1:9000', '--dir', bridgeProject, '--continue', '--session', 'session-1',
   ]);
   console.log('✓ Native child sessions, nested graph, verifier/reviewer lifecycle, effect approvals, and unknown-role isolation project from server events');
@@ -194,7 +194,7 @@ try {
     };
     const result = await runInteractiveOpenCode({
       projectDir: bridgeRunProject,
-      args: ['.'],
+      args: [],
       port: 9876,
       env: process.env,
       config: {},

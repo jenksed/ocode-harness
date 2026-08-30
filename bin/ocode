@@ -14,7 +14,7 @@ else
 fi
 
 case "${1:-}" in
-  version|update|rollback)
+  version)
     exec node "$HARNESS_RUNTIME" "$@"
     ;;
   --version|-V)

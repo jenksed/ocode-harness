@@ -66,10 +66,10 @@ try {
   const capsule = createTaskCapsule({ task_id: 'repository-truth', revision: 1, parent_fingerprint: null, objective: 'Inspect fixture truth', authoritative_inputs: [{ id: 'fixture', kind: 'PATH', reference: 'README.md', fingerprint: 'a'.repeat(64), description: 'Fixture authority' }], scope: { include_paths: ['README.md'], exclude_paths: [] }, non_goals: ['Do not infer source contents'], constraints: ['Use repository facts only'], acceptance: [{ id: 'context-ready', requirement: 'Capsule carries repository context', required_evidence: ['snapshot'] }], stop_conditions: ['Stop after serialization'], context: { path_refs: ['README.md'], evidence_refs: [], max_supplied_chars: 100000, max_expansions: 0 }, assumptions: [], provenance: { workflow_id: null, run_id: null, session_id: null, role: 'orchestrator' }, repository_context: { snapshot: dirty, observations: [observation], unknowns: ['No deployment record is present'] } });
   const roundTrip = validateTaskCapsule(JSON.parse(JSON.stringify(capsule)));
   assert.deepEqual(roundTrip, capsule);
-  assert.equal(capsule.schema_version, 2);
+  assert.equal(capsule.schema_version, 3);
   assert.equal(capsule.repository_context.verified_facts.find((entry) => entry.key === 'git.head').value, dirty.head);
   assert.equal(capsule.repository_context.observations[0].truth_class, 'WORKING_OBSERVATION');
-  console.log('✓ E2E fixture → snapshot → TaskCapsule v2 → JSON preserves HEAD, state, authority, provenance, and fact classes');
+  console.log('✓ E2E fixture → snapshot → TaskCapsule v3 → JSON preserves HEAD, state, authority, provenance, and fact classes');
 
   const result = spawnSync(process.execPath, [cli, 'context', 'snapshot', '--json', '--task', 'cli-fixture'], { cwd: root, env: { ...process.env, OCODE_HARNESS_ROOT: harnessRoot, OCODE_MACHINE_CONFIG: join(root, 'missing-config.json') }, encoding: 'utf8' });
   assert.equal(result.status, 0, result.stderr);

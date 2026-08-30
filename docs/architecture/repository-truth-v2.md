@@ -12,7 +12,7 @@ Each context fact contains a fact kind, truth class, key/value, provenance, and 
 
 ## Capsules
 
-TaskCapsule v1 remains valid. TaskCapsule v2 adds optional `repository_context`, which contains a validated snapshot plus separate `verified_facts`, `decisions`, `evidence`, `observations`, and `unknowns`. ContextCapsule v2 can carry the same optional repository context while retaining its bounded path/evidence budgets. Both preserve their earlier v1 shapes for existing consumers.
+TaskCapsule v1 remains valid. TaskCapsule v2 adds optional `repository_context`, which contains a validated snapshot plus separate `verified_facts`, `decisions`, `evidence`, `observations`, and `unknowns`. TaskCapsule v3 adds an optional serializable `authority_context` of runtime grant references; a child must have the runtime revalidate those references and cannot treat them as authority by themselves. ContextCapsule v2 can carry the same optional repository context while retaining its bounded path/evidence budgets. All preserve earlier shapes for existing consumers.
 
 ## Inspection
 

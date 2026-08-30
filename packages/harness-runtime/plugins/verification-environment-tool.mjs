@@ -27,7 +27,9 @@ export default async function verificationEnvironmentTool(_plugin, options = {})
         },
         async execute(args, context) {
           const requested = await invoke(options, '/request', { revision: args.revision, work_scope: args.work_scope, session_id: context.sessionID, message_id: context.messageID, agent: context.agent });
-          await context.ask({ permission: 'verification_environment', patterns: [requested.request_id], always: [], metadata: { request_id: requested.request_id, work_scope: args.work_scope } });
+          if (requested.admission.status === 'APPROVAL_REQUIRED') {
+            await context.ask({ permission: 'verification_environment', patterns: [requested.request_id], always: [], metadata: { request_id: requested.request_id, work_scope: args.work_scope } });
+          }
           const completed = await invoke(options, '/continue', { request_id: requested.request_id, session_id: context.sessionID, message_id: context.messageID });
           return { title: 'Ocode verification environment', output: completed.environment.path, metadata: { request_id: requested.request_id, receipt_id: completed.receipt.receipt_id, worktree_id: completed.environment.worktree_id } };
         },

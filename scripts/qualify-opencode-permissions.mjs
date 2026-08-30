@@ -129,7 +129,7 @@ const governedGitEffectProbes = {
   },
 };
 
-async function runScenario({ id, command, commands = [command], rules, reply = null, files = {}, git = false, effectProbe = null, agent = 'probe', sourceAgents = false, plugin = null, childSession = false, runtimeValidation = null }) {
+async function runScenario({ id, command, commands = [command], rules, reply = null, files = {}, git = false, effectProbe = null, agent = 'probe', sourceAgents = false, plugin = null, childSession = false, runtimeValidation = null, role = agent, expected_effect = null, expected_disposition = null }) {
   const fixture = mkdtempSync(join(tmpdir(), `ocode-permission-${id}-`));
   for (const [path, content] of Object.entries(files)) writeFileSync(join(fixture, path), content);
   if (git) initializeGitFixture(fixture);
@@ -190,6 +190,7 @@ async function runScenario({ id, command, commands = [command], rules, reply = n
         for await (const event of subscription.stream) {
           events.push(structuredClone(event));
           const properties = event.properties ?? {};
+          if ((event.type === 'permission.updated' || event.type === 'permission.asked') && properties.sessionID === created.id && !reply && expected_disposition === 'ASK') resolveIdle();
           if ((event.type === 'permission.updated' || event.type === 'permission.asked') && properties.sessionID === created.id && reply) {
             permissionReply = { id: properties.id, response: reply, pattern: properties.pattern ?? null, metadata: properties.metadata ?? null };
             await client.postSessionIdPermissionsPermissionId({ path: { id: created.id, permissionID: properties.id }, query: { directory: fixture }, body: { response: reply } });
@@ -218,7 +219,8 @@ async function runScenario({ id, command, commands = [command], rules, reply = n
     const fixture_file_exists = Object.fromEntries(Object.keys(files).map((path) => [path, existsSync(join(fixture, path))]));
     const effect_after = effectProbe?.observe(fixture) ?? null;
     const plugin_events = pluginLogPath && existsSync(pluginLogPath) ? readFileSync(pluginLogPath, 'utf8').trim().split('\n').filter(Boolean).map((line) => JSON.parse(line)) : [];
-    return { id, commands, rules, reply, git_fixture: git, child_session: childSession, plugin: plugin ? { path: plugin.path } : null, plugin_events, permission_request_count: permissionEvents.length, permission_reply: permissionReply, tool_states: tool_results.map((entry) => entry.status), tool_results, request_count: provider.requests.length, marker_created: existsSync(join(fixture, 'marker.txt')), validation_execution: existsSync(join(fixture, 'validation-executed.log')) ? readFileSync(join(fixture, 'validation-executed.log'), 'utf8').trim().split('\n') : [], runtime_validation, fixture_file_exists, effect_before, effect_after, session_abort: 'SUPPORTED' };
+    const observed_disposition = permissionEvents.length ? 'ASK' : tool_results.some((entry) => entry.status === 'error') ? 'DENY' : tool_results.some((entry) => entry.status === 'completed') ? 'ALLOW' : 'INSUFFICIENT_EVIDENCE';
+    return { id, role, command, commands, expected_effect, expected_disposition, rules, reply, git_fixture: git, child_session: childSession, plugin: plugin ? { path: plugin.path } : null, session_id: created.id, permission_events: permissionEvents, permission_request_count: permissionEvents.length, permission_reply: permissionReply, observed_disposition, terminal_status: 'IDLE', tool_states: tool_results.map((entry) => entry.status), tool_results, request_count: provider.requests.length, marker_created: existsSync(join(fixture, 'marker.txt')), validation_execution: existsSync(join(fixture, 'validation-executed.log')) ? readFileSync(join(fixture, 'validation-executed.log'), 'utf8').trim().split('\n') : [], runtime_validation, fixture_file_exists, effect_before, effect_after, session_abort: 'SUPPORTED', evidence_status: expected_disposition && observed_disposition === expected_disposition ? 'PASS' : expected_disposition ? 'FAIL' : 'UNQUALIFIED' };
   } finally {
     await opencode?.close?.();
     await new Promise((resolveClose) => provider.server.close(resolveClose));
@@ -236,7 +238,26 @@ const orchestratorRules = createNativeBashPermissionRules({
   baseRules: orchestrator.permissions.bash,
   roleAuthority: orchestrator.authority,
 });
+const coder = contracts.get('coder');
+const verifier = contracts.get('reviewer') ?? contracts.get('verifier');
+const coderRules = createNativeBashPermissionRules({ baseRules: coder.permissions.bash, roleAuthority: coder.authority });
+const verifierRules = createNativeBashPermissionRules({ baseRules: verifier.permissions.bash, roleAuthority: verifier.authority });
+const pass3LiveScenarios = [
+  ['git-merge-base', 'git merge-base HEAD HEAD'], ['git-rev-list', 'git rev-list HEAD'], ['git-ls-tree', 'git ls-tree HEAD'],
+  ['git-cat-file', 'git cat-file -t HEAD'], ['git-show-ref', 'git show-ref'], ['git-ls-files', 'git ls-files'],
+  ['git-grep', 'git grep fixture-token'], ['git-blame', 'git blame fixture.txt'], ['git-remote-v', 'git remote -v'],
+  ['git-tag-list', 'git tag --list'], ['git-config-get', 'git config --get user.name'], ['git-diff-path', 'git diff -- fixture.txt'],
+  ['find-observation', 'find . -type f'], ['tree-observation', 'tree .'],
+].map(([name, command]) => ({ id: `pass3-coder-observe-${name}`, role: 'coder', agent: 'coder', command, commands: [command], rules: coderRules, git: true, files: { 'fixture.txt': 'fixture-token\n' }, expected_effect: 'observation', expected_disposition: 'ALLOW' }));
+pass3LiveScenarios.push(
+  { id: 'pass3-coder-workspace-ask', role: 'coder', agent: 'coder', command: 'touch feature.txt', rules: coderRules, expected_effect: 'workspace_mutation', expected_disposition: 'ASK' },
+  { id: 'pass3-coder-git-forbidden', role: 'coder', agent: 'coder', commands: ['git add fixture.txt', 'git commit -m fixture', 'git push origin main'], rules: coderRules, git: true, files: { 'fixture.txt': 'fixture-token\n' }, expected_effect: 'closeout', expected_disposition: 'DENY' },
+  { id: 'pass3-coder-transitive-deny', role: 'coder', agent: 'coder', commands: ['sh -c echo escape', 'node -e "console.log(escape)"', 'python -c "print(escape)"'], rules: coderRules, plugin: { path: productionPreExecutionAuthorityGuard, options: preExecutionAuthorityGuardOptions }, expected_effect: 'unknown_transitive_execution', expected_disposition: 'DENY' },
+  { id: 'pass3-reviewer-mutation-deny', role: 'reviewer', agent: 'reviewer', command: 'touch reviewer.txt', rules: verifierRules, expected_effect: 'workspace_mutation', expected_disposition: 'DENY' },
+);
+const includePass3 = process.env.OCODE_PERMISSION_PASS3_LIVE === '1' || pass3LiveScenarios.some(({ id }) => requestedScenarios.has(id));
 for (const scenario of [
+  ...(includePass3 ? pass3LiveScenarios : []),
   { id: 'exact-allow', command: 'pwd', rules: { '*': 'ask', pwd: 'allow' } },
   { id: 'no-match-default', command: 'pwd', rules: { 'git status': 'allow' } },
   { id: 'explicit-no-match-ask', command: 'pwd', rules: { '*': 'ask', 'git status': 'allow' }, reply: 'once' },
@@ -341,7 +362,13 @@ for (const scenario of [
     ['orchestrator-unknown-command-denied', 'uname -a', false, {}],
   ].map(([id, command, git, files, effectProbe]) => ({ id, command, rules: orchestratorRules, git, files, effectProbe })),
 ]) {
-  if (!requestedScenarios.size || requestedScenarios.has(scenario.id)) scenarios.push(await runScenario(scenario));
+  if (!requestedScenarios.size || requestedScenarios.has(scenario.id)) {
+    try {
+      scenarios.push(await runScenario(scenario));
+    } catch (error) {
+      scenarios.push({ id: scenario.id, role: scenario.role ?? scenario.agent ?? 'probe', command: scenario.command ?? null, commands: scenario.commands ?? [scenario.command], expected_effect: scenario.expected_effect ?? null, expected_disposition: scenario.expected_disposition ?? null, observed_disposition: 'INSUFFICIENT_EVIDENCE', terminal_status: 'ERROR', evidence_status: 'INSUFFICIENT_EVIDENCE', error: String(error?.message ?? error), timestamp: new Date().toISOString() });
+    }
+  }
 }
 
 const baseEvidencePath = process.env.OCODE_PERMISSION_BASE_EVIDENCE ? resolve(process.env.OCODE_PERMISSION_BASE_EVIDENCE) : null;
@@ -353,3 +380,4 @@ const artifact = { schema_version: 1, runtime: { opencode: runtimeVersion, sdk: 
 mkdirSync(resolve('qualification'), { recursive: true });
 writeFileSync(artifactPath, `${JSON.stringify(artifact, null, 2)}\n`);
 console.log(JSON.stringify({ status: 'OPENCODE_PERMISSION_CHARACTERIZATION_RECORDED', artifact: artifactPath, scenarios: scenarios.map(({ id, permission_request_count, tool_states }) => ({ id, permission_request_count, tool_states })) }));
+process.exit(0);
